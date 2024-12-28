@@ -43,8 +43,6 @@ export default function ParsedContentDisplay({
         // setExperimentId(response.id)
       // }
     } catch (error) {
-      console.log("api: " + api)
-      console.log("baseURL: "+ process.env.BACKEND_URL)
       toast.error('An error occurred. Please try again!');
       console.error("Error creating experiment file:", error);
     }
