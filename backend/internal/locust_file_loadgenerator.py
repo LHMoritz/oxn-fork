@@ -2,6 +2,7 @@ import importlib
 from importlib.machinery import ModuleSpec
 import importlib.util
 import logging
+import os
 
 from locust import HttpUser, TaskSet, task
 from locust.env import Environment
@@ -92,7 +93,7 @@ class LocustFileLoadgenerator:
 
     def start(self):
         """Start the load generation"""
-        setup_logging("INFO", None)
+        setup_logging(os.getenv("LOCUST_LOG_LEVEL", "WARNING"), None)
         
         assert self.env is not None, "Locust environment must be initialized before starting"
         assert self.env.runner is not None, "Locust runner must be initialized before starting"

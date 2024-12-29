@@ -1,3 +1,4 @@
+from pathlib import Path
 from gevent import monkey
 monkey.patch_all()
 
@@ -10,7 +11,8 @@ uvicorn_logger_access.setLevel(logging.DEBUG)
 
 logger = logging.getLogger("uvicorn")
 logger.info = lambda message: print(message)
-
+data_dir = "data"
+report_dir = "report"
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -45,13 +47,17 @@ async def startup_event():
 
 # Initialize experiment manager
 # TODO: Get base path from some kind of config
-experiment_manager = ExperimentManager("/mnt/oxn-data")
-
+base_path = Path("/mnt/oxn-data")
+experiment_manager = ExperimentManager(base_path)
+experiments_dir = base_path / 'experiments'
 # Pydantic models for request/response validation
 class ExperimentCreate(BaseModel):
     name: str
     config: Dict
-
+class BatchExperimentCreate(BaseModel):
+    name: str
+    config: Dict
+    parameter_variations: Dict[str, List[str]]
 class ExperimentRun(BaseModel):
     runs: int = 1
     output_formats: List[str] = ["json"]  # or csv
@@ -136,9 +142,10 @@ async def run_experiment_sync(
     }
 
 @app.get("/experiments/{experiment_id}/data")
-def get_experiment_data(experiment_id: str):
+async def get_experiment_data(experiment_id: str):
     """Get experiment data as zip file"""
-    return FileResponse(experiment_manager.zip_experiment_data(experiment_id))
+    zip_file_path = experiment_manager.zip_experiment_data(experiment_id, base_path)
+    return FileResponse(zip_file_path, media_type="application/zip", filename=f"{experiment_id}.zip")
 
 @app.get("/experiments/{experiment_id}/status", response_model=ExperimentStatus)
 async def get_experiment_status(experiment_id: str):
@@ -197,18 +204,36 @@ async def get_experiment_report(experiment_id: str):
 
 # Additional Feature Endpoints
 @app.post("/experiments/batch")
-async def run_batch_experiments(
-    experiments: List[ExperimentCreate],
-    background_tasks: BackgroundTasks
-):
+async def create_batch_experiment(batch_experiment: BatchExperimentCreate):
+    return experiment_manager.create_batch_experiment(batch_experiment.name, batch_experiment.config, batch_experiment.parameter_variations)
+
+@app.post("/experiments/batch/{batch_id}/run")
+async def run_batch_experiment(batch_id: str, experiment_config: ExperimentRun):
+    return experiment_manager.run_batch_experiment(batch_id, experiment_config.output_formats, experiment_config.runs)
+
+
+@app.get("/experiments/batch/{batch_id}/{sub_experiment_id}/report")
+async def get_batch_experiment_report(batch_id: str, sub_experiment_id: str):
+    report = experiment_manager.get_batched_experiment_report(batch_id, sub_experiment_id)
+
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return report
+
+@app.get("/experiments/batch/{batch_id}/{sub_experiment_id}/data")
+async def get_batch_experiment_data(batch_id: str, sub_experiment_id: str):
     """
-    Queue multiple experiments for execution.
-    - Creates all experiments
-    - Validates configurations
-    - Queues them for sequential execution
+    Get batch experiment data of a given sub experiment id as zip file
     """
-    # TODO: Implement batch execution queue
-    pass
+    path = experiments_dir / batch_id / 'runs' / sub_experiment_id
+    logger.info(f"Getting data for batch experiment: {sub_experiment_id}")
+    zip_file_path = experiment_manager.zip_experiment_data(sub_experiment_id, path)
+
+    if not zip_file_path.exists():
+        raise HTTPException(status_code=404, detail="Zip file not found")
+    
+    logger.info(f"Returning zip file for batch experiment: {sub_experiment_id}")
+    return FileResponse(zip_file_path, media_type="application/zip", filename=f"{sub_experiment_id}.zip")
 
 '''This endpoint lists all experiments in the file system with corresponding meta data. The difference  to the route : /experiemnts/experiments_id that this route lists
 repsonse variables inside a directory and does not list directories. This route will be mainly used by the frontend.'''
