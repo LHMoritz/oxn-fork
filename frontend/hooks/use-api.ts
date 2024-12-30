@@ -1,8 +1,10 @@
 import { useState } from "react";
 import axios, { AxiosRequestConfig } from "axios";
 
+const NEXT_PUBLIC_BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://backend-chart:8000';
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_API_URL, // Base URL from env
+  baseURL: NEXT_PUBLIC_BACKEND_API_URL,
   headers: { "Content-Type": "application/json" },
 });
 
