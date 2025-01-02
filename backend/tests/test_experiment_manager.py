@@ -16,7 +16,7 @@ import zipfile
 @pytest.fixture
 def test_dir():
     """Create a temporary directory for test data"""
-    tmp_dir = tempfile.mkdtemp()
+    tmp_dir = Path(tempfile.mkdtemp())
     yield tmp_dir
     shutil.rmtree(tmp_dir)  # Cleanup after tests
 
