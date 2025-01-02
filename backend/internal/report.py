@@ -4,32 +4,22 @@ Functionality: Collects and formats interaction data between treatments and resp
 Connection: Called by main.py and Engine to compile and save experiment results.
 
 Handle the generation of experiment reports"""
-import datetime
 import uuid
 from typing import Tuple, Union, TypedDict, Dict, NotRequired
-
 import locust.stats
-import yaml
-
 import pandas as pd
 from scipy.stats import ttest_ind
 
 from backend.internal.runner import ExperimentRunner
 from backend.internal.models.treatment import Treatment
 from backend.internal.responses import TraceResponseVariable, MetricResponseVariable
-from backend.internal.store import construct_key
 from backend.internal.utils import humanize_utc_timestamp
 from backend.internal.errors import OxnException
-
-
 class Reporter:
     def __init__(
         self,
-        report_path: str,
     ):
         self.report_data = {"report": {"runs": {}}}
-        self.report_path = report_path
-        self.report_file_name = f"report_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.yaml"
         self.interactions = []
 
     @staticmethod
@@ -80,11 +70,10 @@ class Reporter:
             if isinstance(response, MetricResponseVariable)
             else f"{response.name}.duration"
         )
-        store_key = construct_key(
-            experiment_key=experiment.experiment_id,
-            run_key=experiment.short_id,
-            response_key=response.name,
-        )
+        if experiment.experiment_id and experiment.short_id:
+            store_key = experiment.experiment_id + "/" + experiment.short_id + "/" + response.name
+        else:
+            store_key = response.name
         #statistic, pvalue, test_name = self.compute_welch_ttest(
         #    dataframe=response.data,
         #    label="NoTreatment",
@@ -226,12 +215,6 @@ class Reporter:
                 "cpu_seconds": container_data["total_cpu_usage"],
                 "number_of_cpus": container_data["number_of_cpus"],
             }
-
-    def dump_report_data(self):
-        # report name has current time in it
-        with open(self.report_path + self.report_file_name , "w+") as fp:
-            contents = yaml.dump(self.report_data, sort_keys=False)
-            fp.write(contents)
 
     def get_report_data(self):
         return self.report_data
