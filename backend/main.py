@@ -1,3 +1,4 @@
+from pathlib import Path
 from gevent import monkey
 monkey.patch_all()
 
@@ -10,21 +11,22 @@ uvicorn_logger_access.setLevel(logging.DEBUG)
 
 logger = logging.getLogger("uvicorn")
 logger.info = lambda message: print(message)
-
-from fastapi import FastAPI, BackgroundTasks, HTTPException, Query
+data_dir = "data"
+report_dir = "report"
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel
 from datetime import datetime
 from backend.internal.experiment_manager import ExperimentManager
 from fastapi.responses import FileResponse, StreamingResponse
-
+from backend.internal.store import LocalFSStore
 
 
 
 app = FastAPI(title="OXN API", version="1.0.0")
 
-# CORS Middleware hinzufügen
+############### CORS Middleware ###############
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],  # Frontend URL
@@ -40,18 +42,20 @@ async def startup_event():
     handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
     logger.addHandler(handler) """
 
+############### Store and Experiment Manager ###############
+base_path = "/mnt/oxn-data"
+store = LocalFSStore(base_path)
+experiment_manager = ExperimentManager(Path(base_path), store)
+experiments_dir = Path(base_path) / 'experiments'
 
-
-
-# Initialize experiment manager
-# TODO: Get base path from some kind of config
-experiment_manager = ExperimentManager("/mnt/oxn-data")
-
-# Pydantic models for request/response validation
+############### Pydantic models for request/response validation ###############
 class ExperimentCreate(BaseModel):
     name: str
     config: Dict
-
+class BatchExperimentCreate(BaseModel):
+    name: str
+    config: Dict
+    parameter_variations: Dict[str, List[str]]
 class ExperimentRun(BaseModel):
     runs: int = 1
     output_formats: List[str] = ["json"]  # or csv
@@ -89,7 +93,7 @@ async def run_experiment(
     - Starts execution in background
     - Returns immediately with acceptance status
     """
-    if not experiment_manager.experiment_exists(experiment_id):
+    if not experiment_manager.get_experiment_config(experiment_id):
         raise HTTPException(status_code=404, detail="Experiment not found")
     
     logger.info(f"Adding background task for experiment: {experiment_id}")
@@ -118,7 +122,7 @@ async def run_experiment_sync(
     - Starts execution in background
     - Returns immediately with acceptance status
     """
-    if not experiment_manager.experiment_exists(experiment_id):
+    if not experiment_manager.get_experiment_config(experiment_id):
         raise HTTPException(status_code=404, detail="Experiment not found")
         
     
@@ -136,17 +140,30 @@ async def run_experiment_sync(
     }
 
 @app.get("/experiments/{experiment_id}/data")
-def get_experiment_data(experiment_id: str):
+async def get_experiment_data(experiment_id: str):
     """Get experiment data as zip file"""
-    return FileResponse(experiment_manager.zip_experiment_data(experiment_id))
+    memory_zip = experiment_manager.get_experiment_data(experiment_id)
+    return Response(
+        content=memory_zip.read(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={experiment_id}.zip"}
+    )
 
 @app.get("/experiments/{experiment_id}/status", response_model=ExperimentStatus)
 async def get_experiment_status(experiment_id: str):
     """Get current status of an experiment"""
-    experiment = experiment_manager.get_experiment(experiment_id)
-    if not experiment:
+    experiment = experiment_manager.get_experiment_config(experiment_id)
+    if experiment is None:
         raise HTTPException(status_code=404, detail="Experiment not found")
-    return experiment
+    response = ExperimentStatus(
+        id=experiment_id,
+        name=experiment["name"],
+        status=experiment["status"],
+        started_at=experiment["started_at"],
+        completed_at=experiment["completed_at"],
+        error_message=experiment["error_message"]
+    )
+    return response
 
 """ '''gets the resulting data for the given experiment id and respone variable id and the file format. If file is found it will be returned. Else a 404 not found will be given.
 Supported file types are json and csv. '''
@@ -197,18 +214,37 @@ async def get_experiment_report(experiment_id: str):
 
 # Additional Feature Endpoints
 @app.post("/experiments/batch")
-async def run_batch_experiments(
-    experiments: List[ExperimentCreate],
-    background_tasks: BackgroundTasks
-):
+async def create_batch_experiment(batch_experiment: BatchExperimentCreate):
+    return experiment_manager.create_batch_experiment(batch_experiment.name, batch_experiment.config, batch_experiment.parameter_variations)
+
+@app.post("/experiments/batch/{batch_id}/run")
+async def run_batch_experiment(batch_id: str, experiment_config: ExperimentRun):
+    return experiment_manager.run_batch_experiment(batch_id, experiment_config.output_formats, experiment_config.runs)
+
+
+@app.get("/experiments/batch/{batch_id}/{sub_experiment_id}/report")
+async def get_batch_experiment_report(batch_id: str, sub_experiment_id: str):
+    report = experiment_manager.get_batched_experiment_report(batch_id, sub_experiment_id)
+
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return report
+
+@app.get("/experiments/batch/{batch_id}/{sub_experiment_id}/data")
+async def get_batch_experiment_data(batch_id: str, sub_experiment_id: str):
     """
-    Queue multiple experiments for execution.
-    - Creates all experiments
-    - Validates configurations
-    - Queues them for sequential execution
+    Get batch experiment data of a given sub experiment id
     """
-    # TODO: Implement batch execution queue
-    pass
+    logger.debug(f"Getting data for batch experiment: {sub_experiment_id}")
+    key = f"{batch_id}_{sub_experiment_id}"
+    zip_file = experiment_manager.get_experiment_data(key)
+    
+    logger.debug(f"Returning zip file for batch experiment: {sub_experiment_id}")
+    return Response(
+        content=zip_file.read(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={sub_experiment_id}.zip"}
+    )
 
 '''This endpoint lists all experiments in the file system with corresponding meta data. The difference  to the route : /experiemnts/experiments_id that this route lists
 repsonse variables inside a directory and does not list directories. This route will be mainly used by the frontend.'''
@@ -221,8 +257,17 @@ async def list_experiments(
     List all experiments
     """
     experiments = experiment_manager.list_experiments()
-    # Convert dict to list for response validation
-    return list(experiments.values())
+    response = []
+    for e in experiments:
+        response.append(ExperimentStatus(
+            id=experiments[e]["id"],
+            name=experiments[e]["name"],
+            status=experiments[e]["status"],
+            started_at=experiments[e]["started_at"],
+            completed_at=experiments[e]["completed_at"],
+            error_message=experiments[e]["error_message"]
+        ))
+    return response
 
 
 @app.get("/health")
@@ -233,7 +278,7 @@ async def health_check():
 @app.get("/experiments/{experiment_id}/config")
 async def get_experiment_config(experiment_id: str):
     """Get experiment configuration"""
-    return experiment_manager.get_experiment(experiment_id)
+    return experiment_manager.get_experiment_config(experiment_id)
 
 # run with uvicorn:
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ from datetime import datetime
 from datetime import timezone
 
 import functools
-
+import itertools
 import yaml
 
 from backend.internal.errors import OxnException
@@ -110,3 +110,93 @@ def remove_env_variable(compose_file_path, service_name, variable_name, variable
 
     with open(compose_file_path, "w") as file:
         yaml.safe_dump(compose_dict, file)
+
+def dict_product(options):
+    """Generate all possible combinations of parameter variations
+    
+    Args:
+        options: Dictionary with parameter paths as keys and lists of values
+        
+    Returns:
+        List of dictionaries containing all possible combinations of parameters
+        
+    Example:
+        Input: {
+            "experiment.treatments.1.params.duration": ["99m", "120m"],
+            "experiment.treatments.1.params.delay": ["99m", "120m"]
+        }
+        Output: [
+            {
+                "experiment.treatments.1.params.duration": "99m",
+                "experiment.treatments.1.params.delay": "99m"
+            },
+            {
+                "experiment.treatments.1.params.duration": "99m", 
+                "experiment.treatments.1.params.delay": "120m"
+            },
+            ...
+        ]
+    """
+    keys = options.keys()
+    values = options.values()
+    combinations = []
+    
+    for combination in itertools.product(*values):
+        combinations.append(dict(zip(keys, combination)))
+        
+    return combinations
+
+def update_dict_with_parameter_variations(config: dict, parameter_variations: dict) -> dict:
+    """
+    Updates a nested dictionary (returns a copy) with parameter variations specified in dot notation.
+    
+    Args:
+        config: The original configuration dictionary to update
+        parameter_variations: Dictionary with keys in dot notation and values to update
+        
+    Example parameter_variations:
+    {
+        "experiment.treatments.0.params.duration": "1m",
+        "experiment.treatments.0.params.delay": 10
+    }
+    
+    Returns:
+        Updated configuration dictionary
+        
+    Raises:
+        KeyError: If a key in the path does not exist in the original config
+        IndexError: If an array index is out of bounds
+    """
+    config = config.copy()
+    
+    for param_path, value in parameter_variations.items():
+        # Split the path into parts
+        path_parts = param_path.split('.')
+        
+        # Start at the root of the config
+        current = config
+        
+        # Traverse to the second-to-last part to get the parent
+        for part in path_parts[:-1]:
+            # Handle array indices
+            if part.isdigit():
+                part = int(part)
+                if not isinstance(current, list):
+                    raise KeyError(f"Expected list but found {type(current)} at path {param_path}")
+                if part >= len(current):
+                    raise IndexError(f"Index {part} is out of bounds for list of length {len(current)} at path {param_path}")
+            
+            # Check if key exists in dict
+            elif isinstance(part, str):
+                if part not in current:
+                    raise KeyError(f"Key '{part}' not found in config at path {param_path}")
+                
+            current = current[part]
+            
+        # Set the final value
+        if path_parts[-1] not in current and not isinstance(current, list):
+            raise KeyError(f"Final key '{path_parts[-1]}' not found in config at path {param_path}")
+            
+        current[path_parts[-1]] = value
+        
+    return config
