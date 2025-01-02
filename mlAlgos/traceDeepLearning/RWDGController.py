@@ -10,9 +10,22 @@ with 'adjency matrices' for each trace that captures the average response times 
 It is part of the RWDG Trace model and therefore part for the data wranglin for the Multilayer perceptron.
 '''
 
+# TODO : interesting KPI: how many faulty traces do have error fields in there
+# TODO : how much do the distribution differ from each other between fault and not fault?
+
+# TODO: do we have a error in the trace -> 0 No , 1 yes 
+# TODO : add internal spans to the next parent there
+
+def mean_normalization( val : float, mean: float, min: float , max : float) -> float:
+          nominator = val - mean
+          denominator = max - min
+          return nominator / denominator
+
+
+
 class RWDGController:
 
-     def __init__(self, variables : list[TraceResponseVariable], experiment_id, allowed_standard_deviation : str, service_name_mapping):
+     def __init__(self, variables : list[TraceResponseVariable], experiment_id, allowed_standard_deviation : str, injected_service: str):
           self.variables : list[TraceResponseVariable] = variables
           self.experiment_id : str = experiment_id
           self.weights_of_edges : dict[str, float] = None
@@ -20,6 +33,25 @@ class RWDGController:
           self.service_name_mapping : dict[str , int] = constants.SERVICES # TODO change later to call a route on that
           self.service_name_mapping_backward = constants.SERVICES_REVERSE
           self.column_names = self._build_colum_names_for_adf_mat_df()
+          self.injected_service = injected_service
+          self.one_hot_encoding_for_exp = self.gen_one_hot_encoding_for_exp()
+          self.one_hot_encoding_column_names = self.gen_one_hot_encoding_col_names()
+
+     '''Normalizes the calculated weight matrices after the mean normalization
+          This has the affect that each value is in range [0, 1] '''
+     def normalizes_response_variables(self):
+          min_values = []
+          max_values = []
+          avg_values = []
+          result = pd.concat([var.adf_matrices for var in self.variables], ignore_index=True)
+          for col in self.column_names:
+               min_values.append(result[col].min())
+               max_values.append(result[col].max())
+               avg_values.append( result[col].mean())
+          
+          for var in self.variables:
+               for idx in range(len(self.column_names)):
+                    var.adf_matrices[self.column_names[idx]].apply(mean_normalization, args=(avg_values[idx], min_values[idx], max_values[idx]))
 
      
      def _calc_adf_matrices_for_variables(self)-> None:
@@ -34,17 +66,16 @@ class RWDGController:
                raw_adj = self.gen_adf(single_trace_df=single_trace_data)
                weighted = self._weight_adjency_matrix(raw_adj)
                new_row.append(single_trace_data[constants.TRACE_ID_COLUMN].iloc[0])
-               #print(np.array(weighted).flatten())
                new_row.extend(np.array(weighted).flatten())
                new_row.append(response_variable.service_name)
-               new_row.append(single_trace_data[constants.SUPERVISED_COLUMN].iloc[0])
+               new_row.extend(self.one_hot_encoding_for_exp)
                dataframe_rows.append(new_row)
           
           # unpack the colum names
           '''Microservice name is here important. Later on we are going to merge the dataframes for each response variable and we still wan to have a direct mapping towards a service '''
           '''[trace_id, flattened_out weighted adj matrix, microservice_name, treatment yes / no]'''
-          response_variable.adf_matrices = pd.DataFrame(dataframe_rows , columns=[constants.TRACE_ID_COLUMN, *self.column_names, "microservice_name",  constants.SUPERVISED_COLUMN])
-          return pd.DataFrame(dataframe_rows , columns=[constants.TRACE_ID_COLUMN, *self.column_names, "microservice_name",  constants.SUPERVISED_COLUMN])
+          response_variable.adf_matrices = pd.DataFrame(dataframe_rows , columns=[constants.TRACE_ID_COLUMN, *self.column_names, "microservice_name",  *self.one_hot_encoding_column_names])
+         # return pd.DataFrame(dataframe_rows , columns=[constants.TRACE_ID_COLUMN, *self.column_names, "microservice_name",  constants.SUPERVISED_COLUMN])
 
      def gen_adf(self, single_trace_df : pd.DataFrame) -> list[list[tuple[int, float]]]:
 
@@ -102,7 +133,20 @@ class RWDGController:
                          result[row_index][col_index] = sum_req_times / number_reqs
 
           return result
+
+     # since the data comes from one experiement with only ine injected fault
+     def gen_one_hot_encoding_for_exp(self) -> list[float]:
+          try:
+               index = self.service_name_mapping[self.injected_service]
+               one_hot_values = [0.0] * len(self.service_name_mapping)
+               one_hot_values[index] = 1
+               return one_hot_values
+          except KeyError as e:
+               pass
      
+     def gen_one_hot_encoding_col_names(self) -> list[str]:
+          return [f"S_{ind}" for ind in range(len(self.service_name_mapping))]
+
      
      '''
      This function is creating the lower and upper bound for the performance anomaly detection per service tuple
@@ -126,7 +170,11 @@ class RWDGController:
      def label_performance_anomalies(self) -> None:
           pass
 
-     #TODO interesing to show how many actual performance anomalies are labeled wiht the service bounds call method for different std.
+     #TODO interesting to show how good this actually is.
+     '''
+          A note here: they label the data artificially. OXN does that for us.
+          it would be interesting to show that how much this artificial labeling through request times is actually good. So we can make here a 
+     '''
      def _cruch_the_numbers(self):
           pass
 

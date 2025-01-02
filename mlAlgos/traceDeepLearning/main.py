@@ -15,7 +15,7 @@ def main():
           res_data = storage_handler.get_file_from_dir("experiment_data", file)
           response_variables.append(TraceResponseVariable(res_data, "experiment_data", file))
      
-     con= RWDGController(response_variables, "experiment_data", 1, "blaaa")
+     con= RWDGController(response_variables, "experiment_data", 1, "recommendationservice")
      con._calc_adf_matrices_for_variables()
 
      for var in con.variables:

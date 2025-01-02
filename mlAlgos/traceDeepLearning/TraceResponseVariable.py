@@ -7,9 +7,9 @@ class TraceResponseVariable:
           self.data = data
           self.experiment_id = experiment_id
           self.service_name = service_name
-          self.adf_matrices : pd.DateFrame = None #[traceID, flattended matrix, treatment yes / No, performance_anomaly yes / no]
-          self.rss_strings : pd.DateFrame = None # [traceID, RSS String , treatment yes /no , workflow anomaly ]
-          #self.mined_data : pd.DataFrame = None
+          # format [traceID, flattened out weighted and normalized adj matrix, service_name (response variable name), one hot encoding for fault injection]
+          self.adf_matrices : pd.DateFrame = None 
+
      
      
 
