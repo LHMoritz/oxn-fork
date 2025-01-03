@@ -51,6 +51,19 @@ This is just for developing and keeping track of decisions we make throughout th
      Load generation starts outside the frontend proxy for the open-telemetry demo
 
 
+# Artificial Labeling, supervised Learning and "KPIS" (3.01.2025)
+
+I just found out that in the Paper they label the data "artificially" meaning that they build there labels themselves. They label faults based on on extremes on a confidence interval they build themsevles around the average estimation.
+
+So eventually they have two steps of inaccuracies. We do have natural labeling provided by OXN itself.
+
+However, this gives us the opporunity to build interesting KPIs around the Classification itself. 
+
+1. The ration of how many faulty traces have gRPC errors or how many good traces have gRPC errors.
+
+2. How much does the distribution differ from each other in a response variable between good and fault traces?
+
+
 
      
 

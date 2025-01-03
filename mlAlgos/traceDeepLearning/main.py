@@ -1,8 +1,8 @@
 
-from storage_client import LocalStorageHandler
+from StorageClient import LocalStorageHandler
 from RWDGController import RWDGController
-from storage_client import LocalStorageHandler
 from TraceResponseVariable import TraceResponseVariable
+import constants
 
 
 def main():
@@ -15,14 +15,13 @@ def main():
           res_data = storage_handler.get_file_from_dir("experiment_data", file)
           response_variables.append(TraceResponseVariable(res_data, "experiment_data", file))
      
-     con= RWDGController(response_variables, "experiment_data", 1, "recommendationservice")
-     con._calc_adf_matrices_for_variables()
+     con= RWDGController(response_variables, "experiment_data",  "recommendationservice")
+     con.iterate_over_varibales()
 
      for var in con.variables:
           print(var.adf_matrices.head())
+          print(var.error_ratio)
      
-     con.get_bounds_for_service_calls()
-
 main()
 
 
