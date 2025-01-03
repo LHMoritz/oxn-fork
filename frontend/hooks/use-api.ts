@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios, { AxiosRequestConfig } from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_API_URL, // Base URL from env
+  baseURL: '/api',
   headers: { "Content-Type": "application/json" },
 });
 

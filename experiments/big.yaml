@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./experiment_schema.json
 experiment:
-  name: big
+  name: big2
   version: 0.0.1
   orchestrator: kubernetes
   services:
