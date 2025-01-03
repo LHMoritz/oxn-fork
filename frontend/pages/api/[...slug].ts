@@ -1,17 +1,22 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://backend-service:8000';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://backend-chart:8000';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { method, body } = req;
+  const { method } = req;
+  const { slug } = req.query;
+
+  const path = Array.isArray(slug) ? slug.join('/') : slug;
+
+  console.log("Send to backend via url build with slug logic:  " + `${BACKEND_URL}/${path}`)
 
   try {
-    const response = await fetch(`${BACKEND_URL}/experiments`, {
+    const response = await fetch(`${BACKEND_URL}/${path}`, {
       method,
       headers: {
         'Content-Type': 'application/json',
       },
-      body: method === 'GET' ? undefined : JSON.stringify(body),
+      body: method !== 'GET' ? JSON.stringify(req.body) : undefined,
     });
 
     const data = await response.json();

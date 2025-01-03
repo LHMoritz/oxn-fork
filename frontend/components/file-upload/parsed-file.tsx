@@ -39,9 +39,9 @@ export default function ParsedContentDisplay({
       setCreateExperimentResponse(response)
       console.log("File saved response:", response);
       toast.success('File saved successfully!');
-      // if (response) {
-        // setExperimentId(response.id)
-      // }
+      if (response) {
+        setExperimentId(response.id)
+      }
     } catch (error) {
       toast.error('An error occurred. Please try again!');
       console.error("Error creating experiment file:", error);
@@ -51,7 +51,7 @@ export default function ParsedContentDisplay({
   const onStartExperiment = async () => {
     try {
       // TODO: Uncomment API call and remove hardcoded response below
-      const response = await post(`/experiments/${experimentId}run`, {
+      const response = await post(`/experiments/${experimentId}/run`, {
         runs: 1,
         output_format: "json"
       });
