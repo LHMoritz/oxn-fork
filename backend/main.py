@@ -1,19 +1,31 @@
 from pathlib import Path
 from gevent import monkey
+
+from backend.internal.errors import StoreException
 monkey.patch_all()
 
 from typing import Dict, List, Optional
 import logging
-uvicorn_logger_error = logging.getLogger("uvicorn.error")
+
+""" uvicorn_logger_error = logging.getLogger("uvicorn.error")
 uvicorn_logger_error.setLevel(logging.DEBUG)
 uvicorn_logger_access = logging.getLogger("uvicorn.access")
 uvicorn_logger_access.setLevel(logging.DEBUG)
 
-logger = logging.getLogger("uvicorn")
-logger.info = lambda message: print(message)
+logger = logging.getLogger("uvicorn")   
+ """
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
 data_dir = "data"
 report_dir = "report"
-from fastapi import FastAPI, BackgroundTasks, HTTPException, Query, Response
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel
@@ -75,6 +87,7 @@ async def create_experiment(experiment: ExperimentCreate):
     Create a new experiment with configuration.
     Stores experiment metadata and creates necessary directories.
     """
+    logger.info(f"API: Creating experiment: {experiment.name}")
     return experiment_manager.create_experiment(
         name=experiment.name,
         config=experiment.config
@@ -215,6 +228,7 @@ async def get_experiment_report(experiment_id: str):
 # Additional Feature Endpoints
 @app.post("/experiments/batch")
 async def create_batch_experiment(batch_experiment: BatchExperimentCreate):
+    logger.info(f"API: Creating batch experiment: {batch_experiment.name}")
     return experiment_manager.create_batch_experiment(batch_experiment.name, batch_experiment.config, batch_experiment.parameter_variations)
 
 @app.post("/experiments/batch/{batch_id}/run")
@@ -245,6 +259,28 @@ async def get_batch_experiment_data(batch_id: str, sub_experiment_id: str):
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename={sub_experiment_id}.zip"}
     )
+
+@app.get("/experiments/batch/{batch_id}/sub_experiment_id")
+async def get_batch_experiment_id(
+    batch_id: str,
+    request: Request
+):
+    """
+    Get the sub experiment id for a given batch id and parameter combination
+    
+    Query params should be provided as key-value pairs, e.g. ?param1=value1&param2=value2
+    """
+    params = request.query_params
+    if not params:
+        raise HTTPException(status_code=400, detail="Parameter query values are required")
+    logger.debug(f"params: {params}")
+    try:
+        param_dict = dict(params)
+        return experiment_manager.get_batched_experiment_id_by_params(batch_id, param_dict)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except StoreException as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 '''This endpoint lists all experiments in the file system with corresponding meta data. The difference  to the route : /experiemnts/experiments_id that this route lists
 repsonse variables inside a directory and does not list directories. This route will be mainly used by the frontend.'''

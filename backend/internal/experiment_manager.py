@@ -1,5 +1,6 @@
 import zipfile
 import yaml
+from backend.internal.errors import StoreException
 from backend.internal.models.response import ResponseVariable
 from fastapi import HTTPException
 from pathlib import Path
@@ -17,12 +18,6 @@ from backend.internal.utils import dict_product, update_dict_with_parameter_vari
 from backend.internal.store import DocumentStore, FileFormat
 import io
 logger = logging.getLogger(__name__)
-logger.info = lambda message: print(message)
-logger.error = lambda message: print(message)
-logger.warning = lambda message: print(message)
-logger.debug = lambda message: print(message)
-
-
 """
 Experiment Config filename : <experiment_id>_config.json
 Experiment Report filename : <experiment_id>_report.yaml
@@ -77,24 +72,6 @@ class ExperimentManager:
     def create_batch_experiment(self, name: str, config: dict, parameter_variations: dict):
         """
         Create a new batch experiment
-
-        experiments/
-        └── batch_experiment_id/
-            ├── experiment.json           # Batch metadata
-            ├── params_to_id.json         # Mapping of parameter combinations to experiment IDs
-            ├── runs/
-            │   ├──0/              # One directory per parameter combination
-            │   │   ├── experiment.json     # Specific configuration for this run
-            │   │   ├── data/
-            │   │   └── report/
-            │   ├──1/
-            │   └──n/
-        
-        parameter_variations example:
-        {
-            "experiment.treatments.0.params.duration": ["1m", "2m", "3m"],
-            "experiment.treatments.0.params.delay": [10, 20, 30]
-        }
         """
 
         batch_id = f"batch_{str(self.counter)}{int(time.time())}"
@@ -310,11 +287,20 @@ class ExperimentManager:
     
     def get_batched_experiment_id_by_params(self, batch_id: str, params: dict) -> Optional[str]:
         '''gets the experiment id for a given batch id and parameter combination'''
-        id_mapping = self.store.load(f"{batch_id}_params_to_id", FileFormat.CSV)
-        for row in id_mapping:
-            if row == params:
-                return row['sub_experiment_id']
-        return None
+        id_mapping = self.store.load(f"{batch_id}_params_to_id", FileFormat.JSON)
+        if id_mapping is None:
+            logger.error(f"No id_mapping found for batch experiment {batch_id}")
+            raise StoreException(f"No id_mapping found for batch experiment {batch_id}")
+        
+        for mapping in id_mapping:
+            # Check if all params match the current mapping
+            # (excluding sub_experiment_id from comparison)
+            mapping_without_id = {k: v for k, v in mapping.items() 
+                                if k != 'sub_experiment_id'}
+            if mapping_without_id == params:
+                return str(mapping['sub_experiment_id'])
+            
+        raise KeyError(f"parameter combination not found for batch experiment {batch_id}")
     
     def get_batched_experiment_report(self, batch_id: str, sub_experiment_id: str):
         '''gets the report for a given batch id and sub experiment id'''

@@ -21,8 +21,6 @@ from backend.internal.utils import utc_timestamp
 from backend.internal.errors import OxnException, OrchestrationException
 
 logger = logging.getLogger(__name__)
-logger.info = lambda message: print(message)
-logger.exception = lambda message: print(message)
 
 class Engine:
     """
@@ -53,7 +51,8 @@ class Engine:
         self.error_message = None
         self.started_at = None
         self.completed_at = None
-
+        # If you want to see the locust logs, set this to True
+        self.doLocustLog = False
     def run(
         self,
         orchestration_timeout=None,
@@ -64,7 +63,7 @@ class Engine:
         assert self.spec
         assert self.spec["experiment"]
         assert self.spec["experiment"]["orchestrator"]
-        self.generator = LocustFileLoadgenerator(orchestrator=self.orchestrator, config=self.spec)
+        self.generator = LocustFileLoadgenerator(orchestrator=self.orchestrator, config=self.spec, log=self.doLocustLog)
         names = []
         self.runner = ExperimentRunner(
             config=self.spec,
