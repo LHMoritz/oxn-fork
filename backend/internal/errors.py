@@ -42,3 +42,7 @@ class OrchestratorException(OxnException):
 class OrchestratorResourceNotFoundException(OxnException):
     """Custom exception subclass to enforce system boundaries with respect to Orchestrator resource not found"""
     pass
+
+class StoreException(OxnException):
+    """Custom exception subclass to enforce system boundaries with respect to Store"""
+    pass

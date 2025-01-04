@@ -16,14 +16,11 @@ from backend.internal.runner import ExperimentRunner
 from backend.internal.docker_orchestration import DockerComposeOrchestrator
 from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
 from backend.internal.report import Reporter
-from backend.internal.store import configure_output_path, write_dataframe, write_json_data
 from backend.internal.locust_file_loadgenerator import LocustFileLoadgenerator
 from backend.internal.utils import utc_timestamp
 from backend.internal.errors import OxnException, OrchestrationException
 
 logger = logging.getLogger(__name__)
-logger.info = lambda message: print(message)
-logger.exception = lambda message: print(message)
 
 class Engine:
     """
@@ -32,23 +29,13 @@ class Engine:
     This class encapsulates all behavior needed to execute observability experiments.
     """
 
-    def __init__(self, configuration_path=None, report_path=None, out_path=None, orchestrator_class=None, spec=None, id=None):
-        assert configuration_path is not None, "Configuration path must be specified"
-        self.config = configuration_path
-        """The path to the configuration file for this engine"""
+    def __init__(self, orchestrator_class=None, spec=None, id=None):
         self.id = id
         """The id of the experiment"""
         self.spec = spec
         """The loaded experiment specification"""
-        self.report_path = report_path
-        """The path to write the experiment report to"""
-        assert report_path is not None, "Report path must be specified"
-        self.reporter = Reporter(report_path=report_path)
+        self.reporter = Reporter()
         """A reference to a reporter instance"""
-        self.out_path = out_path
-        """The path to write the experiment data to"""
-        self.out_formats = [] # todo erase
-        """The formats to write the experiment data to"""
         self.orchestrator = orchestrator_class or KubernetesOrchestrator
         """A reference to an orchestrator instance"""
         self.generator = None
@@ -64,22 +51,8 @@ class Engine:
         self.error_message = None
         self.started_at = None
         self.completed_at = None
-        # configure the output path for HDF storage
-        if self.out_path:
-            configure_output_path(self.out_path)
-
-    def read_experiment_specification(self):
-        """Read the experiment specification file and confirm that its valid yaml"""
-        with open(self.config, "r") as fp:
-            contents = fp.read()
-            try:
-                self.spec = yaml.safe_load(contents)
-            except yaml.YAMLError as e:
-                raise OxnException(
-                    message="Provided experiment spec is not valid YAML",
-                    explanation=str(e),
-                )
-
+        # If you want to see the locust logs, set this to True
+        self.doLocustLog = False
     def run(
         self,
         orchestration_timeout=None,
@@ -90,7 +63,7 @@ class Engine:
         assert self.spec
         assert self.spec["experiment"]
         assert self.spec["experiment"]["orchestrator"]
-        self.generator = LocustFileLoadgenerator(orchestrator=self.orchestrator, config=self.spec)
+        self.generator = LocustFileLoadgenerator(orchestrator=self.orchestrator, config=self.spec, log=self.doLocustLog)
         names = []
         self.runner = ExperimentRunner(
             config=self.spec,
@@ -162,111 +135,3 @@ class Engine:
         # Now we return two dicts, one with the dataframes and one with the report. This data then gets written to disk by the caller (ExperimentManager)
 
         return self.runner.observer.variables(), self.reporter.get_report_data()
-    
-        # Old approach: 
-        for _, response in self.runner.observer.variables().items():
-            # default is hdf
-            if self.out_formats and 'hdf' in self.out_formats:
-                write_dataframe(
-                    dataframe=response.data,
-                    experiment_key=self.runner.experiment_id,
-                    run_key=self.runner.short_id,
-                    response_key=response.name,
-                )
-            if self.out_formats and 'json' in self.out_formats:
-                write_json_data(
-                    data=response.data,
-                    run_key=self.runner.short_id,
-                    response_key=response.name,
-                    out_path=self.out_path,
-                )
-
-            logger.debug(
-                f"Experiment {self.runner.experiment_id}: DataFrame: {len(response.data)} rows"
-            )
-            logger.info(f"Wrote {response.name} to store")
-            if self.report_path:
-                for _, treatment in self.runner.treatments.items():
-                    self.reporter.gather_interaction(
-                        experiment=self.runner,
-                        treatment=treatment,
-                        response=response,
-                    )
-                    logger.debug(
-                        f"Gathered interaction data for {treatment} and {response}"
-                    )
-                self.reporter.assemble_interaction_data(
-                    run_key=self.runner.short_id
-                )
-                logger.debug("Assembled all interaction data")
-                self.reporter.add_loadgen_data(
-                    runner=self.runner, request_stats=self.generator.env.stats
-                )
-                logger.debug("Added load generation data")
-                if accounting:
-                    self.reporter.add_accountant_data(runner=self.runner)
-                    logger.debug("Added accounting data")
-        self.orchestrator.teardown()
-        logger.info("Stopped sue")
-        self.sue_running = False
-
-    def prepare_experiment(self):
-        """Prepare experiment directories and validate configuration"""
-        try:
-            # Ensure output directories exist
-            output_dir = Path(self.out_path).parent
-            output_dir.mkdir(parents=True, exist_ok=True)
-            
-            # Configure output paths
-            if self.out_path:
-                configure_output_path(self.out_path)
-                
-            return True, None
-        except Exception as e:
-            logger.exception("Failed to prepare experiment")
-            return False, str(e)
-
-    def start_experiment(self):
-        """Start experiment execution in current thread"""
-        try:
-            self.status = 'RUNNING'
-            self.started_at = utc_timestamp()
-            
-            # Run with default settings
-            self.run(runs=1, orchestration_timeout=300)
-            
-            self.status = 'COMPLETED'
-            self.completed_at = utc_timestamp()
-            
-            return True, None
-        except Exception as e:
-            logger.exception("Error running experiment")
-            self.status = 'FAILED'
-            self.error_message = str(e)
-            return False, str(e)
-        finally:
-            # Cleanup if needed
-            if self.loadgen_running:
-                self.generator.stop()
-            if self.sue_running:
-                self.orchestrator.teardown()
-
-    @classmethod
-    def create_from_config(cls, config_dict, output_format='hdf', output_path=None, 
-                          report_path=None, orchestrator_class=None):
-        """Factory method to create Engine instance from config dictionary"""
-        try:
-            # Validate config
-            if not isinstance(config_dict, dict):
-                raise ValueError("Configuration must be a dictionary")
-                
-            return cls(
-                configuration_path=config_dict,
-                out_formats=output_format,
-                out_path=output_path,
-                report_path=report_path,
-                orchestrator_class=orchestrator_class
-            )
-        except Exception as e:
-            logger.exception("Failed to create engine from config")
-            raise ValueError(f"Invalid configuration: {str(e)}")

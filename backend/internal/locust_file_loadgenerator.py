@@ -2,6 +2,7 @@ import importlib
 from importlib.machinery import ModuleSpec
 import importlib.util
 import logging
+import os
 
 from locust import HttpUser, TaskSet, task
 from locust.env import Environment
@@ -16,7 +17,7 @@ from gevent import Greenlet
 from gevent.pool import Group
 
 logger = logging.getLogger(__name__)
-logger.info = lambda message: print(message)
+
 
 class LocustFileLoadgenerator:
     """
@@ -24,7 +25,7 @@ class LocustFileLoadgenerator:
     This loads the locust file and runs the locust file
     """
     
-    def __init__(self, orchestrator: Orchestrator, config: dict):
+    def __init__(self, orchestrator: Orchestrator, config: dict, log: bool = False):
         assert orchestrator is not None
         self.orchestrator = orchestrator
         """A reference to the orchestrator instance"""
@@ -40,7 +41,7 @@ class LocustFileLoadgenerator:
         self._read_config()
         """Read the experiment spec and populate stages and tasks"""
         self.greenlets = Group()
-
+        self.log = log
     def _read_config(self):
         """Read the load generation section of an experiment specification"""
         loadgen_section: dict = self.config["experiment"]["loadgen"]
@@ -92,7 +93,8 @@ class LocustFileLoadgenerator:
 
     def start(self):
         """Start the load generation"""
-        setup_logging("INFO", None)
+        if self.log:
+            setup_logging(os.getenv("LOCUST_LOG_LEVEL", "WARNING"), None)
         
         assert self.env is not None, "Locust environment must be initialized before starting"
         assert self.env.runner is not None, "Locust runner must be initialized before starting"

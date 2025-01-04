@@ -1,8 +1,6 @@
-curl -X POST http://localhost:8000/experiments \
--H "Content-Type: application/json" \
--d '{
-    "name": "big",
-    "config": {
+{
+    "experiment": {
+        "name": "big",
         "version": "0.0.1",
         "orchestrator": "kubernetes",
         "services": {
@@ -17,7 +15,7 @@ curl -X POST http://localhost:8000/experiments \
                     "target": "sue"
                 },
                 {
-                    "name": "kube-prometheus-kube-prome-prometheus",
+                    "name": "kube-prometheus-kube-prome-prometheus", 
                     "namespace": "oxn-external-monitoring",
                     "target": "oxn"
                 }
@@ -26,7 +24,7 @@ curl -X POST http://localhost:8000/experiments \
         "responses": [
             {
                 "name": "frontend_traces",
-                "type": "trace",
+                "type": "trace", 
                 "service_name": "frontend",
                 "left_window": "10s",
                 "right_window": "10s",
@@ -66,19 +64,11 @@ curl -X POST http://localhost:8000/experiments \
             ]
         },
         "loadgen": {
-            "run_time": "2m",
+            "run_time": "20m",
             "max_users": 500,
             "spawn_rate": 50,
             "locust_files": ["/backend/locust/locust_basic_interaction.py", "/backend/locust/locust_otel_demo.py"],
             "target": { "name": "astronomy-shop-frontendproxy", "namespace": "system-under-evaluation", "port": 8080 }
         }
     }
-}'
-
-01733683345
-01733759112
-curl -X POST http://localhost:8000/experiments/01733759112/run \
--H "Content-Type: application/json" \
--d '{"runs": 1, "output_format": "json"}'
-
-curl http://localhost:8000/experiments/01733743930/status
+}
