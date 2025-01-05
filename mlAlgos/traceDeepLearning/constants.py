@@ -4,10 +4,12 @@ REF_TYPE_SPAN_ID = "ref_type_span_ID"
 DURATION_COLUMN = "duration"
 TRACE_ID_COLUMN = "trace_id"
 START_TIME = 'start_time'
-
+SPAN_KIND = 'span_kind'
 NOT_AVAILABLE = "N/A"
 
 SUPERVISED_COLUMN = "packet_loss_treatment"
+
+NO_TREATMENT = "NoTreatment"
 
 PROJECT_ID = "advanced-cloud-prototyping"
 
@@ -17,6 +19,19 @@ MINED_DATASETS = "mined_datasets"
 EVALUATION_DATASETS = "evaluation_datasets"
 
 ADJENCY_TOTAL_PRE = "adjency_total_csv_"
+
+INTERNAL_TYPE = "internal"
+REQ_STATUS_CODE = "req_status_code"
+
+ERROR_IN_TRACE_COLUMN = "has_error_in_trace"
+
+
+
+# for the error ratio dictionary
+FAULTY_ERROR = "faultyError"
+FAULTY_NO_ERROR = "faultyNoError"
+GOOD_ERROR = "goodError"
+GOOD_NO_ERROR = "goodNoError"
 
 
 '''
