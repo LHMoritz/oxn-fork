@@ -63,6 +63,7 @@ However, this gives us the opporunity to build interesting KPIs around the Class
 
 2. How much does the distribution differ from each other in a response variable between good and fault traces?
 
+
 # Model Evaluation and Metrics
 
      "Root cause Analysis" is a multi-class classification. When the model is given a trace it should output the class (in this case the microservice) in which (the model) thinks the fault has happened or no Fault would be another class [so eventaully we have Microservices we trained the model on +1 class for the]. To evaluate the model we will calculate a confusion matrix. Which is just a n x n matrix [n corresponds to the number of classes / microseervices].
@@ -87,6 +88,19 @@ However, this gives us the opporunity to build interesting KPIs around the Class
                - we stay on the response varibale level
                -  we can calculate metrics on variable level not just on experiment level
                - if we need the entire confusion matrics for the experiment , we can just sum up all the matrices to generate the "view"
+
+# The Multilayer Perceptron
+
+     The MLP will have 5 layers:
+     -  1 Input layer [Dimensions will be the crossproduct of all (microservices +1)  flattened out to rowvectors ]
+     - 3 Hidden layer [Dimension 1500 hidden nodes, activation:  RelU]
+     - 1 output layer [Dimensions : number of Microservices, activation : softmax (so it can be interpreted as probability)]
+
+     We will train with Adam Algorithm
+
+     
+     
+
 
 
 

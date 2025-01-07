@@ -77,4 +77,10 @@ SERVICES_REVERSE = {
     14: "cartservice"
 }
 
+# machine learning model constants
+
+MODEL_DIMENSIONS = [196, 1500, 1500, 1500, 14]
+
+MODEL_PATH = "./models/traceModel.pt"
+
 
