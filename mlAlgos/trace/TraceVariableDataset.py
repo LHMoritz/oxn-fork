@@ -26,13 +26,15 @@ class TraceVariableDataset(Dataset):
           row_series : pd.Series = self.dataframe.iloc[index]
 
           # getting the labels in one-hot-encoding fashion
-          labels_list = row_series.loc(self.labels).tolist()
-          labels_tensor = torch.tensor(labels_list)
+          labels_list = row_series[self.col_names_labels]
+          labels_list = labels_list.astype(float)
+          labels_tensor = torch.tensor(labels_list.values, dtype=torch.float32)
 
           # getting the corresponding input tensor
-          input_cols_list = row_series.loc(self.col_names_input)
-          input_tensor = torch.tensor(input_cols_list)
-
+          input_cols_list = row_series[self.col_names_input]
+          input_cols_list = input_cols_list.astype(float)
+          input_tensor = torch.tensor(input_cols_list.values, dtype=torch.float32)
+          # supervised learning, give back the input and the target as a tuple
           return input_tensor, labels_tensor
 
 
