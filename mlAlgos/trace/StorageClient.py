@@ -9,6 +9,7 @@ import os
 import constants
 import pandas as pd
 from pathlib import Path
+import json
 
 class StorageHandler(ABC):
 
@@ -51,6 +52,15 @@ class LocalStorageHandler(StorageHandler):
                os.makedirs(dir_name, exist_ok=True)
                file_path = os.path.join(dir_name, file_name)
                file_content.to_csv(file_path, index=False)
+          except Exception as e:
+               print(f"Error: Could not write file '{file_name}' to '{dir_name}'. {e}")
+     
+     def write_json_to_directory(self, dir_name, file_name, file_content) -> None:
+          try:
+               os.makedirs(dir_name, exist_ok=True)
+               file_path = os.path.join(dir_name, file_name)
+               with open(file_path, "w") as json_file:
+                    json.dump(data, json_file, indent=4)
           except Exception as e:
                print(f"Error: Could not write file '{file_name}' to '{dir_name}'. {e}")
 

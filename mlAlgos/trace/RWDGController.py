@@ -3,6 +3,7 @@ from TraceResponseVariable import TraceResponseVariable
 import pandas as pd
 import constants
 import numpy as np
+from utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df
 
 '''
 This class Takes in  a dataframe from with distributed tracing data and generates a dataframe
@@ -31,10 +32,10 @@ class RWDGController:
           #self.weights_of_edges : dict[str, float] = None
           self.service_name_mapping : dict[str , int] = constants.SERVICES # TODO change later to call a route on that
           self.service_name_mapping_backward = constants.SERVICES_REVERSE
-          self.column_names = self._build_colum_names_for_adf_mat_df()
+          self.column_names = build_colum_names_for_adf_mat_df()
           self.injected_service = injected_service
           self.one_hot_encoding_for_exp = self.gen_one_hot_encoding_for_exp()
-          self.one_hot_encoding_column_names = self.gen_one_hot_encoding_col_names()
+          self.one_hot_encoding_column_names = gen_one_hot_encoding_col_names()
 
      '''Normalizes the calculated weight matrices after the mean normalization
           This has the affect that each value is in range [0, 1] '''
@@ -198,22 +199,7 @@ class RWDGController:
           except KeyError as e:
                pass
      
-     def gen_one_hot_encoding_col_names(self) -> list[str]:
-          return [f"S_{ind}" for ind in range(len(self.service_name_mapping))]
-
-
-     """builds the column names for all the response variables"""
-     def _build_colum_names_for_adf_mat_df(self) -> list[str]:
-          result = []
-          for _ , out_val in constants.SERVICES.items():
-               for _ , in_val in constants.SERVICES.items():
-                    result.append(f"{out_val}_{in_val}")
-
-          return result
-
-
      '''
-
      This function is creating the lower and upper bound for the performance anomaly detection per service tuple
      based on very simple "outlier detection". This could be up for discussion for improvements. For now I would leave it this way as stated in the paper.
      Here we use int as a val corresponding to the index in the flattened dataframe

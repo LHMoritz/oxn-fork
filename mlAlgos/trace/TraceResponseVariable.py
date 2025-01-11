@@ -1,5 +1,6 @@
 
 import pandas as pd
+import torch
 
 class TraceResponseVariable:
 
@@ -12,13 +13,17 @@ class TraceResponseVariable:
           self.error_ratio : dict[str, float] = {}
           # good [avg, std], faulty [avg, std]
           self.time_dis : dict[str, tuple[float, float]] = None
-          self.confusion_matrix = None
+          self.confusion_matrix : torch.tensor = None
+          self.predictions = torch.tensor = None
           # TODO add some logic to add the index
           self.index_in_matrix = None
           self.true_positives = -1
           self.true_negatives = -1
           self.false_positives = -1
           self.false_negatives = -1
+          self.micro_precision = None
+          self.micro_recall = None
+          self.micro_f1_score = None
 
      
      

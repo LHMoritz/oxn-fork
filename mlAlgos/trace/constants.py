@@ -83,4 +83,9 @@ MODEL_DIMENSIONS = [225, 1500, 1500, 1500, 15]
 
 MODEL_PATH = "./model/traceModel.pt"
 
+METRICS = ["micro_precision", "micro_recall", "micro_f1_score"]
+
+ANALYSIS_DIR = "result"
+VARIABLE_METRICS = "response_variable_metrics"
+VARIABLE_PROBS = "response_varibale_probs"
 

@@ -9,6 +9,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import constants
 from TraceVariableDataset import TraceVariableDataset
+from ModelController import ModelController
 
 
 def main():
@@ -55,6 +56,28 @@ def init_model():
      my_trace_model = TraceModel(nn.CrossEntropyLoss(), [225, 1500, 1500, 1500, 15],  nn.ReLU())
 
 #init_model()
+
+def test_inference():
+     storage_handler = LocalStorageHandler("data")
+     file_list = storage_handler.list_files_in_dir("experiment_data")
+     
+     response_variables = []
+     for file in file_list:
+          res_data = storage_handler.get_file_from_dir("experiment_data", file)
+          response_variables.append(TraceResponseVariable(res_data, "experiment_data", file))
+     
+     con= RWDGController(response_variables, "experiment_data",  "recommendationservice")
+     con.iterate_over_varibales()
+
+     evaluater = ModelController(response_variables, "experiment_data",constants.MODEL_PATH, 12 , local_storage_handler=storage_handler)
+
+     evaluater.evaluate_variables()
+
+     evaluater._save_cond_prob_to_disk()
+     evaluater._save_metrics_to_disk()
+
+test_inference()
+
 
 
 

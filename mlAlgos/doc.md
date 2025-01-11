@@ -84,10 +84,20 @@ However, this gives us the opporunity to build interesting KPIs around the Class
           A good visual representations is given in the paper: https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9711932
 
 
-          This brings us several advantages:
-               - we stay on the response varibale level
-               -  we can calculate metrics on variable level not just on experiment level
-               - if we need the entire confusion matrics for the experiment , we can just sum up all the matrices to generate the "view"
+     For each variable I want to calculate the following metrics with micro averaging:
+
+          Precision,
+          Recall,
+          F1 Score,
+          the Microservice that was predicted wrong the most of the time,
+
+
+          Precision and recall curve * for each response variable
+
+          showing the conditional Probability for each variable if it has an error
+
+
+     A nice Overview of the metrics can be founf in the following paper: ttps://arxiv.org/abs/2008.05756
 
 # The Multilayer Perceptron
 
@@ -97,7 +107,6 @@ However, this gives us the opporunity to build interesting KPIs around the Class
      - 1 output layer [Dimensions : number of Microservices, activation : softmax (so it can be interpreted as probability)]
 
      We will train with Adam Algorithm
-
      
      
 

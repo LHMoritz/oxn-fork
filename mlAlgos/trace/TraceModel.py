@@ -19,13 +19,9 @@ class TraceModel(nn.Module):
           self.loss_function = loss_function
           self.activation = activation
           self.layers = self.init_model_layers(dimensions=dimensions)
-          for lay in self.layers:
-               print(f"input dim: {lay.in_features}")
-               print(f"output dim: {lay.out_features}")
-          print(len(self.layers))
+          self.soft_max : nn.Module = nn.Softmax(dim=0)
           
           
-     
      def init_model_layers(self, dimensions : list[int])-> nn.ModuleList:
           layers = nn.ModuleList()
           for idx in range(1, len(dimensions)):
@@ -69,9 +65,6 @@ class TraceModel(nn.Module):
                          print(f"Optimizing for batch with ID: {iterations_counter}")
                          optimizer.zero_grad()
                          out =  self.forward(batch)
-                         #print(f"The output tensor: {out.shape}")
-                         #print(f"the batch tensor : {batch.shape}")
-                         #print(f"the labels tensor: {labels.shape}")
                          loss = self.loss_function(out, labels)
                          # just for vizualizing during training
                          if iterations_counter % 100 == 0:
@@ -86,8 +79,9 @@ class TraceModel(nn.Module):
      
      def infer(self, input: torch.tensor )-> torch.tensor:
           input = self.forward(input)
-          # dim 1 is important if the batch size > 1
-          return nn.Softmax(input, dim=1)
+          input = self.soft_max(input)
+          return input
+ 
      
      def test_trace_model(self, test_loader : DataLoader) -> tuple[list[float], list[float]]:
           error = []

@@ -1,42 +1,107 @@
 from TraceResponseVariable import TraceResponseVariable
-import pandas as pd
 import constants
-import numpy as np
+from utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df
 import torch
-import os
 import torch.nn as nn
 from TraceModel import TraceModel
+from TraceVariableDataset import TraceVariableDataset
+from torcheval.metrics.functional import multiclass_confusion_matrix
+import numpy as np
+from torcheval.metrics import MulticlassPrecision , MulticlassF1Score , MulticlassRecall
+from StorageClient import LocalStorageHandler
 
 
 class ModelController:
 
-     def __init__(self, variables : list[TraceResponseVariable], experiment_id : str , model_path :str):
+     def __init__(self, variables : list[TraceResponseVariable], experiment_id : str , model_path :str, index_actual_MS : int, local_storage_handler : LocalStorageHandler):
           self.variables = variables
           self.experiment_id = experiment_id
           self.model = self._load_model(model_path, TraceModel(nn.CrossEntropyLoss(), constants.MODEL_DIMENSIONS,  nn.ReLU()))
           # goody trace is a class itself
           self.num_classes = len(constants.SERVICES) + 1
-     
+          self.one_hot_labels = gen_one_hot_encoding_col_names()
+          self.input_labels = build_colum_names_for_adf_mat_df()
+          self.index_of_actual_label : int  = index_actual_MS
+          self.storage_handler : LocalStorageHandler = local_storage_handler
 
-     def _load_model(self, PATH : str, model : nn.Module) -> None:
-          state_dict = torch.load(PATH)
+     
+     # trained with 16 out
+     def _load_model(self, PATH : str, model : nn.Module) -> nn.Module:
+          state_dict = torch.load(PATH, weights_only=True)
           model.load_state_dict(state_dict)
           # set the model to Evaluation mode to infer on unseen data
           model.eval()
           return model
 
+     '''
+     This function actually puts the transformed data through the model: It does the inference part.
+     '''
+     def _infer_variable(self, variable : TraceResponseVariable) -> None:
+          trace_data_set = TraceVariableDataset(dataframe=variable.adf_matrices, labels=self.one_hot_labels, input_names=self.input_labels)
+          predicted_labels = []
+          actual_lables = [self.index_of_actual_label] * len(trace_data_set)
+          for x in range(len(trace_data_set)):
+               input , _ = trace_data_set[x]
+               output = self.model.infer(input)
+               max_index = torch.argmax(output)
+               predicted_labels.append(max_index)
 
-     def _calc_accuracy_for_variable(self, variable : TraceResponseVariable) -> float:
+          variable.predictions = torch.tensor(predicted_labels)
+          variable.confusion_matrix = multiclass_confusion_matrix(torch.tensor(predicted_labels), torch.tensor(actual_lables), self.num_classes).numpy()
+
+     def evaluate_variables(self):
+          for var in self.variables:
+               self._infer_variable(variable=var)
+               self._f1_for_variable(var)
+               self._recall_for_variable(var)
+               self._precision_for_variable(var)
+
+     '''
+     For the next three function I will take the micro average between the classes or evaluation
+     '''
+     def _precision_for_variable(self, variable :TraceResponseVariable) -> None:
+          actual_lables = torch.tensor([self.index_of_actual_label] * len(variable.adf_matrices))
+          metric = MulticlassPrecision(average="micro", num_classes=self.num_classes)
+          metric.update(variable.predictions, actual_lables)
+          variable.micro_precision = metric.compute().item()
+
+
+     def _recall_for_variable(self, variable : TraceResponseVariable) -> None:
+          actual_lables = torch.tensor([self.index_of_actual_label] * len(variable.adf_matrices))
+          metric = MulticlassRecall(average="micro", num_classes=self.num_classes)
+          metric.update(variable.predictions, actual_lables)
+          variable.micro_recall = metric.compute().item()
+
+     def _f1_for_variable(self, variable: TraceResponseVariable) -> None:
+          actual_lables = torch.tensor([self.index_of_actual_label] * len(variable.adf_matrices))
+          metric = MulticlassF1Score(average="micro", num_classes=self.num_classes)
+          metric.update(variable.predictions, actual_lables)
+          variable.micro_f1_score = metric.compute().item()
+
+     def _get_highest_misclassification(self, variable : TraceResponseVariable) -> None:
           pass
 
-     def _calc_some_metric_for_varibable(self, variable : TraceResponseVariable) -> float:
-          pass
+          
+     def _save_metrics_to_disk(self) -> None:
+          metric_dict = {}
+          for var in self.variables:
+               variable_dict = {}
+               for metric in constants.METRICS:
+                    variable_dict[metric] = getattr(var, metric)
+               metric_dict[var.service_name] = variable_dict
+          
+          self.storage_handler.write_json_to_directory(constants.ANALYSIS_DIR, constants.VARIABLE_METRICS, metric_dict)
+     
+     def _save_cond_prob_to_disk(self) -> None:
+          prob_dict = {}
+          for var in self.variables:
+               prob_dict[var.service_name] = var.error_ratio
 
-     def _eval_variable(self, variable : TraceResponseVariable) -> torch.tensor:
-          pass
+          self.storage_handler.write_json_to_directory(constants.ANALYSIS_DIR, constants.VARIABLE_PROBS)     
 
-     def _save_metric_to_disk(self, metric_name : str) -> None:
-          pass
+
+                    
+
 
 
 
