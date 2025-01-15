@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import constants
 from TraceVariableDataset import TraceVariableDataset
 from ModelController import ModelController
+import torch
 
 
 def main():
@@ -77,6 +78,26 @@ def test_inference():
      evaluater._save_metrics_to_disk()
 
 test_inference()
+
+def test_model_controller():
+     storage_handler = LocalStorageHandler("data")
+     file_list = storage_handler.list_files_in_dir("experiment_data")
+     
+     response_variables = []
+     for file in file_list:
+          res_data = storage_handler.get_file_from_dir("experiment_data", file)
+          response_variables.append(TraceResponseVariable(res_data, "experiment_data", file))
+     m = ModelController(response_variables, "experiment_data",constants.MODEL_PATH, 12 , local_storage_handler=storage_handler)
+
+#test_model_controller()
+
+def test():
+
+     a = torch.tensor([1,2,3,4],dtype=torch.float32)
+     print(a)
+     print(type(a))
+ 
+#test()
 
 
 

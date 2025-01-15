@@ -21,19 +21,23 @@ class TraceVariableDataset(Dataset):
      Here we have to give back the input and the actual label of the this dataframe row (trace we have coverted in the row).
      We have to convert it to tensors so we can use it with our model.
      '''
-     def __getitem__(self, index):
+     def __getitem__(self, index) -> tuple[torch.tensor, torch.tensor]:
           # gives back a pandas series
           row_series : pd.Series = self.dataframe.iloc[index]
 
           # getting the labels in one-hot-encoding fashion
           labels_list = row_series[self.col_names_labels]
-          labels_list = labels_list.astype(float)
-          labels_tensor = torch.tensor(labels_list.values, dtype=torch.float32)
+          #print(labels_list)
+          labels_list_as_list = labels_list.astype(float).to_list()
+          #print(labels_list)
+          print(labels_list_as_list)
+          print(type(labels_list_as_list))
+          labels_tensor = torch.tensor(labels_list_as_list, dtype=torch.float32)
 
           # getting the corresponding input tensor
           input_cols_list = row_series[self.col_names_input]
           input_cols_list = input_cols_list.astype(float)
-          input_tensor = torch.tensor(input_cols_list.values, dtype=torch.float32)
+          input_tensor = torch.tensor(input_cols_list.values, dtype=torch.float32, requires_grad=False)
           # supervised learning, give back the input and the target as a tuple
           return input_tensor, labels_tensor
 
