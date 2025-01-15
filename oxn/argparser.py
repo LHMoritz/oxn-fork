@@ -19,7 +19,7 @@ def validate_file(file):
 
 
 def validate_output_formats(formats):
-    valid_formats = {'hdf', 'json'}
+    valid_formats = {'hdf', 'json', 'csv'}
     formats = set(formats.split(','))
     invalid = formats - valid_formats
     if invalid:
@@ -103,7 +103,7 @@ parser.add_argument(
     dest="out_formats",
     type=validate_output_formats,
     default={'hdf'},
-    help="Comma-separated (no spaces) list of output formats. Valid formats are: hdf, json. Default is hdf",
+    help="Comma-separated (no spaces) list of output formats. Valid formats are: hdf, json and csv. Default is hdf",
 )
 
 

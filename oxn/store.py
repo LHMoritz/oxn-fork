@@ -201,3 +201,13 @@ def write_json_data(data, experiment_key, run_key, response_key, out_path=None) 
     
     with open(json_path, 'x') as f:
         json.dump(data, f, indent=2)
+
+def write_pandas_to_csv_data(data : pd.DataFrame, experiment_key, run_key, response_key, out_path=None) -> None:
+    """Writes a Response variable (Should be Trace Response Variable)"""
+    storage_dir = out_path if out_path else STORAGE_DIR
+    Path(storage_dir).mkdir(parents=True, exist_ok=True)
+        
+    filename = f"{experiment_key}_{run_key}_{response_key}.csv"
+    csv_path = Path(storage_dir) / filename
+
+    data.to_csv(csv_path, index=False)
