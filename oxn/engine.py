@@ -180,7 +180,7 @@ class Engine:
                         response_key=response.name,
                         out_path=self.out_path,
                     )
-                    
+
                 # most likely for TraceResponseVariable
                 if self.out_formats and 'csv' in self.out_formats:
                     write_pandas_to_csv_data(
@@ -190,6 +190,7 @@ class Engine:
                         response_key=response.name,
                         out_path=self.out_path,
                     )
+                    logger.info(f"just wrote for {response.variable} with {len(response.data)} rows to disk")
                 logger.debug(
                     f"Experiment {self.runner.config_filename}: DataFrame: {len(response.data)} rows"
                 )
