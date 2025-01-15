@@ -5,7 +5,7 @@ type: application
 version: 1.0.0
 
 dependencies:
-  - name: frontend-chart
+  - name: frontend-module
     version: "latest"
     appVersion: 0.0.1
     repository: "file://./charts/frontend-chart"
@@ -17,6 +17,6 @@ dependencies:
     version: 1.0.0
     repository: "file://./charts/backend-dev-chart"
     condition: backend-dev-chart.enabled
-#  - name: analysis
-#    version: 1.0.0
-#    repository: "file://./charts/analysis-chart"
+  - name: analysis-module
+    version: 1.0.0
+    repository: "file://./charts/analysis-chart"

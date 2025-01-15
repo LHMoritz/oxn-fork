@@ -21,6 +21,9 @@ spec:
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        env:
+        - name: BACKEND_URL
+          value: "http://backend-chart:8000"
         ports:
         - containerPort: 8001
         volumeMounts:
