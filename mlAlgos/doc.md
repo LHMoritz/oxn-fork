@@ -64,6 +64,57 @@ However, this gives us the opporunity to build interesting KPIs around the Class
 2. How much does the distribution differ from each other in a response variable between good and fault traces?
 
 
+# Model Evaluation and Metrics
+
+     "Root cause Analysis" is a multi-class classification. When the model is given a trace it should output the class (in this case the microservice) in which (the model) thinks the fault has happened or no Fault would be another class [so eventaully we have Microservices we trained the model on +1 class for the]. To evaluate the model we will calculate a confusion matrix. Which is just a n x n matrix [n corresponds to the number of classes / microseervices].
+     This is a good Introduction for confusion matrix: https://towardsai.net/p/l/multi-class-model-evaluation-with-confusion-matrix-and-classification-report
+
+
+          Right now I am evaluating if I can use Libaries such aus skLearn or PyTorch for the Eval. Or if we need more freedom and should write it out ourselves. 
+
+          >>> input = torch.tensor([0, 0, 1, 1, 1, 2, 1, 2])
+          >>> target = torch.tensor([2, 0, 2, 0, 1, 2, 1, 0])
+          >>> multiclass_confusion_matrix(input, target, 3)
+          tensor([[1, 1, 1],
+                    [0, 2, 0],
+                    [1, 1, 1]])
+     
+          This is how multiclass classification is done in pytorch. I ma choossing to store the partly confusion matrix within each traceresposse variable. 
+
+          A good visual representations is given in the paper: https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9711932
+
+
+     For each variable I want to calculate the following metrics with micro averaging:
+
+          Precision,
+          Recall,
+          F1 Score,
+          the Microservice that was predicted wrong the most of the time,
+
+
+          Precision and recall curve * for each response variable
+
+          showing the conditional Probability for each variable if it has an error
+
+
+     A nice Overview of the metrics can be founf in the following paper: ttps://arxiv.org/abs/2008.05756
+
+# The Multilayer Perceptron
+
+     The MLP will have 5 layers:
+     -  1 Input layer [Dimensions will be the crossproduct of all (microservices +1)  flattened out to rowvectors ]
+     - 3 Hidden layer [Dimension 1500 hidden nodes, activation:  RelU]
+     - 1 output layer [Dimensions : number of Microservices, activation : softmax (so it can be interpreted as probability)]
+
+     We will train with Adam Algorithm
+     
+     
+
+
+
+
+
+
 
      
 
