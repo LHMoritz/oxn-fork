@@ -32,6 +32,7 @@ import os
 import json
 import csv
 import yaml
+import pandas as pd
 from typing import Optional, List, Dict, Union
 from enum import Enum
 
@@ -46,6 +47,17 @@ class LocalFSStore(DocumentStore):
     def _get_file_path(self, key: str, format: FileFormat) -> str:
         """Helper to construct file path."""
         return os.path.join(self.base_path, f"{key}.{format.value}")
+    
+    def save_pandas_frame(self, key : str, data : pd.DataFrame, format : str) -> None:
+        """
+        Writes a pandas Dataframe to Disk using pandas csv API
+        """
+        file_path = self._get_file_path(key, format)
+        try:
+            data.to_csv(file_path, index=False)
+        except Exception as e:
+            pass
+
 
     def save(self, key: str, data: Union[Dict, List], format: FileFormat) -> None:
         """

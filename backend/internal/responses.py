@@ -193,6 +193,9 @@ class MetricResponseVariable(ResponseVariable):
             raise e
 
 
+SUPERVISED_COLUMN = "supervised_column"
+VARIABLE_NAME = "response_variable"
+
 class TraceResponseVariable(ResponseVariable):
     def __init__(
             self,
@@ -275,9 +278,11 @@ class TraceResponseVariable(ResponseVariable):
             treatment_start: float,
             treatment_end: float,
             label_column: str,
-            label: str,
+            label: str
     ) -> None:
-        """Label a dataframe containing Jaeger spans depending on the span start timestamp"""
+        """Label a dataframe containing Jaeger spans depending on the span start timestamp
+        I will use the melting down technique. Additionally we will have a column that holds the Microservice (variable Name)
+        """
         if self.data is None or self.data.empty:
             # TODO handle this better
             self.data = pd.DataFrame(columns=['start_time'])
@@ -288,7 +293,8 @@ class TraceResponseVariable(ResponseVariable):
         predicate = (self.data["start_time"] >= scaled_treatment_start) & (
                 self.data["start_time"] <= scaled_treatment_end
         )
-        self.data[label_column] = np.where(predicate, label, "NoTreatment")
+        self.data[VARIABLE_NAME] = self.name
+        self.data[SUPERVISED_COLUMN] = np.where(predicate, label, "NoTreatment")
 
     @staticmethod
     def _tabulate(trace_json) -> pd.DataFrame:

@@ -34,7 +34,7 @@ exporters:
 processors:
   probabilistic_sampler:
     hash_seed: 22
-    sampling_percentage: 1
+    sampling_percentage: 10
   batch:
 
 connectors:

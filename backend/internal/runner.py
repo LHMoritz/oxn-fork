@@ -264,7 +264,7 @@ class ExperimentRunner:
                         treatment_end=treatment.end,
                         treatment_start=treatment.start,
                         label_column=treatment.name,
-                        label=treatment.name,
+                       label=treatment.name
                     )
                 except (JaegerException, PrometheusException) as e:
                     logger.warning(f"Failed to label response variable {response_variable.name}: {str(e)}. Skipping.")
