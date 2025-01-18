@@ -7,7 +7,8 @@ import torch
 This class can be seen as putting a single variable through the model.
 It will create 
 '''
-class TraceVariableDataset(Dataset):
+#class TraceVariableDataset(Dataset):
+class TraceVariableDataset():
      
      def __init__(self, dataframe : pd.DataFrame, labels : list[str], input_names : list[str]):
           self.dataframe : pd.DataFrame = dataframe

@@ -51,7 +51,7 @@ class ModelController:
           print(len(trace_data_set))
           for x in range(len(trace_data_set)):
                print(x)
-               input , labels = trace_data_set[x]
+               input , labels = trace_data_set.__getitem__(x)
                output = self.model.infer(input)
                max_index = torch.argmax(output)
                predicted_labels.append(max_index)
