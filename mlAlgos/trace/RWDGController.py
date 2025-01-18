@@ -92,6 +92,8 @@ class RWDGController:
           for var in self.variables:
                self._adj_mat_for_var(var)
                self._calc_error_ratio_for_var(var)
+          
+          self.normalizes_response_variables()
      
      def _adj_mat_for_var(self , response_variable : TraceResponseVariable)-> None:
           dataframe_rows = []

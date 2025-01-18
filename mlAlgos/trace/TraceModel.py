@@ -18,7 +18,7 @@ class TraceModel(nn.Module):
           super(TraceModel, self).__init__()
           self.loss_function = loss_function
           self.activation = activation
-          self.layers = self.init_model_layers(dimensions=dimensions)
+          self.layers : nn.ModuleList = self.init_model_layers(dimensions=dimensions)
           self.soft_max : nn.Module = nn.Softmax(dim=0)
           
           
@@ -30,9 +30,11 @@ class TraceModel(nn.Module):
           return layers
 
      def forward(self, input : torch.tensor) -> torch.tensor:
-          for index in range(len(self.layers)):
-               input = self.layers[index](input)
+          #print(f"Input shape: {input.shape}")
+          for layer in self.layers:
+               input = layer(input) 
                input = self.activation(input)
+               #print(f"After layer {layer}: {input.shape}")
           return input
      
      # for calculating the accuracies for batches during training and ultimately the report
@@ -78,7 +80,11 @@ class TraceModel(nn.Module):
           return errors, accuracies
      
      def infer(self, input: torch.tensor )-> torch.tensor:
+          input = input.unsqueeze(0)
+          print(input.shape)
           input = self.forward(input)
+          print(input)
+          print(input.shape)
           input = self.soft_max(input)
           return input
  
@@ -114,6 +120,9 @@ def vizualize_test_err_and_acc(err : list[float], acc : list[float]) -> None:
      plt.title("Test")
      plt.legend()
      plt.show()
+
+
+
 
 
 

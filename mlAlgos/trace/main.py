@@ -15,6 +15,8 @@ import torch
 
 def main():
 
+     print(torch.Tensor([1,2,3]))
+
      storage_handler = LocalStorageHandler("data")
      file_list = storage_handler.list_files_in_dir("experiment_data")
      
@@ -72,6 +74,8 @@ def test_inference():
 
      evaluater = ModelController(response_variables, "experiment_data",constants.MODEL_PATH, 12 , local_storage_handler=storage_handler)
 
+     evaluater.model.parameters
+
      evaluater.evaluate_variables()
 
      evaluater._save_cond_prob_to_disk()
@@ -98,6 +102,14 @@ def test():
      print(type(a))
  
 #test()
+
+def soemthing():
+     evaluater = ModelController(None , "experiment_data",constants.MODEL_PATH, 12 , local_storage_handler=None)
+
+     for param in evaluater.model.parameters():
+          print(param.shape)
+
+#soemthing()
 
 
 

@@ -10,13 +10,7 @@ import numpy as np
 from torcheval.metrics import MulticlassPrecision , MulticlassF1Score , MulticlassRecall
 from StorageClient import LocalStorageHandler
 from ModelSingleton import ModelSingleton
-
-
-
-print(type(torch))
-print(type(([1,2,3])))
-
-
+import pandas as pd
 
 class ModelController:
 
@@ -45,19 +39,19 @@ class ModelController:
      This function actually puts the transformed data through the model: It does the inference part.
      '''
      def _infer_variable(self, variable : TraceResponseVariable) -> None:
-          trace_data_set = TraceVariableDataset(dataframe=variable.adf_matrices, labels=self.one_hot_labels, input_names=self.input_labels)
+          variable_dataset = TraceVariableDataset(variable.adf_matrices,  self.one_hot_labels, self.input_labels)
           predicted_labels = []
-          actual_lables = [self.index_of_actual_label] * len(trace_data_set)
-          print(len(trace_data_set))
-          for x in range(len(trace_data_set)):
-               print(x)
-               input , labels = trace_data_set.__getitem__(x)
+          actual_lables = [self.index_of_actual_label] * len(variable.adf_matrices)
+          print(len(variable.adf_matrices))
+          for x in range(len(variable.adf_matrices)):
+               input , _ = variable_dataset[x]
                output = self.model.infer(input)
                max_index = torch.argmax(output)
                predicted_labels.append(max_index)
 
-          variable.predictions = torch.tensor(predicted_labels)
-          variable.confusion_matrix = multiclass_confusion_matrix(torch.tensor(predicted_labels), torch.tensor(actual_lables), self.num_classes).numpy()
+          variable.predictions = torch.Tensor(predicted_labels)
+          #variable.confusion_matrix = multiclass_confusion_matrix(torch.Tensor(predicted_labels), torch.Tensor(actual_lables), self.num_classes).numpy()
+     
 
      def evaluate_variables(self):
           print("starting tom evaluate varibales")
@@ -72,20 +66,20 @@ class ModelController:
      For the next three function I will take the micro average between the classes or evaluation
      '''
      def _precision_for_variable(self, variable :TraceResponseVariable) -> None:
-          actual_lables = torch.tensor([self.index_of_actual_label] * len(variable.adf_matrices))
+          actual_lables = torch.Tensor([self.index_of_actual_label] * len(variable.adf_matrices))
           metric = MulticlassPrecision(average="micro", num_classes=self.num_classes)
           metric.update(variable.predictions, actual_lables)
           variable.micro_precision = metric.compute().item()
 
 
      def _recall_for_variable(self, variable : TraceResponseVariable) -> None:
-          actual_lables = torch.tensor([self.index_of_actual_label] * len(variable.adf_matrices))
+          actual_lables = torch.Tensor([self.index_of_actual_label] * len(variable.adf_matrices))
           metric = MulticlassRecall(average="micro", num_classes=self.num_classes)
           metric.update(variable.predictions, actual_lables)
           variable.micro_recall = metric.compute().item()
 
      def _f1_for_variable(self, variable: TraceResponseVariable) -> None:
-          actual_lables = torch.tensor([self.index_of_actual_label] * len(variable.adf_matrices))
+          actual_lables = torch.Tensor([self.index_of_actual_label] * len(variable.adf_matrices))
           metric = MulticlassF1Score(average="micro", num_classes=self.num_classes)
           metric.update(variable.predictions, actual_lables)
           variable.micro_f1_score = metric.compute().item()
