@@ -95,13 +95,18 @@ class LocustFileLoadgenerator:
         """Start the load generation"""
         if self.log:
             setup_logging(os.getenv("LOCUST_LOG_LEVEL", "WARNING"), None)
+
+        # Suppress locust.stats_logger
+        logging.getLogger("locust.stats_logger").setLevel(logging.CRITICAL)
+        logging.getLogger("locust.runners").setLevel(logging.CRITICAL)
+        logging.getLogger("locust.stats").setLevel(logging.CRITICAL)
         
         assert self.env is not None, "Locust environment must be initialized before starting"
         assert self.env.runner is not None, "Locust runner must be initialized before starting"
         
         self.env.runner.start(self.max_users, self.spawn_rate)
-        self.greenlets.spawn(stats_printer(self.env.stats))
-        self.greenlets.spawn(stats_history, self.env.runner)
+        #self.greenlets.spawn(stats_printer(self.env.stats))
+        #self.greenlets.spawn(stats_history, self.env.runner)
 
 
     def stop(self):

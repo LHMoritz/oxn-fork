@@ -1,0 +1,204 @@
+set dotenv-load
+# List available recipes
+default:
+    @just --list
+
+#### Variables ####
+kubernetes_dir:="k8s"
+terraform_dir:=kubernetes_dir/"scripts"
+backend_dir:="backend"
+analysis_dir:=kubernetes_dir/"analysis"
+manifests_dir:=kubernetes_dir/"manifests"
+
+# Setup required GCP APIs
+setup:
+    #!/bin/bash
+    gcloud services enable cloudresourcemanager.googleapis.com
+    gcloud services enable compute.googleapis.com
+    gcloud services enable iam.googleapis.com
+    gcloud services enable container.googleapis.com
+    gcloud services enable storage.googleapis.com
+
+# Initialize terraform
+init:
+    cd {{terraform_dir}} && terraform init
+
+# Create and configure the cluster
+up spot="":
+    #!/bin/bash
+    set -e
+    cd {{terraform_dir}}
+    # Create GCS bucket
+    terraform apply -auto-approve
+
+    echo $(pwd)
+
+    # Set kOps state store
+    export KOPS_STATE_STORE="gs://$(terraform output -raw kops_state_store_bucket_name)"
+
+    echo $NODE_SIZE
+
+    # Create cluster configuration
+    echo "Creating cluster configuration..."
+    kops create cluster \
+        --name="${CLUSTER_NAME}" \
+        --state="${KOPS_STATE_STORE}" \
+        --zones="${TF_VAR_zone}" \
+        --control-plane-zones="${TF_VAR_zone}" \
+        --node-count="${NODE_COUNT}" \
+        --control-plane-size="${CONTROL_PLANE_SIZE}" \
+        --node-size="${NODE_SIZE}" \
+        --control-plane-count=1 \
+        --networking=cilium \
+        --cloud=gce \
+        --project="${TF_VAR_project_id}" \
+        --set="spec.kubeAPIServer.enableAdmissionPlugins=PodNodeSelector" \
+        --set="spec.kubeAPIServer.enableAdmissionPlugins=PodTolerationRestriction" \
+        --set="spec.metricsServer.enabled=true" \
+        --set="spec.metricsServer.insecure=true" \
+        --yes
+
+    if [ -n "$spot" ]; then
+        # Configure spot instances
+        echo "Modifying instance groups to use spot instances..."
+        kops get ig --name "${CLUSTER_NAME}" -o yaml > ig_specs.yaml
+        sed -i '/spec:/a\  gcpProvisioningModel: SPOT' ig_specs.yaml
+        kops replace -f ig_specs.yaml
+    fi
+
+    # Create and validate cluster
+    echo "Creating the cluster..."
+    kops update cluster --name="${CLUSTER_NAME}" --yes
+    kops export kubeconfig --admin
+    
+    echo "Waiting for cluster to be ready..."
+    kops validate cluster --wait 10m
+
+    # Label the node as the OXN host
+    OXN_NODE_HOST=$(kubectl get nodes -o jsonpath='{.items[?(@.metadata.labels.node-role\.kubernetes\.io/node=="")].metadata.name}' | awk '{print $1}')
+    kubectl label node "$OXN_NODE_HOST" "app=oxn-host"
+
+
+# Install SUE and OXN
+install dev="false":
+    echo "Installing OpenEBS..."
+    kubectl apply -f https://openebs.github.io/charts/openebs-operator.yaml
+
+    echo "Installing Prometheus Stack..."
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo update
+    helm install kube-prometheus prometheus-community/kube-prometheus-stack \
+        --namespace oxn-external-monitoring \
+        --create-namespace \
+        --version 62.5.1 \
+        -f {{manifests_dir}}/values_kube_prometheus.yaml
+
+    echo "Installing OpenTelemetry Demo..."
+    helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+    helm repo update
+    helm install astronomy-shop open-telemetry/opentelemetry-demo \
+        --namespace system-under-evaluation \
+        --create-namespace \
+        -f {{manifests_dir}}/values_opentelemetry_demo.yaml
+
+    echo "Installing OXN Platform..."
+    kubectl create namespace oxn --dry-run=client -o yaml | kubectl apply -f -
+    if [ "$dev" == "true" ]; then
+    helm install oxn-platform {{kubernetes_dir}}/oxn-platform --set backend-chart.enabled=false --set backend-dev-chart.enabled=true
+    else
+    helm install oxn-platform {{kubernetes_dir}}/oxn-platform \
+    -namespace oxn \
+    --create-namespace
+    fi
+    echo "Waiting for OpenTelemetry Demo pods to be ready..."
+    kubectl wait --for=condition=ready pod \
+        --all \
+        -n system-under-evaluation \
+        --timeout=300s
+
+# Destroy the cluster and clean up resources
+down:
+    #!/bin/bash
+    set -e
+    cd {{terraform_dir}}
+    export KOPS_STATE_STORE="gs://$( terraform output -raw kops_state_store_bucket_name)"
+    kops delete cluster --name "${CLUSTER_NAME}" --yes
+    terraform destroy -auto-approve
+
+# Validate cluster status
+validate:
+    export KOPS_STATE_STORE="gs://$( cd {{terraform_dir}} && terraform output -raw kops_state_store_bucket_name)" && \
+    kops validate cluster
+
+# Get cluster info
+get-cluster:
+    export KOPS_STATE_STORE="gs://$( cd {{terraform_dir}} && terraform output -raw kops_state_store_bucket_name)" && \
+    kops get cluster
+
+# Export kubeconfig
+get-kubeconfig:
+    export KOPS_STATE_STORE="gs://$( cd {{terraform_dir}} && terraform output -raw kops_state_store_bucket_name)" && \
+    kops export kubeconfig --admin
+
+datamodels:
+    datamodel-codegen --input backend/internal/schemas/experiment_schema.json --input-file-type jsonschema --output backend/internal/models/experiment.py
+build-dev:
+    docker build -t $OXN_DEV_REPOSITORY/oxn-dev:latest --push {{backend_dir}}
+
+# TODO
+run-batch-experiment config="":
+    if [ -f $config ]; then
+    echo "Config file $config not found"
+    exit 1
+    fi
+    # first get backend pod
+    # then port forward 8000
+    # then curl and send the config to 
+    curl -X 'POST' \
+    'http://localhost:8000/experiments/batch/<id goes here>/run' \
+    -H 'accept: application/json' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "runs": 1,
+    "output_formats": [
+    "json"
+    ]
+    }'
+
+    # then get the zip file (the results ) from this endpoint
+    curl -X 'GET' \
+    'http://localhost:8000/experiments/batch_01737208087/data' \
+    -H 'accept: application/json'
+
+generate-env:
+    #!/usr/bin/env bash
+    if [ -f .env ]; then
+        echo ".env file already exists. Please remove it first if you want to generate a new one."
+        exit 1
+    fi
+    
+    RANDOM_SUFFIX=$(LC_ALL=C tr -dc 'a-z0-9' < /dev/urandom | head -c 6)
+    
+    cat > .env << EOF
+    TF_VAR_project_id="advanced-cloud-prototyping"
+    CLUSTER_NAME="cluster-${RANDOM_SUFFIX}.com"
+    TF_VAR_zone="europe-west1-b"
+    NODE_COUNT="3"
+    CONTROL_PLANE_SIZE="e2-standard-2"
+    NODE_SIZE="e2-standard-2"
+    TF_VAR_bucket_name="kops-state-${RANDOM_SUFFIX}"
+    TF_VAR_bucket_location="EU"
+    EOF
+    
+    echo ".env file generated with default values. Please modify as needed."
+    echo "The variables are automatically sourced :)"
+
+env-check:
+    echo $TF_VAR_project_id
+    echo $CLUSTER_NAME
+    echo $TF_VAR_zone
+    echo $NODE_COUNT
+    echo $CONTROL_PLANE_SIZE
+    echo $NODE_SIZE
+    echo $TF_VAR_bucket_name
+    echo $TF_VAR_bucket_location
