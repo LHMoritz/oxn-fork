@@ -18,7 +18,7 @@ class TraceVariableDataset(Dataset):
     def __len__(self):
         return len(self.dataframe)
 
-    def __getitem__(self, index) -> tuple[torch.tensor, torch.tensor]:
+    def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
         # Extract the row as a pandas Series
         row_series: pd.Series = self.dataframe.iloc[index]
 

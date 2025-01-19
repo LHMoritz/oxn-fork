@@ -13,8 +13,8 @@ class TraceResponseVariable:
           self.error_ratio : dict[str, float] = {}
           # good [avg, std], faulty [avg, std]
           self.time_dis : dict[str, tuple[float, float]] = None
-          self.confusion_matrix : torch.tensor = None
-          self.predictions = torch.tensor = None
+          self.confusion_matrix : torch.Tensor = None
+          self.predictions = torch.Tensor = None
           # TODO add some logic to add the index
           self.index_in_matrix = None
           self.micro_precision = None

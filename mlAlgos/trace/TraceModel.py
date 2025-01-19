@@ -29,7 +29,7 @@ class TraceModel(nn.Module):
                layers.append(new_layer)
           return layers
 
-     def forward(self, input : torch.tensor) -> torch.tensor:
+     def forward(self, input : torch.Tensor) -> torch.Tensor:
           #print(f"Input shape: {input.shape}")
           for layer in self.layers:
                input = layer(input) 
@@ -38,7 +38,7 @@ class TraceModel(nn.Module):
           return input
      
      # for calculating the accuracies for batches during training and ultimately the report
-     def calculate_accuracy(self, predictions : torch.tensor, actual : torch.tensor) -> float:
+     def calculate_accuracy(self, predictions : torch.Tensor, actual : torch.Tensor) -> float:
           counter_acc = 0
           counter = 0
           #print(actual)
@@ -79,7 +79,7 @@ class TraceModel(nn.Module):
 
           return errors, accuracies
      
-     def infer(self, input: torch.tensor )-> torch.tensor:
+     def infer(self, input: torch.Tensor )-> torch.Tensor:
           input = input.unsqueeze(0)
           print(input.shape)
           input = self.forward(input)
