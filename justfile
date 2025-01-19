@@ -103,13 +103,8 @@ install dev="false":
 
     echo "Installing OXN Platform..."
     kubectl create namespace oxn --dry-run=client -o yaml | kubectl apply -f -
-    if [ "$dev" == "true" ]; then
-    helm install oxn-platform {{kubernetes_dir}}/oxn-platform --set backend-chart.enabled=false --set backend-dev-chart.enabled=true
-    else
-    helm install oxn-platform {{kubernetes_dir}}/oxn-platform \
-    -namespace oxn \
-    --create-namespace
-    fi
+    if [ "$dev" == "true" ]; then helm install oxn-platform {{kubernetes_dir}}/oxn-platform --namespace oxn --create-namespace --set backend-chart.enabled=false --set backend-dev-chart.enabled=true; else helm install oxn-platform {{kubernetes_dir}}/oxn-platform --namespace oxn --create-namespace; fi
+
     echo "Waiting for OpenTelemetry Demo pods to be ready..."
     kubectl wait --for=condition=ready pod \
         --all \
@@ -146,29 +141,39 @@ build-dev:
     docker build -t $OXN_DEV_REPOSITORY/oxn-dev:latest --push {{backend_dir}}
 
 # TODO
-run-batch-experiment config="":
-    if [ -f $config ]; then
-    echo "Config file $config not found"
-    exit 1
-    fi
+run-batch-experiment config_path="" output_path="" times="1":
+    #!/bin/bash
+    if [ ! -f {{config_path}} ]; then echo "Config file {{config_path}} not found"; exit 1; fi
     # first get backend pod
-    # then port forward 8000
-    # then curl and send the config to 
-    curl -X 'POST' \
-    'http://localhost:8000/experiments/batch/<id goes here>/run' \
-    -H 'accept: application/json' \
-    -H 'Content-Type: application/json' \
-    -d '{
-    "runs": 1,
-    "output_formats": [
-    "json"
-    ]
-    }'
+    backend_pod=$(kubectl get pods -n oxn | grep ^backend | awk '{print $1}')
+    # then port forward 8000 in a separate process
+    kubectl port-forward -n oxn $backend_pod 8000:8000 &
+    sleep 3
+    config_json=$(cat {{config_path}})
+    echo $config_json
+    # Create the experiment and extract the id
+    experiment_id=$(curl -X POST \
+        'http://localhost:8000/experiments/batch' \
+        -H 'accept: application/json' \
+        -H 'Content-Type: application/json' \
+        -d "$config_json" | jq -r '.id')
 
+    # Run the experiment (this blocks until the experiment is finished)
+    curl -X POST \
+        "http://localhost:8000/experiments/batch/${experiment_id}/run" \
+        -H 'accept: application/json' \
+        -H 'Content-Type: application/json' \
+        -d '{"runs": '{{times}}', "output_formats": ["json"]}'
+
+    sleep 10
     # then get the zip file (the results ) from this endpoint
-    curl -X 'GET' \
-    'http://localhost:8000/experiments/batch_01737208087/data' \
-    -H 'accept: application/json'
+    curl -X GET \
+        "http://localhost:8000/experiments/${experiment_id}/data" \
+        -H 'accept: application/json' \
+        -O
+    mv data {{output_path}}.zip
+    # Clean up port-forward
+    pkill -f "kubectl port-forward.*8000:8000"
 
 generate-env:
     #!/usr/bin/env bash

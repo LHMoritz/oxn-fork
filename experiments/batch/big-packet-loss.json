@@ -302,7 +302,7 @@
   }
 },
 "parameter_variations":	{
-  "experiment.treatments.1.loss_treatment.params.duration": ["1m", "2m"],
-  "experiment.treatments.1.loss_treatment.params.loss_percentage": [15.0, 30.0, 50.0]
+  "experiment.treatments.1.loss_treatment.params.duration": ["2m"],
+  "experiment.treatments.1.loss_treatment.params.loss_percentage": [15.0, 30.0]
 }
 }

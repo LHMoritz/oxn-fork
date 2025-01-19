@@ -47,6 +47,7 @@ class LocustFileLoadgenerator:
         loadgen_section: dict = self.config["experiment"]["loadgen"]
         self.stages = loadgen_section.get("stages", None)
         self.run_time = int(time_string_to_seconds(loadgen_section["run_time"]))
+        logger.info(f"Run time: {self.run_time}")
         self.locust_files = loadgen_section.get("locust_files", None)
        
         self.target = loadgen_section.get("target")
