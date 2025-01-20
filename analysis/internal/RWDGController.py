@@ -22,7 +22,10 @@ It is part of the RWDG Trace model and therefore part for the data wranglin for 
 def mean_normalization( val : float, mean: float, min: float , max : float) -> float:
      nominator = val - mean
      denominator = max - min
-     return nominator / denominator
+     if denominator > 0:
+          return nominator / denominator
+     else:
+          return 0.0
 
 class RWDGController:
 

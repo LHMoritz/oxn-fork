@@ -1,15 +1,13 @@
 
-
-'''
-Here I use the class coding to an interface for the bridge between local developement and dev. in the cloud
-'''
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from fileinput import filename
 import os
 import constants
 import pandas as pd
 from pathlib import Path
 import json
+from exceptions import OXNFileNotFound, BatchExperimentsNotSupported, LabelNotPresent
 
 class StorageHandler(ABC):
 
@@ -20,33 +18,60 @@ class StorageHandler(ABC):
           '''
      
      @abstractmethod
-     def write_file_to_directory(self, dir_name, file_name, file_content) -> None:
+     def write_json_to_directory(self, dir_name, file_name, file_content) -> None:
           '''
           writes File to directory given the name and the content
         '''
      @abstractmethod
-     def get_file_from_dir(self, dir_name, file_name):
+     def get_file_from_dir(self, file_path):
           '''
           retrieves file from directory
           '''
      
 # TODO add rel_path offset in all functions
+
+def config_predicate(name:str) -> bool:
+     return "config" in name
+
 class LocalStorageHandler(StorageHandler):
 
-     def __init__(self, base_path) -> None:
+     def __init__(self, base_path :str) -> None:
           super().__init__()
-          self.base_path = base_path
+          self.experiment_path = Path(base_path) / 'experiments'
      
-     def list_files_in_dir(self, experiment_id) -> list[str]:
+     """
+     Gets the label for the experiment (the Microservice name in which the fault was injected)
+     """
+     def get_experiment_label(self, experiment_id : str) -> str:
+          files = self.list_files_in_dir(experiment_id=experiment_id)
+          num = list(filter(config_predicate, files))
+          if len(num) > 1:
+               raise BatchExperimentsNotSupported("Batch Experiments not yet supported for Deep Learning")
+          elif len(num) == 0:
+               raise OXNFileNotFound(f"Could not find Config file for  experiment: {experiment_id}")
+
+          with open(Path(self.experiment_path) / num[0], "r") as file:
+               data = json.load(file)
+          labels = []
+          for treatment in data["spec"]["experiment"]["treatments"]:
+               params = treatment.get("add_security_context", treatment.get("loss_treatment", {})).get("params", {})
+               if "label" in params:
+                    labels.append(params["label"])
+          
+          if len(labels) >= 1:
+               return labels[0]
+          else:
+               raise LabelNotPresent(f"Label for supervised learning not found")
+     
+     def list_files_in_dir(self, experiment_id :str) -> list[str]:
           try:
-               dir_path = Path(self.base_path) / Path(experiment_id)
-               print(dir_path)
-               files = os.listdir(dir_path)
-               return files
+               files = os.listdir(self.experiment_path)
+               return  list(filter(lambda x : experiment_id in x , files))
           except FileNotFoundError:
-               print(f"Error: Directory '{dir_path}' not found.")
+               print("err")
                return []
      
+     """
      def write_file_to_directory(self, dir_name, file_name, file_content: pd.DataFrame) -> None:
           try:
                os.makedirs(dir_name, exist_ok=True)
@@ -55,89 +80,60 @@ class LocalStorageHandler(StorageHandler):
           except Exception as e:
                print(f"Error: Could not write file '{file_name}' to '{dir_name}'. {e}")
      
-     def write_json_to_directory(self, dir_name, file_name, file_content) -> None:
+     """
+
+     def write_json_to_directory(self, file_name : str, file_content : dict) -> None:
           try:
-               os.makedirs(dir_name, exist_ok=True)
-               file_path = os.path.join(dir_name, file_name)
+               file_path = os.path.join(self.experiment_path, f"{file_name}.json")
                with open(file_path, "w") as json_file:
-                    json.dump(data, json_file, indent=4)
-          except Exception as e:
-               print(f"Error: Could not write file '{file_name}' to '{dir_name}'. {e}")
+                    json.dump(file_content, json_file)
+          except IOError as e:
+               pass
 
      
-     def get_file_from_dir(self, experiment_id, response_variable_name) -> pd.DataFrame | None:
+     def get_file_from_dir(self, file_name:str) -> tuple[pd.DataFrame, str] | None:
           try:
-               file_path = Path(self.base_path) / Path(experiment_id) / Path(response_variable_name )
+               file_path = Path(self.experiment_path) / file_name
                print(file_path)
-               df = pd.read_csv(file_path)
-               df
-               return df
+               with open(file_path, 'r' ) as file:
+                    data = json.load(file)
+               df =  pd.DataFrame(data)
+
+               if not self.check_columns_exist(df, constants.REQUIRED_COLUMNS) :
+                    return None
+
+               service_name = df.iloc[0]["service_name"]
+               return df, service_name
           except FileNotFoundError:
-               print(f"Error: File for : '{response_variable_name}' not found in directory '{experiment_id}'.")
+               print(f"Error: File for : {file_name} not found")
                return None
           except pd.errors.EmptyDataError:
-               print(f"Error: File '{response_variable_name}' is empty or has invalid data.")
+               print(f"Error: File {file_name} is empty or has invalid data.")
                return None
           except Exception as e:
-               print(f"Error: Could not retrieve or parse file '{response_variable_name}' from '{experiment_id}'. {e}")
+               print(f"Could not retrieve {e} ")
                return None
      
-     def get_service_names(self):
-          return 
+     def check_columns_exist(self, data : pd.DataFrame, required_columns : list[str] ) -> bool:
+          missing_columns = [col for col in required_columns if col not in data.columns]
+          return len(missing_columns) == 0
 
 
-if __name__ == "__main__":
-     shandler = LocalStorageHandler("data")
-     file_list = shandler.list_files_in_dir("experiment_data")
-     for f in file_list:
-          data = shandler.get_file_from_dir("experiment_data", f)
-          if data is not None:
-               print(data.head(5))
+if __name__=='__main__':
+     handler = LocalStorageHandler("oxn")
+     print(handler.list_files_in_dir("01737208087"))
+     print(handler.list_files_in_dir("01737287"))
+     a = {"x" : "y"}
+     handler.write_json_to_directory("analysis", a)
 
-
-
-# TODO add OXN storage client
-
-'''
-class GCloudStorageHandler(StorageHandler):
-     # bucket name comes from terraform script
-     def __init__(self, experiment_id, bucket_name) -> None:
-          super().__init__()
-          self.experiment_id = experiment_id
-          self.client_instance = storage.client()
-          self.bucket_name = bucket_name
-
+     print(handler.get_experiment_label("01737208087"))
+     tup = handler.get_file_from_dir('01737208087_frontend_traces.json')
+     if tup is not None:
+          print(tup[0].head(5))
+          print(tup[1])
      
-     def list_raw_datafiles_for_exp(self) -> list[str] | None:
-          try:
-               bucket = self.client_instance.bucket(self.bucket_name)
-               blobs = bucket.list_blobs(prefix=f"{self.experiment_id}/{constants.RAW_DATASETS}")
-               result = []
-               for b in blobs:
-                    result.append(b.name)
-               return result
-          except Exception as e:
-              print(f"problem when listing the files for bucket {self.bucket_name} and experiment {self.experiment_id} : {e.__str__}")
-              
-     #In this case dirname raw_data, transformed_data or eval_data
-   
-     def get_file_from_dir(self, dir_name, file_name):
-          try:
-               bucket = self.client_instance.bucket(self.bucket_name)
-               full_name = f"{self.experiment_id}/{dir_name}/{file_name}"
-               blob = bucket.blob(full_name)     
-               file_content = blob.download_as_string().decode('utf-8')
-               return file_content
-          except Exception as e:
-               print(f"problem when downloading blob from storage : {e.__str__}")
-     
-     def write_file_to_directory(self, dir_name, file_name, file_content) -> None:
-          try:
-               bucket = self.client_instance.bucket(self.bucket_name)
-               full_blob_name = f"{dir_name}/{file_name}"
-               blob = bucket.blob(full_blob_name)
-               blob.upload_from_string(file_content)
-          except Exception as e:
-               print(f"problem when uploading the file to storag : {e.__str__}")
 
-'''
+
+
+
+

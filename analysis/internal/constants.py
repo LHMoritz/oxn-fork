@@ -89,3 +89,6 @@ ANALYSIS_DIR = "result"
 VARIABLE_METRICS = "response_variable_metrics"
 VARIABLE_PROBS = "response_varibale_probs"
 
+REQUIRED_COLUMNS = ["trace_id","span_id", "operation" , "start_time", "end_time", "duration", "service_name" ,"span_kind",
+                     "req_status_code", "ref_type", "ref_type_span_ID", "ref_type_trace_ID", "add_security_context", "loss_treatment" ]
+

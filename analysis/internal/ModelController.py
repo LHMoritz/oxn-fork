@@ -14,26 +14,17 @@ import pandas as pd
 
 class ModelController:
 
-     def __init__(self, variables : list[TraceResponseVariable], experiment_id : str , model_path :str, index_actual_MS : int, local_storage_handler : LocalStorageHandler):
+     def __init__(self, variables : list[TraceResponseVariable], experiment_id : str , model :TraceModel, index_actual_MS : int, local_storage_handler : LocalStorageHandler):
           self.variables = variables
           self.experiment_id = experiment_id
-          self.model : TraceModel = ModelSingleton.instance()
+          self.model : TraceModel = model
           # goody trace is a class itself
           self.num_classes = len(constants.SERVICES) + 1
           self.one_hot_labels = gen_one_hot_encoding_col_names()
           self.input_labels = build_colum_names_for_adf_mat_df()
           self.index_of_actual_label : int  = index_actual_MS
           self.storage_handler : LocalStorageHandler = local_storage_handler
-          print(self.one_hot_labels)
-          print(self.input_labels)
 
-     # trained with 16 out
-     def _load_model(self, PATH : str, model : nn.Module) -> nn.Module:
-          state_dict = torch.load(PATH, weights_only=True)
-          model.load_state_dict(state_dict)
-          # set the model to Evaluation mode to infer on unseen data
-          model.eval()
-          return model
 
      '''
      This function actually puts the transformed data through the model: It does the inference part.
@@ -49,7 +40,7 @@ class ModelController:
                max_index = torch.argmax(output)
                predicted_labels.append(max_index)
 
-          variable.predictions = torch.Tensor(predicted_labels)
+          variable.predictions = torch.tensor(predicted_labels)
           #variable.confusion_matrix = multiclass_confusion_matrix(torch.Tensor(predicted_labels), torch.Tensor(actual_lables), self.num_classes).numpy()
      
 
