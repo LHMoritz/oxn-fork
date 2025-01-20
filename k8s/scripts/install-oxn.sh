@@ -140,7 +140,9 @@ echo "To extract results: ./extract-results.sh <remote-results-path> <local-dest
 echo "Installing OXN Platform..."
 kubectl create namespace oxn --dry-run=client -o yaml | kubectl apply -f -
 if [ "$1" == "--dev" ]; then
-    helm install oxn-platform ../oxn-platform --set backend-chart.enabled=false --set backend-dev-chart.enabled=true
+    helm install oxn-platform ../oxn-platform --set backend-chart.enabled=false --set backend-dev-chart.enabled=true \
+    --namespace oxn \
+    --create-namespace
 else
     helm install oxn-platform ../oxn-platform \
         --namespace oxn \
