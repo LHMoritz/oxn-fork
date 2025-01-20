@@ -1,7 +1,7 @@
 # OXN Platform Just Commands Guide
 
 ## Prerequisites
-- just (command runner)
+- just (command runner) https://github.com/casey/just?tab=readme-ov-file#packages
 - Google Cloud SDK
 - Terraform >= 1.0
 - kubectl
