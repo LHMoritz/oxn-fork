@@ -25,59 +25,163 @@
     },
     "responses": [
       {
+        "name": "accountingservice_traces",
+        "type": "trace",
+        "service_name": "accountingservice",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "flagd_traces",
+        "type": "trace",
+        "service_name": "flagd",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "adservice_traces",
+        "type": "trace",
+        "service_name": "adservice",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "cartservice_traces",
+        "type": "trace",
+        "service_name": "cartservice",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "checkoutservice_traces",
+        "type": "trace",
+        "service_name": "checkoutservice",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "currencyservice_traces",
+        "type": "trace",
+        "service_name": "currencyservice",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "emailservice_traces",
+        "type": "trace",
+        "service_name": "emailservice",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "featureflagservice_traces",
+        "type": "trace",
+        "service_name": "featureflagservice",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "ffspostgres_traces",
+        "type": "trace",
+        "service_name": "ffspostgres",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "frontendproxy_traces",
+        "type": "trace",
+        "service_name": "frontendproxy",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "frauddetectionservice_traces",
+        "type": "trace",
+        "service_name": "frauddetectionservice",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
         "name": "frontend_traces",
         "type": "trace",
         "service_name": "frontend",
-        "left_window": "60s",
-        "right_window": "60s",
+        "left_window": "10s",
+        "right_window": "10s",
         "limit": 1499
       },
       {
-        "name": "recommendation_traces",
+        "name": "grafana_traces",
         "type": "trace",
-        "service_name": "recommendationservice",
-        "left_window": "60s",
-        "right_window": "60s",
+        "service_name": "grafana",
+        "left_window": "10s",
+        "right_window": "10s",
         "limit": 1499
       },
       {
-        "name": "cart_traces",
+        "name": "kafka_traces",
         "type": "trace",
-        "service_name": "cartservice",
-        "left_window": "60s",
-        "right_window": "60s",
+        "service_name": "kafka",
+        "left_window": "10s",
+        "right_window": "10s",
         "limit": 1499
       },
       {
-        "name": "product_catalog_traces",
+        "name": "otelcollector_traces",
         "type": "trace",
-        "service_name": "productcatalogservice",
-        "left_window": "60s",
-        "right_window": "60s",
+        "service_name": "otelcollector",
+        "left_window": "10s",
+        "right_window": "10s",
         "limit": 1499
       },
       {
-        "name": "checkout_traces",
-        "type": "trace",
-        "service_name": "checkoutservice",
-        "left_window": "60s",
-        "right_window": "60s",
-        "limit": 1499
-      },
-      {
-        "name": "payment_traces",
+        "name": "paymentservice_traces",
         "type": "trace",
         "service_name": "paymentservice",
-        "left_window": "60s",
-        "right_window": "60s",
+        "left_window": "10s",
+        "right_window": "10s",
         "limit": 1499
       },
       {
-        "name": "shipping_traces",
+        "name": "producatalogservice_traces",
+        "type": "trace",
+        "service_name": "producatalogservice",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "quoteservice_traces",
+        "type": "trace",
+        "service_name": "quoteservice",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "recommendationservice_traces",
+        "type": "trace",
+        "service_name": "recommendationservice",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "shippingservice_traces",
         "type": "trace",
         "service_name": "shippingservice",
-        "left_window": "60s",
-        "right_window": "60s",
+        "left_window": "10s",
+        "right_window": "10s",
         "limit": 1499
       },
       {

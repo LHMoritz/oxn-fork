@@ -49,6 +49,11 @@ Build development image:
 just build-dev
 ```
 
+Run batch experiment:
+```bash
+just run-batch-experiment <config_path> <output_path> <times>
+```
+
 ## Cluster Management
 
 Check cluster status:
@@ -83,3 +88,4 @@ Generated in .env file:
 - NODE_SIZE: Worker node machine type
 - TF_VAR_bucket_name: kOps state store bucket
 - TF_VAR_bucket_location: Bucket location 
+- OXN_DEV_REPOSITORY: Docker repository for development image
