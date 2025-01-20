@@ -1,9 +1,13 @@
 
+from trace import Trace
+from urllib import response
 from TraceResponseVariable import TraceResponseVariable
 import pandas as pd
 import constants
 import numpy as np
-from utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df
+from StorageClient import LocalStorageHandler
+from utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df, get_treatment_column, get_index_for_service_label
+from exceptions import ColumnsNotPresent
 
 '''
 This class Takes in  a dataframe from with distributed tracing data and generates a dataframe
@@ -36,25 +40,32 @@ class RWDGController:
           self.service_name_mapping : dict[str , int] = constants.SERVICES # TODO change later to call a route on that
           self.service_name_mapping_backward = constants.SERVICES_REVERSE
           self.column_names = build_colum_names_for_adf_mat_df()
-          self.injected_service = injected_service
-          self.one_hot_encoding_for_exp = self.gen_one_hot_encoding_for_exp()
+          self.injected_service = get_index_for_service_label(injected_service)
+          self.one_hot_encoding_for_exp : list[float] = self.gen_one_hot_encoding_for_exp()
+          if len(self.one_hot_encoding_for_exp) == 0:
+               raise ColumnsNotPresent("Not all needed columns in the Dataframe are present")
           self.one_hot_encoding_column_names = gen_one_hot_encoding_col_names()
+          self.supervised_column = get_treatment_column(list(self.variables[0].data.columns))
 
      '''Normalizes the calculated weight matrices after the mean normalization
           This has the affect that each value is in range [0, 1] '''
      def normalizes_response_variables(self):
-          min_values = []
-          max_values = []
-          avg_values = []
-          result = pd.concat([var.adf_matrices for var in self.variables], ignore_index=True)
-          for col in self.column_names:
-               min_values.append(result[col].min())
-               max_values.append(result[col].max())
-               avg_values.append( result[col].mean())
-          
+
+          # we do not want to do it with error_code columns, just the 
+          numerical_column_names = self.column_names[:len(self.column_names) -1]
+
           for var in self.variables:
-               for idx in range(len(self.column_names)):
-                    var.adf_matrices[self.column_names[idx]].apply(mean_normalization, args=(avg_values[idx], min_values[idx], max_values[idx]))
+               if var.adf_matrices	is not None:
+                    avg_values = []
+                    max_values = []
+                    min_values = []
+                    for col in numerical_column_names:
+                         avg_values.append(var.adf_matrices[col].mean())
+                         max_values.append(var.adf_matrices[col].max())
+                         min_values.append(var.adf_matrices[col].min())
+
+                    for idx in range(len(numerical_column_names)):
+                         var.adf_matrices[self.column_names[idx]].apply(mean_normalization, args=(avg_values[idx], min_values[idx], max_values[idx]))
 
      '''
      This functions labels the trace with a boolean column:
@@ -86,6 +97,7 @@ class RWDGController:
 
      def is_grpc_error(self, grpc_status_code : str) -> bool:
           return not grpc_status_code == "0"
+
                     
      '''
      This functions iterates over all the trace responsevariables and does the data transformation and the
@@ -110,13 +122,17 @@ class RWDGController:
                new_row.append(response_variable.service_name)
                new_row.append(self.trace_has_error(single_trace_data))
                new_row.extend(self.one_hot_encoding_for_exp)
-               new_row.append(single_trace_data[constants.SUPERVISED_COLUMN].iloc[0])
+               new_row.append(single_trace_data[self.supervised_column].iloc[0])
                dataframe_rows.append(new_row)
           
           # unpack the colum names
           '''Microservice name is here important. Later on we are going to merge the dataframes for each response variable and we still wan to have a direct mapping towards a service '''
           '''[trace_id, flattened_out weighted adj matrix, microservice_name, one hot encoding for treatment]'''
-          response_variable.adf_matrices = pd.DataFrame(dataframe_rows , columns=[constants.TRACE_ID_COLUMN, *self.column_names, "microservice_name", constants.ERROR_IN_TRACE_COLUMN, *self.one_hot_encoding_column_names, constants.SUPERVISED_COLUMN])
+          #print(dataframe_rows[0])
+         # print("_________________")
+          #print([constants.TRACE_ID_COLUMN, *self.column_names, "microservice_name", constants.ERROR_IN_TRACE_COLUMN, *self.one_hot_encoding_column_names, self.supervised_column])
+         # exit(1)
+          response_variable.adf_matrices = pd.DataFrame(dataframe_rows , columns=[constants.TRACE_ID_COLUMN, *self.column_names, "microservice_name", constants.ERROR_IN_TRACE_COLUMN, *self.one_hot_encoding_column_names, self.supervised_column])
          
      '''
      To add internal spans to the next network span, we are going to use a stack of networl request that hold the index tuple for the matrix
@@ -135,9 +151,11 @@ class RWDGController:
                if row[constants.SPAN_KIND] == constants.INTERNAL_TYPE:
                     span_duration = row[constants.DURATION_COLUMN]
                     # peek the stack
-                    indices = stack[-1]
-                    self.handle_internal_span(indices, adjency_matrix, span_duration)
-                    continue
+                    if len(stack) > 0:
+                         indices = stack[-1]
+                         self.handle_internal_span(indices, adjency_matrix, span_duration)
+                         continue
+                    else: continue
 
                ref_span_id = row[constants.REF_TYPE_SPAN_ID]
 
@@ -197,12 +215,11 @@ class RWDGController:
      # since the data comes from one experiement with only ine injected fault
      def gen_one_hot_encoding_for_exp(self) -> list[float]:
           try:
-               index = self.service_name_mapping[self.injected_service]
-               one_hot_values = [0.0] * len(self.service_name_mapping)
-               one_hot_values[index] = 1
+               one_hot_values = [0.0] * (len(self.service_name_mapping) + 1)
+               one_hot_values[self.injected_service] = 1
                return one_hot_values
           except KeyError as e:
-               pass
+               return []
      
      '''
      This function is creating the lower and upper bound for the performance anomaly detection per service tuple
@@ -230,25 +247,57 @@ class RWDGController:
           P(trace has no error code | goody Trace)
      '''
      def _calc_error_ratio_for_var(self, var : TraceResponseVariable) -> None:
-          faulty_traces_with_error = 0
-          faulty_traces_no_error = 0
-          good_traces_with_error = 0
-          good_traces_no_error = 0
-          # number of traces within the varibale
-          len_goody_traces = len(var.adf_matrices[var.adf_matrices[constants.SUPERVISED_COLUMN] == constants.NO_TREATMENT])
-          len_faulty_traces = len(var.adf_matrices[var.adf_matrices[constants.SUPERVISED_COLUMN] != constants.NO_TREATMENT])
-          for _,row  in var.adf_matrices.iterrows():
-               if row[constants.ERROR_IN_TRACE_COLUMN] == 0 and row[constants.SUPERVISED_COLUMN] == constants.NO_TREATMENT:
-                    good_traces_no_error +=1
-               elif row[constants.ERROR_IN_TRACE_COLUMN] == 1 and row[constants.SUPERVISED_COLUMN] == constants.NO_TREATMENT:
-                    good_traces_with_error += 1 
-               elif row[constants.ERROR_IN_TRACE_COLUMN] == 0 and row[constants.SUPERVISED_COLUMN] != constants.NO_TREATMENT:
-                    faulty_traces_no_error += 1
-               elif row[constants.ERROR_IN_TRACE_COLUMN] == 1 and row[constants.SUPERVISED_COLUMN] != constants.NO_TREATMENT:
-                    faulty_traces_with_error +=1
-          
-          var.error_ratio[constants.FAULTY_ERROR] = faulty_traces_with_error / len_faulty_traces
-          var.error_ratio[constants.FAULTY_NO_ERROR] = faulty_traces_no_error / len_faulty_traces
-          var.error_ratio[constants.GOOD_ERROR] = good_traces_with_error / len_goody_traces
-          var.error_ratio[constants.GOOD_NO_ERROR] = good_traces_no_error / len_goody_traces
+          if var.adf_matrices is not None:
+               faulty_traces_with_error = 0
+               faulty_traces_no_error = 0
+               good_traces_with_error = 0
+               good_traces_no_error = 0
+               # number of traces within the varibale
+               len_goody_traces = len(var.adf_matrices[var.adf_matrices[self.supervised_column] == constants.NO_TREATMENT])
+               len_faulty_traces = len(var.adf_matrices[var.adf_matrices[self.supervised_column] != constants.NO_TREATMENT])
+               for _,row  in var.adf_matrices.iterrows():
+                    if row[constants.ERROR_IN_TRACE_COLUMN] == 0 and row[self.supervised_column] == constants.NO_TREATMENT:
+                         good_traces_no_error +=1
+                    elif row[constants.ERROR_IN_TRACE_COLUMN] == 1 and row[self.supervised_column] == constants.NO_TREATMENT:
+                         good_traces_with_error += 1 
+                    elif row[constants.ERROR_IN_TRACE_COLUMN] == 0 and row[self.supervised_column] != constants.NO_TREATMENT:
+                         faulty_traces_no_error += 1
+                    elif row[constants.ERROR_IN_TRACE_COLUMN] == 1 and row[self.supervised_column] != constants.NO_TREATMENT:
+                         faulty_traces_with_error +=1
+               if len_faulty_traces > 0:
+                    var.error_ratio[constants.FAULTY_ERROR] = faulty_traces_with_error / len_faulty_traces
+                    var.error_ratio[constants.FAULTY_NO_ERROR] = faulty_traces_no_error / len_faulty_traces
+               if len_goody_traces > 0:
+                    var.error_ratio[constants.GOOD_ERROR] = good_traces_with_error / len_goody_traces
+                    var.error_ratio[constants.GOOD_NO_ERROR] = good_traces_no_error / len_goody_traces
+
+
+"""
+if __name__=='__main__':
      
+     handler = LocalStorageHandler("oxn")
+     files_list = handler.list_files_in_dir("01737208087")
+     if len(files_list) == 0:
+         print("What?")
+
+     response_variables : list[TraceResponseVariable] = []
+
+     for file in files_list:
+          if "config" in file:
+               continue
+          tup = handler.get_file_from_dir(file)
+          if tup is None:
+               print("Why non")
+               exit()
+          response_variables.append(TraceResponseVariable(tup[0],"01737208087", tup[1] ))
+     
+     for var in response_variables:
+          print(var.data.head(5))
+          print(var.data.columns)
+     
+     ex_label = handler.get_experiment_label("01737208087")
+     
+     con = RWDGController(response_variables, "01737208087",ex_label )
+     
+     con.iterate_over_varibales()
+"""

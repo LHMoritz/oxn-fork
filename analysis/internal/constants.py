@@ -42,7 +42,7 @@ The Integers as corresponding values will be the corresponding index values to b
 
 '''
 SERVICES = {
-    "frontend-proxy": 0,
+    "frontendproxy": 0,
     "frontend": 1,
     "featureflagservice": 2,
     "accountingservice": 3,
@@ -56,11 +56,12 @@ SERVICES = {
     "quoteservice": 11,
     "recommendationservice": 12,
     "shippingservice": 13,
-    "cartservice": 14
+    "cartservice": 14,
+    "flagd": 15
 }
 
 SERVICES_REVERSE = {
-    0: "frontend-proxy",
+    0: "frontendproxy",
     1: "frontend",
     2: "featureflagservice",
     3: "accountingservice",
@@ -74,14 +75,15 @@ SERVICES_REVERSE = {
     11: "quoteservice",
     12: "recommendationservice",
     13: "shippingservice",
-    14: "cartservice"
+    14: "cartservice",
+    15 : "flagd"
 }
 
 # machine learning model constants
 
-MODEL_DIMENSIONS = [225, 1500, 1500, 1500, 15]
+MODEL_DIMENSIONS = [256, 1500, 1500, 1500, 17]
 
-MODEL_PATH = "./model/traceModel.pt"
+MODEL_PATH = "./model/new_traceModel.pt"
 
 METRICS = ["micro_precision", "micro_recall", "micro_f1_score"]
 
@@ -90,5 +92,5 @@ VARIABLE_METRICS = "response_variable_metrics"
 VARIABLE_PROBS = "response_varibale_probs"
 
 REQUIRED_COLUMNS = ["trace_id","span_id", "operation" , "start_time", "end_time", "duration", "service_name" ,"span_kind",
-                     "req_status_code", "ref_type", "ref_type_span_ID", "ref_type_trace_ID", "add_security_context", "loss_treatment" ]
+                     "req_status_code", "ref_type", "ref_type_span_ID", "ref_type_trace_ID", "add_security_context" ]
 

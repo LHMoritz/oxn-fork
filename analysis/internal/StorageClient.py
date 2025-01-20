@@ -8,6 +8,8 @@ import pandas as pd
 from pathlib import Path
 import json
 from exceptions import OXNFileNotFound, BatchExperimentsNotSupported, LabelNotPresent
+from utils import get_treatment_column
+import numpy as np
 
 class StorageHandler(ABC):
 
@@ -98,6 +100,7 @@ class LocalStorageHandler(StorageHandler):
                with open(file_path, 'r' ) as file:
                     data = json.load(file)
                df =  pd.DataFrame(data)
+               df.replace(['N/A', 'null', ''], np.nan, inplace=True)
 
                if not self.check_columns_exist(df, constants.REQUIRED_COLUMNS) :
                     return None
@@ -116,7 +119,8 @@ class LocalStorageHandler(StorageHandler):
      
      def check_columns_exist(self, data : pd.DataFrame, required_columns : list[str] ) -> bool:
           missing_columns = [col for col in required_columns if col not in data.columns]
-          return len(missing_columns) == 0
+          treatment = get_treatment_column(list(data.columns))
+          return len(missing_columns) == 0 and treatment != ""
 
 
 if __name__=='__main__':

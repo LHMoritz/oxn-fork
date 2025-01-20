@@ -64,7 +64,7 @@ class TraceModel(nn.Module):
           iterations_counter = 0
           while iterations_counter < iterations:
                     for batch, labels in train_loader:
-                         print(f"Optimizing for batch with ID: {iterations_counter}")
+                         #print(f"Optimizing for batch with ID: {iterations_counter}")
                          optimizer.zero_grad()
                          out =  self.forward(batch)
                          loss = self.loss_function(out, labels)

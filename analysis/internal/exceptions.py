@@ -12,3 +12,11 @@ class OXNFileNotFound(Exception):
 class LabelNotPresent(Exception):
     def __init__(self, message):
         super().__init__(message)
+
+class ColumnsNotPresent(Exception):
+   def __init__(self, message):
+        super().__init__(message)
+
+class ServiceUnknown(Exception):
+    def __init__(self, message):
+        super().__init__(message)
