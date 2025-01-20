@@ -15,7 +15,7 @@ spec:
       labels:
         app: {{ .Chart.Name }}
     spec:
-      serviceAccountName: {{ .Release.Name }}-backend-sa
+      serviceAccountName: {{ .Chart.Name }}-sa
       nodeSelector:
         app: oxn-host
       containers:

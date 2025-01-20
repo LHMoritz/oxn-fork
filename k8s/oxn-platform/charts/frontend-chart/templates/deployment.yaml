@@ -24,4 +24,4 @@ spec:
         - containerPort: 3000
         env:
         - name: BACKEND_URL
-          value: "http://backend-chart:8000"
+          value: "http://backend-module:8000"

@@ -15,7 +15,7 @@ spec:
       labels:
         app: {{ .Chart.Name }}
     spec:
-      serviceAccountName: {{ .Release.Name }}-analysis-sa
+      serviceAccountName: {{ .Chart.Name }}-sa
       nodeSelector:
         app: oxn-host
       containers:
@@ -23,7 +23,7 @@ spec:
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         env:
         - name: BACKEND_URL
-          value: "http://backend-chart:8000"
+          value: "http://backend-module:8000"
         ports:
         - containerPort: 8001
         volumeMounts:

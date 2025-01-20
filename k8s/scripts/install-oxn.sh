@@ -19,7 +19,6 @@ fi
 # Define directories relative to script location
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 MANIFESTS_DIR="${SCRIPT_DIR}/../manifests"
-DASHBOARDS_DIR="${SCRIPT_DIR}/../dashboards"
 
 # Verify directories exist
 if [ ! -d "$MANIFESTS_DIR" ]; then
@@ -27,10 +26,6 @@ if [ ! -d "$MANIFESTS_DIR" ]; then
     exit 1
 fi
 
-if [ ! -d "$DASHBOARDS_DIR" ]; then
-    echo "Error: Dashboards directory not found: $DASHBOARDS_DIR"
-    exit 1
-fi
 
 echo "Installing OpenEBS..."
 kubectl apply -f https://openebs.github.io/charts/openebs-operator.yaml
