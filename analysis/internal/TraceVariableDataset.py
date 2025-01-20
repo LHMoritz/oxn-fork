@@ -1,4 +1,5 @@
 
+from numpy import dtype, float32
 import pandas as pd
 from torch.utils.data import Dataset
 import torch
@@ -25,13 +26,13 @@ class TraceVariableDataset(Dataset):
         # Process labels
         labels_list = row_series[self.col_names_labels]
         labels_list_as_list = labels_list.astype(float).to_list()
-        labels_tensor = torch.Tensor(labels_list_as_list)
+        labels_tensor = torch.tensor(labels_list_as_list, dtype=torch.float32)
         print(labels_tensor)
         print(labels_tensor.shape)
 
         # Process inputs
         input_cols_list = row_series[self.col_names_input].astype(float).to_list()
-        input_tensor = torch.Tensor(input_cols_list)
+        input_tensor = torch.tensor(input_cols_list, dtype=torch.float32)
 
         return input_tensor, labels_tensor
 
