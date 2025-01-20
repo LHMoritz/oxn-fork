@@ -38,3 +38,4 @@ terraform.tfstate.backup
 # Cluster configuration
 backend.egg-info
 k8s/scripts/config/.cluster-name
+.env
