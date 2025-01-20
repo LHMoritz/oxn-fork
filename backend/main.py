@@ -4,7 +4,7 @@ from gevent import monkey
 from backend.internal.errors import StoreException
 monkey.patch_all()
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 import logging
 
 """ uvicorn_logger_error = logging.getLogger("uvicorn.error")
@@ -67,7 +67,7 @@ class ExperimentCreate(BaseModel):
 class BatchExperimentCreate(BaseModel):
     name: str
     config: Dict
-    parameter_variations: Dict[str, List[str]]
+    parameter_variations: Dict[str, List[Union[str, float]]] 
 class ExperimentRun(BaseModel):
     runs: int = 1
     output_formats: List[str] = ["json"]  # or csv
