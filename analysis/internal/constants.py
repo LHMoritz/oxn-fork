@@ -1,3 +1,8 @@
+
+"""
+This file just contains conmstants I use throught the entire backend
+"""
+
 SERVICE_NAME_COLUMN = "service_name"
 SPAN_ID_COLUMN = "span_id"
 REF_TYPE_SPAN_ID = "ref_type_span_ID"
@@ -7,24 +12,18 @@ START_TIME = 'start_time'
 SPAN_KIND = 'span_kind'
 NOT_AVAILABLE = "N/A"
 
-SUPERVISED_COLUMN = "packet_loss_treatment"
+REQUIRED_COLUMNS = ["trace_id","span_id", "operation" , "start_time", "end_time", "duration", "service_name" ,"span_kind",
+                     "req_status_code", "ref_type", "ref_type_span_ID", "ref_type_trace_ID", "add_security_context" ]
+
 
 NO_TREATMENT = "NoTreatment"
-
 PROJECT_ID = "advanced-cloud-prototyping"
-
-#### constants to access google cloud storage
-RAW_DATASETS = "raw_data"
-MINED_DATASETS = "mined_datasets"
-EVALUATION_DATASETS = "evaluation_datasets"
 
 ADJENCY_TOTAL_PRE = "adjency_total_csv_"
 
 INTERNAL_TYPE = "internal"
 REQ_STATUS_CODE = "req_status_code"
-
 ERROR_IN_TRACE_COLUMN = "has_error_in_trace"
-
 
 
 # for the error ratio dictionary
@@ -80,17 +79,8 @@ SERVICES_REVERSE = {
 }
 
 # machine learning model constants
-
 MODEL_DIMENSIONS = [256, 1500, 1500, 1500, 17]
-
 MODEL_PATH = "./model/new_traceModel.pt"
-
 METRICS = ["micro_precision", "micro_recall", "micro_f1_score"]
 
-ANALYSIS_DIR = "result"
-VARIABLE_METRICS = "response_variable_metrics"
-VARIABLE_PROBS = "response_varibale_probs"
-
-REQUIRED_COLUMNS = ["trace_id","span_id", "operation" , "start_time", "end_time", "duration", "service_name" ,"span_kind",
-                     "req_status_code", "ref_type", "ref_type_span_ID", "ref_type_trace_ID", "add_security_context" ]
 

@@ -102,7 +102,7 @@ However, this gives us the opporunity to build interesting KPIs around the Class
 # The Multilayer Perceptron
 
      The MLP will have 5 layers:
-     -  1 Input layer [Dimensions will be the crossproduct of all (microservices +1)  flattened out to rowvectors ]
+     -  1 Input layer [Dimensions will be the crossproduct of all n^2 + 1 (+ 1 because having no fault is basically the another "microservice" , n being the microservices under observations) flattened out to rowvectors ]
      - 3 Hidden layer [Dimension 1500 hidden nodes, activation:  RelU]
      - 1 output layer [Dimensions : number of Microservices, activation : softmax (so it can be interpreted as probability)]
 
