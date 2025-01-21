@@ -1,6 +1,8 @@
 import zipfile
 import yaml
+from backend.internal.analysis import ExperimentAnalyzer
 from backend.internal.errors import StoreException
+from backend.internal.fault_detection import PrometheusDetectionAnalyzer
 from backend.internal.models.response import ResponseVariable
 from fastapi import HTTPException
 from pathlib import Path
@@ -14,6 +16,7 @@ from typing import Dict, Optional, Tuple, List
 import pandas as pd
 from backend.internal.engine import Engine
 from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
+from backend.internal.prometheus import Prometheus
 from backend.internal.utils import dict_product, update_dict_with_parameter_variations
 from backend.internal.store import DocumentStore, FileFormat
 import io
@@ -346,7 +349,7 @@ class ExperimentManager:
         '''gets the response data for a given batch id and sub experiment id'''
         key = f"{batch_id}_{sub_experiment_id}_{response_name}.{file_ending}"
         return self.store.load(key, FileFormat.JSON)
-        
+    
     def get_analysis_data(self) -> Dict:
         """
         Retrieves analysis data from the configured analysis path
@@ -384,6 +387,45 @@ class ExperimentManager:
                 detail=f"Error loading analysis data: {str(e)}"
             )
 
+    def save_detection_results(self, experiment_id: str, results: Dict, mechanism: str):
+        """Save fault detection results for an experiment"""
+        self.store.save(f"{experiment_id}_{mechanism}_detection", results, FileFormat.JSON)
+        
+    def analyze_fault_detection(self, experiment_id: str) -> Dict:
+        """Analyze fault detection for an experiment"""
+        report = self.get_experiment_report(experiment_id)
+        if report is None:
+            raise ValueError(f"No report found for experiment {experiment_id}")
+        
+        # TODO find a place to keep a reference to the prometheus client
+        experiment = self.get_experiment_config(experiment_id)['spec']
+        if experiment is None:
+            raise ValueError(f"No experiment config found for experiment {experiment_id}")
+        orchestrator = KubernetesOrchestrator(experiment_config=experiment)
+        prometheus_client = Prometheus(orchestrator)
+        
+        analyzer = ExperimentAnalyzer(
+            detection_analyzer=PrometheusDetectionAnalyzer(prometheus_client)
+        )
+        
+        results = analyzer.analyze_fault_detection(report)
+        
+        # Save results
+        self.store.save(
+            f"{experiment_id}_fault_detection",
+            {'results': results},
+            FileFormat.JSON
+        )
+        
+        return results
+        
+
+    def get_experiment_fault_detection(self, experiment_id: str) -> Dict:
+        """Get fault detection for an experiment"""
+        fault_detection = self.store.load(f"{experiment_id}_fault_detection", FileFormat.JSON)
+        if fault_detection is None:
+            raise ValueError(f"No fault detection found for experiment {experiment_id}")
+        return fault_detection   
 
 
         

@@ -8,7 +8,7 @@ import logging
 from math import e
 import requests
 from requests.adapters import Retry, HTTPAdapter
-
+from datetime import datetime
 from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
 
 from backend.internal.models.orchestrator import Orchestrator
@@ -283,5 +283,31 @@ class Prometheus:
         except (requests.ConnectionError, requests.HTTPError) as requests_exception:
             raise PrometheusException(
                 message=f"Error while talking to Prometheus at {url}",
+                explanation=f"{requests_exception}",
+            )
+    def get_alerts(self, start_time: datetime, end_time: datetime, step: str = '15s') -> dict:
+        """Query ALERTS from Prometheus for a given time range"""
+        params = {
+            'query': 'ALERTS',
+            'start': start_time.timestamp(),
+            'end': end_time.timestamp(),
+            'step': step
+        }
+        
+        range_query = self.endpoints.get("range_query")
+        if range_query is None:
+            raise PrometheusException(
+                message="Error while getting endpoint for range_query",
+                explanation="No target range_query endpoint returned",
+            )
+        
+        url = self.base_url + range_query
+        try:
+            response = self.session.get(url=url, params=params)
+            response.raise_for_status()
+            return response.json()
+        except (requests.ConnectionError, requests.HTTPError) as requests_exception:
+            raise PrometheusException(
+                message=f"Error while querying alerts from Prometheus at {url} with params {params}",
                 explanation=f"{requests_exception}",
             )
