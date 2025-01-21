@@ -1,4 +1,4 @@
-from urllib import response
+
 from TraceResponseVariable import TraceResponseVariable
 import constants
 from utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df , get_index_for_service_label
@@ -46,7 +46,7 @@ class ModelController:
           #variable.confusion_matrix = multiclass_confusion_matrix(torch.Tensor(predicted_labels), torch.Tensor(actual_lables), self.num_classes).numpy()
      
 
-     def evaluate_variables(self):
+     def evaluate_variables(self) -> tuple[dict[str, list[dict[str, float]]], dict[str, list[dict[str, float]]]]:
           print("starting tom evaluate varibales")
           for var in self.variables:
                print(f"evaluating for {var.service_name}")
@@ -55,8 +55,9 @@ class ModelController:
                self._recall_for_variable(var)
                self._precision_for_variable(var)
           
-          self._save_cond_prob_to_disk()
-          self._save_metrics_to_disk()
+          prob_dict = self._save_cond_prob_to_disk()
+          metric_dict = self._save_metrics_to_disk()
+          return metric_dict, prob_dict
 
      '''
      For the next three function I will take the micro average between the classes or evaluation
@@ -87,7 +88,7 @@ class ModelController:
           pass
 
      # TODO be careful with the filehandling
-     def _save_metrics_to_disk(self) -> None:
+     def _save_metrics_to_disk(self) -> dict[str, list[dict[str, float]]]:
           metric_dict = {}
           for var in self.variables:
                variable_dict = {}
@@ -96,13 +97,15 @@ class ModelController:
                metric_dict[var.service_name] = variable_dict
           
           self.storage_handler.write_json_to_directory(f"metrics_all_variables_{self.experiment_id}", metric_dict )
+          return metric_dict
      
-     def _save_cond_prob_to_disk(self) -> None:
+     def _save_cond_prob_to_disk(self) -> dict[str, list[dict[str, float]]]:
           prob_dict = {}
           for var in self.variables:
                prob_dict[var.service_name] = var.error_ratio
 
           self.storage_handler.write_json_to_directory(f"prob_all_variables{self.experiment_id}", prob_dict)
+          return prob_dict
 
 
 

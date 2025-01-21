@@ -6,7 +6,7 @@ import torch
 
 '''
 This class can be seen as putting a single variable through the model.
-It will create 
+It will create the input for the Model
 '''
 
 class TraceVariableDataset(Dataset):
@@ -20,15 +20,15 @@ class TraceVariableDataset(Dataset):
         return len(self.dataframe)
 
     def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
-        # Extract the row as a pandas Series
+
         row_series: pd.Series = self.dataframe.iloc[index]
 
         # Process labels
         labels_list = row_series[self.col_names_labels]
         labels_list_as_list = labels_list.astype(float).to_list()
         labels_tensor = torch.tensor(labels_list_as_list, dtype=torch.float32)
-        print(labels_tensor)
-        print(labels_tensor.shape)
+        #print(labels_tensor)
+        #print(labels_tensor.shape)
 
         # Process inputs
         input_cols_list = row_series[self.col_names_input].astype(float).to_list()
