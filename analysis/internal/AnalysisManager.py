@@ -48,6 +48,10 @@ class AnalysisManager:
      def analyze_experimment(self) -> tuple[dict[str, list[dict[str, float]]], dict[str, list[dict[str, float]]]]:
           self.rwdg_controller.iterate_over_varibales()
           return self.model_controller.evaluate_variables()
+
+
+if __name__=='__main__':
+     pass
        
 
 

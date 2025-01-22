@@ -5,7 +5,7 @@ from utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_
 import torch
 import torch.nn as nn
 from TraceModel import TraceModel
-from TraceVariableDataset import TraceVariableDataset
+from analysis.internal.TraceVariableDatasetInference import TraceVariableDatasetInference
 import numpy as np
 from torcheval.metrics import MulticlassPrecision , MulticlassF1Score , MulticlassRecall
 from StorageClient import LocalStorageHandler
@@ -32,7 +32,7 @@ class ModelController:
      '''
      def _infer_variable(self, variable : TraceResponseVariable) -> None:
           if variable.adf_matrices is not None:
-               variable_dataset = TraceVariableDataset(variable.adf_matrices,  self.one_hot_labels, self.input_labels)
+               variable_dataset = TraceVariableDatasetInference(variable.adf_matrices,  self.one_hot_labels, self.input_labels)
                predicted_labels = []
                actual_lables = [self.index_of_actual_label] * len(variable.adf_matrices)
                print(len(variable.adf_matrices))

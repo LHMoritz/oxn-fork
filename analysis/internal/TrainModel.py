@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, random_split
 from TraceModel import TraceModel, vizualize_training_err_and_acc
 import torch.nn as nn
 import constants
-from TraceVariableDataset import TraceVariableDataset
+from analysis.internal.TraceVariableDatasetInference import TraceVariableDatasetInference
 import torch
 
 def build_new_mock_model():
