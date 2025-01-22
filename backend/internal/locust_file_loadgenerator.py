@@ -1,3 +1,4 @@
+import gevent
 import importlib
 from importlib.machinery import ModuleSpec
 import importlib.util
@@ -106,6 +107,7 @@ class LocustFileLoadgenerator:
         assert self.env.runner is not None, "Locust runner must be initialized before starting"
         
         self.env.runner.start(self.max_users, self.spawn_rate)
+        self.greenlets.spawn(gevent.sleep, self.run_time)
         #self.greenlets.spawn(stats_printer(self.env.stats))
         #self.greenlets.spawn(stats_history, self.env.runner)
 

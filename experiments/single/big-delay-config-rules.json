@@ -353,7 +353,7 @@
           "action": "kubernetes_prometheus_rules",
           "params": {
             "latency_threshold": 100,
-            "evaluation_window": "10s"
+            "evaluation_window": "120s"
           }
         }
       },
@@ -382,7 +382,7 @@
             "label": "astronomy-shop-recommendationservice",
             "delay_time": "120ms",
             "delay_jitter": "120ms",
-            "duration": "2m",
+            "duration": "3m",
             "interface": "eth0"
           }
         }
@@ -402,7 +402,7 @@
     },
     "loadgen": {
       "run_time": "5m",
-      "max_users": 600,
+      "max_users": 650,
       "spawn_rate": 50,
       "locust_files": [
         "/backend/locust/locust_basic_interaction.py",

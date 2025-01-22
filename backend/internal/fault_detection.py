@@ -25,6 +25,11 @@ class InjectedFault:
 
 class FaultDetectionAnalyzer(ABC):
     """Base class for fault detection analysis"""
+
+    @abstractmethod
+    def get_raw_detection_data(self, start_time: datetime, end_time: datetime) -> dict:
+        """Get raw detection data from the underlying system"""
+        pass
     
     @abstractmethod
     def get_detections(self, start_time: datetime, end_time: datetime) -> List[DetectionEvent]:
@@ -40,7 +45,6 @@ class FaultDetectionAnalyzer(ABC):
         """Analyze detection for all faults in an experiment"""
         end_time = datetime.now()
         start_time = end_time - timedelta(hours=24)
-        
         logger.info(f"Analyzing experiment from {start_time} to {end_time}")
         logger.info(f"Number of faults to analyze: {len(faults)}")
         
@@ -64,7 +68,11 @@ class PrometheusDetectionAnalyzer(FaultDetectionAnalyzer):
     
     def __init__(self, prometheus):
         self.prometheus = prometheus
-        logger.info("Initialized PrometheusDetectionAnalyzer")
+        logger.info("Initialized PrometheusDetectionAnalyzer with base URL: %s", prometheus.base_url)
+
+    def get_raw_detection_data(self, start_time: datetime, end_time: datetime) -> dict:
+        """Get raw detection data from Prometheus"""
+        return self.prometheus.get_alerts(start_time, end_time)
     
     def get_detections(self, start_time: datetime, end_time: datetime) -> List[DetectionEvent]:
         """Get detections from Prometheus alerts"""

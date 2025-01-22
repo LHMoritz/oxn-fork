@@ -251,8 +251,8 @@ async def create_batch_experiment(batch_experiment: BatchExperimentCreate):
     return experiment_manager.create_batch_experiment(batch_experiment.name, batch_experiment.config, batch_experiment.parameter_variations)
 
 @app.post("/experiments/batch/{batch_id}/run")
-async def run_batch_experiment(batch_id: str, experiment_config: ExperimentRun):
-    return experiment_manager.run_batch_experiment(batch_id, experiment_config.output_formats, experiment_config.runs)
+async def run_batch_experiment(batch_id: str, experiment_config: ExperimentRun, analyze: bool = Query(False, description="Enable analysis after experiment completion")):
+    return experiment_manager.run_batch_experiment(batch_id, experiment_config.output_formats, experiment_config.runs, analyze)
 
 
 @app.get("/experiments/batch/{batch_id}/{sub_experiment_id}/report")
@@ -334,6 +334,16 @@ async def health_check():
 async def get_experiment_config(experiment_id: str):
     """Get experiment configuration"""
     return experiment_manager.get_experiment_config(experiment_id)
+
+@app.get("/experiments/{experiment_id}/analyse-fault-detection")
+async def analyse_fault_detection(experiment_id: str):
+    """Analyse fault detection for an experiment"""
+    return experiment_manager.analyze_fault_detection(experiment_id)
+
+@app.get("/experiments/{experiment_id}/raw-detections")
+async def get_experiment_detections(experiment_id: str):
+    """Get raw detection data for an experiment"""
+    return experiment_manager.get_experiment_detections(experiment_id)
 
 # run with uvicorn:
 if __name__ == "__main__":

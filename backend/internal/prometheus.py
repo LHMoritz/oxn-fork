@@ -33,6 +33,7 @@ class Prometheus:
         address = None
         if isinstance(orchestrator, KubernetesOrchestrator):
             address = orchestrator.get_prometheus_address(target)
+            logger.info("Initialised Prometheus client with address: %s", address)
         else:
             address = orchestrator.get_prometheus_address()
         self.base_url = f"http://{address}:9090/api/v1/"
@@ -305,6 +306,7 @@ class Prometheus:
         try:
             response = self.session.get(url=url, params=params)
             response.raise_for_status()
+            #logger.info(f"Got Alerts From Prometheus: {response.json()}")
             return response.json()
         except (requests.ConnectionError, requests.HTTPError) as requests_exception:
             raise PrometheusException(

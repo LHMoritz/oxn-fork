@@ -81,6 +81,7 @@ up spot="":
 
 # Install SUE and OXN
 install dev="false":
+    #!/bin/bash
     echo "Installing OpenEBS..."
     kubectl apply -f https://openebs.github.io/charts/openebs-operator.yaml
 
@@ -103,7 +104,7 @@ install dev="false":
 
     echo "Installing OXN Platform..."
     kubectl create namespace oxn --dry-run=client -o yaml | kubectl apply -f -
-    if [ "$dev" == "true" ]; then helm install oxn-platform {{kubernetes_dir}}/oxn-platform --namespace oxn --create-namespace --set backend-chart.enabled=false --set backend-dev-chart.enabled=true; else helm install oxn-platform {{kubernetes_dir}}/oxn-platform --namespace oxn --create-namespace; fi
+    if [ {{dev}} == "true" ]; then helm install oxn-platform {{kubernetes_dir}}/oxn-platform --namespace oxn --create-namespace --set backend-chart.enabled=false --set backend-dev-chart.enabled=true; else helm install oxn-platform {{kubernetes_dir}}/oxn-platform --namespace oxn --create-namespace; fi
 
     echo "Waiting for OpenTelemetry Demo pods to be ready..."
     kubectl wait --for=condition=ready pod \
@@ -160,7 +161,7 @@ run-batch-experiment config_path="" output_path="" times="1":
 
     # Run the experiment (this blocks until the experiment is finished)
     curl -X POST \
-        "http://localhost:8000/experiments/batch/${experiment_id}/run" \
+        "http://localhost:8000/experiments/batch/${experiment_id}/run?analyze=true" \
         -H 'accept: application/json' \
         -H 'Content-Type: application/json' \
         -d '{"runs": '{{times}}', "output_formats": ["json"]}'
@@ -172,11 +173,10 @@ run-batch-experiment config_path="" output_path="" times="1":
         -H 'accept: application/json' \
         -O
     mv data {{output_path}}.zip
-    # Clean up port-forward
+    # Clean up port-forward - this may fail if the port-forward is not running because you might have created a separate port-forward
     pkill -f "kubectl port-forward.*8000:8000"
 
 run-single-experiment config_path="" output_path="" times="1":
-    #!/bin/bash
     #!/bin/bash
     if [ ! -f {{config_path}} ]; then echo "Config file {{config_path}} not found"; exit 1; fi
     # first get backend pod
@@ -209,6 +209,8 @@ run-single-experiment config_path="" output_path="" times="1":
     # Clean up port-forward
     pkill -f "kubectl port-forward.*8000:8000"
 
+upgrade:
+    helm upgrade astronomy-shop open-telemetry/opentelemetry-demo --namespace system-under-evaluation  -f {{manifests_dir}}/values_opentelemetry_demo.yaml
 generate-env:
     #!/usr/bin/env bash
     if [ -f .env ]; then

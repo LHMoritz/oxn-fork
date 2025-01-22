@@ -2,13 +2,13 @@ import zipfile
 import yaml
 from backend.internal.analysis import ExperimentAnalyzer
 from backend.internal.errors import StoreException
-from backend.internal.fault_detection import PrometheusDetectionAnalyzer
+from backend.internal.fault_detection import DetectionEvent, PrometheusDetectionAnalyzer
 from backend.internal.models.response import ResponseVariable
 from fastapi import HTTPException
 from pathlib import Path
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import fcntl
 import logging
 from fastapi.responses import FileResponse
@@ -132,7 +132,7 @@ class ExperimentManager:
         """Get experiment config"""
         return self.store.load(f"{experiment_id}_config", FileFormat.JSON)
     
-    def run_batch_experiment(self, batch_id: str, output_formats: List[str], runs: int):
+    def run_batch_experiment(self, batch_id: str, output_formats: List[str], runs: int, analyse_fault_detection: bool = False):
         """Run a batch experiment"""
         try:
             logger.info(f"Running batch experiment: {batch_id}")
@@ -150,6 +150,9 @@ class ExperimentManager:
                 try:
                     logger.info(f"Running sub experiment {sub_experiment_id} with params: {params}")
                     self.run_experiment(f"{batch_id}_{sub_experiment_id}", output_formats, runs)
+                    if analyse_fault_detection:
+                        # output data is stored - can be retrieved later using get_experiment_data
+                        self.analyze_fault_detection(f"{batch_id}_{sub_experiment_id}")
                 except Exception as e:
                     logger.error(f"Error running sub experiment {sub_experiment_id}: {e}")
                     raise e
@@ -402,14 +405,22 @@ class ExperimentManager:
         if experiment is None:
             raise ValueError(f"No experiment config found for experiment {experiment_id}")
         orchestrator = KubernetesOrchestrator(experiment_config=experiment)
-        prometheus_client = Prometheus(orchestrator)
-        
+        prometheus_client = Prometheus(orchestrator, target="sue")
+        prometheus_analyzer = PrometheusDetectionAnalyzer(prometheus_client)
+        end_time = datetime.now()
+        start_time = end_time - timedelta(hours=24)
         analyzer = ExperimentAnalyzer(
-            detection_analyzer=PrometheusDetectionAnalyzer(prometheus_client)
+            detection_analyzer=prometheus_analyzer
         )
-        
+        detections = prometheus_analyzer.get_raw_detection_data(start_time, end_time)
         results = analyzer.analyze_fault_detection(report)
-        
+
+        # Save detections
+        self.store.save(
+            f"{experiment_id}_detections",
+            {'detections': detections},
+            FileFormat.JSON
+        )
         # Save results
         self.store.save(
             f"{experiment_id}_fault_detection",
@@ -426,6 +437,13 @@ class ExperimentManager:
         if fault_detection is None:
             raise ValueError(f"No fault detection found for experiment {experiment_id}")
         return fault_detection   
+    
+    def get_experiment_detections(self, experiment_id: str) -> dict:
+        """Get raw detection data for an experiment"""
+        detections = self.store.load(f"{experiment_id}_detections", FileFormat.JSON)
+        if detections is None:
+            raise ValueError(f"No detections found for experiment {experiment_id}")
+        return detections
 
 
         
