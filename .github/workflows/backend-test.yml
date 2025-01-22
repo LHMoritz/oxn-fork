@@ -19,7 +19,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker buildx build -t backend-module-test:latest -f backend/Dockerfile.test backend/
+          docker buildx build --load -t backend-module-test:latest -f backend/Dockerfile.test backend/
 
       - name: Run Docker container
         run: |
