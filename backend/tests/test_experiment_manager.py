@@ -230,3 +230,4 @@ def test_get_batched_experiment_response_data(experiment_manager):
     experiment_manager.store.load.return_value = {'response': 'data'}
     response = experiment_manager.get_batched_experiment_response_data('batch_1', '0', 'response', 'json')
     assert response['response'] == 'data'
+    
