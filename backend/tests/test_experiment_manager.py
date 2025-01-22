@@ -16,8 +16,7 @@ from backend.internal.models.response import ResponseVariable
 from backend.internal.responses import MetricResponseVariable, TraceResponseVariable
 from backend.internal.store import DocumentStore, FileFormat
 from unittest.mock import MagicMock, patch
-import io
-import os
+import io 
 
 @pytest.fixture
 def test_dir():
