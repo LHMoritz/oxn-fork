@@ -1,0 +1,26 @@
+# .github/workflows/docker-test.yml
+name: Build and Test Docker Image
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build Docker image
+        run: |
+          docker build -t backend-backend-test:latest -f backend/Dockerfile.test backend/
+
+      - name: Run Docker container
+        run: |
+          docker run backend-backend-test:latest uv run pytest tests/ -v --tb=short -s
