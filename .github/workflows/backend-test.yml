@@ -1,5 +1,5 @@
 # .github/workflows/docker-test.yml
-name: Build and Test Docker Image
+name: Build Backend Service and Run Unit Tests
 
 on:
   push:

@@ -9,6 +9,7 @@ from backend.internal.experiment_manager import ExperimentManager
 import pandas as pd
 from backend.internal.models.response import ResponseVariable
 from backend.internal.responses import MetricResponseVariable, TraceResponseVariable
+from backend.internal.store import DocumentStore
 import zipfile
 
 
@@ -20,10 +21,11 @@ def test_dir():
     yield tmp_dir
     shutil.rmtree(tmp_dir)  # Cleanup after tests
 
+store: DocumentStore
 @pytest.fixture
 def experiment_manager(test_dir):
     """Create ExperimentManager instance with test directory"""
-    return ExperimentManager(test_dir)
+    return ExperimentManager(test_dir, store: DocumentStore)
 
 @pytest.fixture
 def sample_config():
