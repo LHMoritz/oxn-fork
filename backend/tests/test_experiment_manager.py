@@ -20,7 +20,6 @@ import io
 import os
 
 
-
 @pytest.fixture
 def test_dir():
     """Create a temporary directory for test data"""
