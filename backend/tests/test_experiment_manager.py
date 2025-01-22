@@ -21,7 +21,8 @@ def test_dir():
     yield tmp_dir
     shutil.rmtree(tmp_dir)  # Cleanup after tests
 
-store: DocumentStore
+store = DocumentStore()
+
 @pytest.fixture
 def experiment_manager(test_dir):
     """Create ExperimentManager instance with test directory"""
