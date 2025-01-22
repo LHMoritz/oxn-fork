@@ -8,7 +8,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - PYTHONPATH=/backend
+      - PYTHONPATH=/analysis
       - LOG_LEVEL=DEBUG
       - PYTHONUNBUFFERED=1
 

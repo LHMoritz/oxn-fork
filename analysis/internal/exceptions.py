@@ -24,3 +24,7 @@ class ServiceUnknown(Exception):
 class NoDataForExperiment(Exception):
     def __init__(self, message):
         super().__init__(message)
+
+class ConfigFileNotFound(Exception):
+    def __init__(self, message):
+        super().__init__(message)

@@ -9,7 +9,7 @@ This class can be seen as putting a single variable through the model.
 It will create the input for the Model
 '''
 
-class TraceVariableDataset(Dataset):
+class TraceVariableDatasetInference(Dataset):
     def __init__(self, dataframe: pd.DataFrame, labels: list[str], input_names: list[str]):
         self.dataframe: pd.DataFrame = dataframe
         self.col_names_labels: list[str] = labels

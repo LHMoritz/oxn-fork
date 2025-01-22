@@ -6,7 +6,7 @@ import constants
 import pandas as pd
 from pathlib import Path
 import json
-from exceptions import OXNFileNotFound, BatchExperimentsNotSupported, LabelNotPresent
+from exceptions import OXNFileNotFound, BatchExperimentsNotSupported, LabelNotPresent, ConfigFileNotFound
 from utils import get_treatment_column
 import numpy as np
 
@@ -49,7 +49,7 @@ class LocalStorageHandler(StorageHandler):
           if len(num) > 1:
                raise BatchExperimentsNotSupported("Batch Experiments not yet supported for Deep Learning")
           elif len(num) == 0:
-               raise OXNFileNotFound(f"Could not find Config file for  experiment: {experiment_id}")
+               raise ConfigFileNotFound(f"Could not find experiement configuration file for  experiment: {experiment_id}")
 
           with open(Path(self.experiment_path) / num[0], "r") as file:
                data = json.load(file)
