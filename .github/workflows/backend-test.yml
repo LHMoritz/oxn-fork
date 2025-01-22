@@ -19,8 +19,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker buildx build -t backend-test:latest -f backend/Dockerfile.test backend/
+          docker buildx build -t backend-module-test:latest -f backend/Dockerfile.test backend/
 
       - name: Run Docker container
         run: |
-          docker run backend-test:latest uv run pytest tests/ -v --tb=short -s
+          docker run backend-module-test:latest pytest tests/ -v --tb=short -s
