@@ -25,7 +25,7 @@ store: DocumentStore
 @pytest.fixture
 def experiment_manager(test_dir):
     """Create ExperimentManager instance with test directory"""
-    return ExperimentManager(test_dir, store: DocumentStore)
+    return ExperimentManager(test_dir, store)
 
 @pytest.fixture
 def sample_config():
