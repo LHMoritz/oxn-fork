@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch
 from exceptions import ServiceUnknown
 
+
 """
 Here we have to account for the case that there is no fault injected
 """

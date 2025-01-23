@@ -3,6 +3,8 @@
 This file just contains conmstants I use throught the entire backend
 """
 
+from pathlib import Path
+
 SERVICE_NAME_COLUMN = "service_name"
 SPAN_ID_COLUMN = "span_id"
 REF_TYPE_SPAN_ID = "ref_type_span_ID"
@@ -80,7 +82,8 @@ SERVICES_REVERSE = {
 
 # machine learning model constants
 MODEL_DIMENSIONS = [256, 1500, 1500, 1500, 17]
-MODEL_PATH = "./model/new_traceModel.pt"
+#ODEL_PATH = "./model/new_traceModel.pt"
 METRICS = ["micro_precision", "micro_recall", "micro_f1_score"]
+MODEL_PATH = Path("internal/model") / "new_traceModel.pt"
 
 

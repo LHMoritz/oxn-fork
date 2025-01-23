@@ -39,11 +39,19 @@ class Conditional_Prob(BaseModel):
     faulty_Error : Optional[float]
     faulty_No_Error : Optional[float]
 
+class TimeToResults(BaseModel):
+    pass
+
+class DataLength(BaseModel):
+    pass
+
 class AnalysisResponse(BaseModel):
     experiment_id : str
     metrics : Optional[List[VariableMetrics]]
     probability : Optional[List[Conditional_Prob]]
     message : Message
+    dataLenght : DataLength
+    timeToResults : TimeToResults
 
 
 ERROR_MESSAGES = {

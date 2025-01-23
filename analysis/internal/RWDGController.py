@@ -1,13 +1,12 @@
 
-from trace import Trace
 from urllib import response
 from TraceResponseVariable import TraceResponseVariable
 import pandas as pd
 import constants
 import numpy as np
-from StorageClient import LocalStorageHandler
 from utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df, get_treatment_column, get_index_for_service_label
 from exceptions import ColumnsNotPresent
+import logging
 
 '''
 This class Takes in  a dataframe from with distributed tracing data and generates a dataframe
@@ -66,6 +65,8 @@ class RWDGController:
 
                     for idx in range(len(numerical_column_names)):
                          var.adf_matrices[self.column_names[idx]].apply(mean_normalization, args=(avg_values[idx], min_values[idx], max_values[idx]))
+          
+          logger
 
      '''
      This functions labels the trace with a boolean column:

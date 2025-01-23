@@ -5,7 +5,7 @@ from utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_
 import torch
 import torch.nn as nn
 from TraceModel import TraceModel
-from analysis.internal.TraceVariableDatasetInference import TraceVariableDatasetInference
+from TraceVariableDatasetInference import TraceVariableDatasetInference
 import numpy as np
 from torcheval.metrics import MulticlassPrecision , MulticlassF1Score , MulticlassRecall
 from StorageClient import LocalStorageHandler
@@ -85,6 +85,9 @@ class ModelController:
                variable.micro_f1_score = metric.compute().item()
 
      def _get_highest_misclassification(self, variable : TraceResponseVariable) -> None:
+          pass
+
+     def aggregate_over_the_experiment() -> dict[str, float]:
           pass
 
      # TODO be careful with the filehandling

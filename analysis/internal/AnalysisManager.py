@@ -9,7 +9,11 @@ from StorageClient import LocalStorageHandler
 from TraceModel import TraceModel
 from exceptions import OXNFileNotFound, NoDataForExperiment
 from ModelController import ModelController
+import logging
+from utils import load_model
+import re
 
+logger = logging.getLogger(__name__)
 
 class AnalysisManager:
 
@@ -20,10 +24,12 @@ class AnalysisManager:
           self.experiment_label : str = self._get_label_for_experiment()
           self.rwdg_controller = RWDGController(self.response_variables, self.experiment_id, self.experiment_label)
           self.model_controller = ModelController(self.response_variables, self.experiment_id, model=trace_model, experiment_label=self.experiment_label, local_storage_handler=local_storage_handler)
+          self.failed_files : list[str] = []
      
      def _get_data_for_variables(self) -> list[TraceResponseVariable]:
           files_list = self.storage_handler.list_files_in_dir(self.experiment_id)
-          if len(files_list) == 0:
+          if len(files_list) == 0 :
+               logger.error(f"Could not find any data for ex: {self.experiment_id}")
                raise OXNFileNotFound(f"Cannot find data for experiment with ID: {self.experiment_id}")
 
           response_variables : list[TraceResponseVariable] = []
@@ -34,6 +40,7 @@ class AnalysisManager:
                tup = self.storage_handler.get_file_from_dir(file)
                if tup is None:
                     print(f"Could not retrieve data for file: {file}")
+                    self.failed_files.append(self.extract_variable_name_from_file(file))
                     continue
                response_variables.append(TraceResponseVariable(tup[0],self.experiment_id, tup[1] ))
           
@@ -48,10 +55,17 @@ class AnalysisManager:
      def analyze_experimment(self) -> tuple[dict[str, list[dict[str, float]]], dict[str, list[dict[str, float]]]]:
           self.rwdg_controller.iterate_over_varibales()
           return self.model_controller.evaluate_variables()
+     
+     def extract_servicename_from_file(self, file_name : str) -> str:
+          pattern = r'_(.*?)_traces\.json'
+          match = re.search(pattern, file_name)
+          if match:
+               return match.group(1)
+          else:
+               return file_name
+          
 
 
-if __name__=='__main__':
-     pass
        
 
 
