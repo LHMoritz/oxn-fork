@@ -19,7 +19,6 @@ fi
 # Define directories relative to script location
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 MANIFESTS_DIR="${SCRIPT_DIR}/../manifests"
-DASHBOARDS_DIR="${SCRIPT_DIR}/../dashboards"
 
 # Verify directories exist
 if [ ! -d "$MANIFESTS_DIR" ]; then
@@ -27,10 +26,6 @@ if [ ! -d "$MANIFESTS_DIR" ]; then
     exit 1
 fi
 
-if [ ! -d "$DASHBOARDS_DIR" ]; then
-    echo "Error: Dashboards directory not found: $DASHBOARDS_DIR"
-    exit 1
-fi
 
 echo "Installing OpenEBS..."
 kubectl apply -f https://openebs.github.io/charts/openebs-operator.yaml
@@ -140,7 +135,9 @@ echo "To extract results: ./extract-results.sh <remote-results-path> <local-dest
 echo "Installing OXN Platform..."
 kubectl create namespace oxn --dry-run=client -o yaml | kubectl apply -f -
 if [ "$1" == "--dev" ]; then
-    helm install oxn-platform ../oxn-platform --set backend-chart.enabled=false --set backend-dev-chart.enabled=true
+    helm install oxn-platform ../oxn-platform --set backend-chart.enabled=false --set backend-dev-chart.enabled=true \
+    --namespace oxn \
+    --create-namespace
 else
     helm install oxn-platform ../oxn-platform \
         --namespace oxn \

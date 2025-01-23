@@ -1,5 +1,10 @@
+from gevent import monkey
+monkey.patch_all()
+
+from math import log
 import time
 import unittest.mock
+from venv import logger
 import pytest
 from pathlib import Path
 import json
@@ -9,9 +14,9 @@ from backend.internal.experiment_manager import ExperimentManager
 import pandas as pd
 from backend.internal.models.response import ResponseVariable
 from backend.internal.responses import MetricResponseVariable, TraceResponseVariable
-import zipfile
-
-
+from backend.internal.store import DocumentStore, FileFormat
+from unittest.mock import MagicMock, patch
+import io 
 
 @pytest.fixture
 def test_dir():
@@ -21,9 +26,14 @@ def test_dir():
     shutil.rmtree(tmp_dir)  # Cleanup after tests
 
 @pytest.fixture
-def experiment_manager(test_dir):
-    """Create ExperimentManager instance with test directory"""
-    return ExperimentManager(test_dir)
+def mock_store():
+    store = MagicMock(spec=DocumentStore)
+    return store
+
+@pytest.fixture
+def experiment_manager(test_dir, mock_store):
+    """Create ExperimentManager instance with test directory and mocked store"""
+    return ExperimentManager(test_dir, mock_store)
 
 @pytest.fixture
 def sample_config():
@@ -104,448 +114,120 @@ def sample_config():
     }
 
 def test_create_experiment(experiment_manager, sample_config):
-    """Test creating a new experiment"""
-    experiment = experiment_manager.create_experiment(
-        name="Test Experiment",
-        config=sample_config
-    )
-    
+    """Test the creation of an experiment"""
+    experiment = experiment_manager.create_experiment(name="Test Experiment", config=sample_config)
+    assert experiment is not None
     assert experiment['name'] == "Test Experiment"
     assert experiment['status'] == "PENDING"
     assert experiment['spec'] == sample_config
-    
-    # Verify directory structure
-    exp_dir = Path(experiment['paths']['data']).parent
-    assert exp_dir.exists()
-    assert (exp_dir / 'data').exists()
-    assert (exp_dir / 'benchmark').exists()
-    assert (exp_dir / 'report').exists()
-    
-    # Verify experiment.json was created
-    assert (exp_dir / 'experiment.json').exists()
-    
-def test_get_experiment(experiment_manager, sample_config):
-    """Test retrieving an experiment"""
-    created = experiment_manager.create_experiment(
-        name="Test Experiment",
-        config=sample_config
-    )
-    
-    retrieved = experiment_manager.get_experiment(created['id'])
-    assert retrieved == created
 
-def test_get_nonexistent_experiment(experiment_manager):
-    """Test retrieving a non-existent experiment"""
-    assert experiment_manager.get_experiment("nonexistent") is None
+def test_create_batch_experiment(experiment_manager, sample_config):
+    """Test the creation of a batch experiment"""
+    parameter_variations = {"experiment.treatments.0.params.duration": "2m"}
+    batch_config = experiment_manager.create_batch_experiment("Batch Test", sample_config, parameter_variations)
+    assert batch_config is not None
+    assert batch_config['name'] == "Batch Test"
+    assert batch_config['status'] == "PENDING"
+    assert batch_config['parameter_variations'] == parameter_variations
 
-def test_experiment_exists(experiment_manager, sample_config):
-    """Test checking if experiment exists"""
-    experiment = experiment_manager.create_experiment(
-        name="Test Experiment",
-        config=sample_config
-    )
-    
-    assert experiment_manager.experiment_exists(experiment['id']) is True
-    assert experiment_manager.experiment_exists("nonexistent") is False
+def test_get_experiment_config(experiment_manager, sample_config):
+    """Test for get_experiment_config method"""
+    experiment_id = "test_experiment"
+    experiment_manager.store.load.return_value = sample_config
+    config = experiment_manager.get_experiment_config(experiment_id)
+    experiment_manager.store.load.assert_called_once_with(f"{experiment_id}_config", FileFormat.JSON)
+    assert config == sample_config
 
-def test_update_experiment(experiment_manager, sample_config):
-    """Test updating experiment metadata"""
-    experiment = experiment_manager.create_experiment(
-        name="Test Experiment",
-        config=sample_config
-    )
-    
-    updates = {
-        'status': 'RUNNING',
-        'started_at': '2023-12-07T12:00:00'
-    }
-    
-    updated = experiment_manager.update_experiment(experiment['id'], updates)
-    assert updated['status'] == 'RUNNING'
-    assert updated['started_at'] == '2023-12-07T12:00:00'
-    
-    # Verify changes were persisted
-    retrieved = experiment_manager.get_experiment(experiment['id'])
-    assert retrieved['status'] == 'RUNNING'
-    assert retrieved['started_at'] == '2023-12-07T12:00:00'
+def test_run_batch_experiment(experiment_manager):
+    """Test running a batch experiment"""
+    batch_id = "batch_1"
+    experiment_manager.store.load.return_value = [{'sub_experiment_id': 0}]
+    experiment_manager.run_experiment = MagicMock()
+    experiment_manager.run_batch_experiment(batch_id, ['json'], 1)
+    experiment_manager.run_experiment.assert_called_once()
+
+def test_get_experiment_report(experiment_manager):
+    """Test getting an experiment report"""
+    experiment_id = "test_experiment"
+    experiment_manager.store.load.return_value = {'report': 'data'}
+    report = experiment_manager.get_experiment_report(experiment_id)
+    assert report['report'] == 'data'
+    experiment_manager.store.load.assert_called_once_with(f"{experiment_id}_report", FileFormat.YAML)
+
+def test_run_experiment(experiment_manager, sample_config):
+    """Test running an experiment"""
+    experiment_id = "test_experiment"
+    experiment_manager.acquire_lock = MagicMock(return_value=True)
+    experiment_manager.release_lock = MagicMock()
+    experiment_manager.update_experiment_config = MagicMock()
+    experiment_manager.get_experiment_config = MagicMock(return_value={'spec': sample_config})
+    experiment_manager.run_experiment(experiment_id, ['json'], 1)
+    experiment_manager.update_experiment_config.assert_any_call(experiment_id, {'status': 'RUNNING'})
+    experiment_manager.update_experiment_config.assert_any_call(experiment_id, {'status': 'COMPLETED'})
+
+def test_update_experiment_config(experiment_manager, sample_config):
+    """Test updating experiment config"""
+    experiment_id = "test_experiment"
+    experiment_manager.store.load.return_value = sample_config
+    experiment_manager.update_experiment_config(experiment_id, {'status': 'UPDATED'})
+    experiment_manager.store.save.assert_called_once()
 
 def test_list_experiments(experiment_manager, sample_config):
     """Test listing all experiments"""
-    # Create a few experiments
-    exp1 = experiment_manager.create_experiment("Test 1", sample_config)
-    time.sleep(1)
-    exp2 = experiment_manager.create_experiment("Test 2", sample_config)
-    
+    experiment_manager.store.list_keys.return_value = ['1_config']
+    experiment_manager.store.load.return_value = sample_config
     experiments = experiment_manager.list_experiments()
-    assert len(experiments) == 2
-    assert experiments[exp1['id']] == exp1
-    assert experiments[exp2['id']] == exp2
+    assert '1_config' in experiments
 
-def test_acquire_release_lock(experiment_manager):
-    """Test experiment locking mechanism"""
-    # Should be able to acquire lock initially
+def test_acquire_lock(experiment_manager, test_dir):
+    """Test acquiring a lock"""
+    lock_file_path = test_dir / '.lock'
+    experiment_manager.lock_file = lock_file_path
+    with open(lock_file_path, 'w') as f:
+        pass
     assert experiment_manager.acquire_lock() is True
-    
-    # Second attempt should fail
-    assert experiment_manager.acquire_lock() is False
-    
-    # After releasing, should be able to acquire again
     experiment_manager.release_lock()
-    assert experiment_manager.acquire_lock() is True
+    assert not hasattr(experiment_manager, 'lock_fd')
 
-@pytest.mark.asyncio
-async def test_run_experiment(experiment_manager, sample_config):
-    """Test running an experiment"""
-    experiment = experiment_manager.create_experiment(
-        name="Test Experiment",
-        config=sample_config
-    )
-    
-    # Engine class mock
-    with unittest.mock.patch('backend.internal.engine.Engine') as MockEngine:
-        mock_engine = MockEngine.return_value
-        
-        experiment_manager.run_experiment(
-            experiment['id'],
-            output_format='hdf',
-            runs=1
-        )
-        
-        MockEngine.assert_called_once()
-        mock_engine.run.assert_called_once_with(
-            runs=1,
-            orchestration_timeout=None,
-            randomize=False,
-            accounting=False
-        )
-
-def test_write_experiment_data(experiment_manager):
-    """Test writing experiment data in different formats"""
-    experiment = experiment_manager.create_experiment(
-        name="Test Experiment vhjifk",
-        config={"test": "config"}
-    )
-    
-    # Create mock orchestrator
-    mock_orchestrator = unittest.mock.Mock()
-    
-    # Create test response data using concrete implementations
-    responses = {
-        "metric1": MetricResponseVariable(
-            orchestrator=mock_orchestrator,
-            name="metric1",
-            experiment_start=1000,
-            experiment_end=2000,
-            right_window="10s",
-            left_window="10s",
-            description={
-                "metric_name": "test_metric",
-                "step": 1,
-                "left_window": "10s",
-                "right_window": "10s"
-            },
-            target="oxn"
-        ),
-        "trace1": TraceResponseVariable(
-            orchestrator=mock_orchestrator,
-            name="trace1",
-            experiment_start=1000,
-            experiment_end=2000,
-            right_window="10s",
-            left_window="10s",
-            description={
-                "service_name": "test-service",
-                "limit": 100,
-                "left_window": "10s",
-                "right_window": "10s"
-            }
-        )
-    }
-    
-    # Set the data directly since we're not actually observing
-    responses["metric1"].data = pd.DataFrame({
-        "timestamp": [1, 2, 3],
-        "value": [10.0, 20.0, 30.0],
-        "cpu_usage": [0.5, 0.7, 0.9],
-        "memory_mb": [256, 512, 1024],
-        "requests_per_sec": [100, 150, 200]
-    })
-    responses["trace1"].data = pd.DataFrame({
-        "id": [1, 2],
-        "name": ["trace1", "trace2"], 
-        "duration": [100, 200],
-        "status": ["success", "success"],
-        "error_count": [0, 0],
-        "span_count": [5, 8]
-    })
-    
-    # Write data in different formats
-    # responses : Dict[str, ResponseVariable]
-    experiment_manager.write_experiment_data(
-        run=0,
-        experiment_id=experiment['id'],
-        responses=responses,
-        formats=["csv", "json"]
-    )
-    
-    # Verify files were created
-    data_dir = experiment_manager.experiments_dir / experiment['id'] / 'data'
-    assert (data_dir / f"0_{experiment['id']}_metric1.csv").exists()
-    assert (data_dir / f"0_{experiment['id']}_metric1.json").exists()
-    assert (data_dir / f"0_{experiment['id']}_trace1.json").exists()
-    
-    # Verify CSV content
-    df = pd.read_csv(data_dir / f"0_{experiment['id']}_metric1.csv")
-    assert len(df) == 3
-    assert list(df.columns) == ["timestamp", "value", "cpu_usage", "memory_mb", "requests_per_sec"]
-    
-    # Verify JSON content
-    with open(data_dir / f"0_{experiment['id']}_trace1.json") as f:
-        trace_data = json.load(f)
-        assert len(trace_data) == 2
+def test_release_lock(experiment_manager, test_dir):
+    """Test releasing a lock"""
+    lock_file_path = test_dir / '.lock'
+    experiment_manager.lock_file = lock_file_path
+    with open(lock_file_path, 'w') as f:
+        pass
+    experiment_manager.acquire_lock()
+    experiment_manager.release_lock()
+    assert not hasattr(experiment_manager, 'lock_fd')
 
 def test_get_experiment_response_data(experiment_manager):
-    """Test retrieving experiment response data"""
-    experiment = experiment_manager.create_experiment(
-        name="Test Experiment",
-        config={"test": "config"}
-    )
-    print(experiment['id'])
-    # Create mock orchestrator
-    mock_orchestrator = unittest.mock.Mock()
+    """Test getting experiment response data"""
+    experiment_manager.store.list_keys.return_value = ['1_0_response.json']
+    experiment_manager.store.load.return_value = {'data': 'response'}
+    response = experiment_manager.get_experiment_response_data(0, '1', 'response', 'json')
+    assert response['data'] == 'response'
+
+def test_get_experiment_data(experiment_manager):
+    """Test getting experiment data"""
+    experiment_manager.store.list_files.return_value = ['1_report.yaml']
+    experiment_manager.store.load.return_value = {'report': 'data'}
+    data = experiment_manager.get_experiment_data('1')
+    assert isinstance(data, io.BytesIO)
+
+def test_get_batched_experiment_id_by_params(experiment_manager):
+    """Test getting batched experiment ID by parameters"""
+    experiment_manager.store.load.return_value = [{'sub_experiment_id': '0', 'param': 1}]
+    sub_experiment_id = experiment_manager.get_batched_experiment_id_by_params('batch_1', {'param': 1})
+    assert sub_experiment_id == '0'
+
+def test_get_batched_experiment_report(experiment_manager):
+    """Test getting batched experiment report"""
+    experiment_manager.store.load.return_value = {'report': 'data'}
+    report = experiment_manager.get_batched_experiment_report('batch_1', '0')
+    assert report['report'] == 'data'
+
+def test_get_batched_experiment_response_data(experiment_manager):
+    """Test getting batched experiment response data"""
+    experiment_manager.store.load.return_value = {'response': 'data'}
+    response = experiment_manager.get_batched_experiment_response_data('batch_1', '0', 'response', 'json')
+    assert response['response'] == 'data'
     
-    # Create test response data
-    responses = {
-        "metric1": MetricResponseVariable(
-            orchestrator=mock_orchestrator,
-            name="metric1",
-            experiment_start=1000,
-            experiment_end=2000,
-            right_window="10s",
-            left_window="10s",
-            description={
-                "metric_name": "test_metric",
-                "step": 1,
-                "left_window": "10s",
-                "right_window": "10s"
-            },
-            target="oxn"
-        )
-    }
-    
-    # Set the data directly
-    responses["metric1"].data = pd.DataFrame({
-        "timestamp": [1, 2, 3],
-        "value": [10.0, 20.0, 30.0]
-    })
-
-    # Write data in different formats
-    experiment_manager.write_experiment_data(
-        run=0,
-        experiment_id=experiment['id'],
-        responses=responses,
-        formats=["csv", "json"]
-    )
-
-    # Test retrieving CSV data
-    csv_response = experiment_manager.get_experiment_response_data(
-        run=0,
-        experiment_id=experiment['id'],
-        response_name=f"metric1",
-        file_ending="csv"
-    )
-    assert csv_response.media_type == "text/csv"
-    assert csv_response.filename == f"0_{experiment['id']}_metric1.csv"
-
-    # Test retrieving JSON data  
-    json_response = experiment_manager.get_experiment_response_data(
-        run=0,
-        experiment_id=experiment['id'],
-        response_name=f"metric1", 
-        file_ending="json"
-    )
-    assert json_response.media_type == "application/json"
-    assert json_response.filename == f"0_{experiment['id']}_metric1.json"
-
-    # Test retrieving non-existent file
-    with pytest.raises(FileNotFoundError):
-        experiment_manager.get_experiment_response_data(
-            run=0,
-            experiment_id=experiment['id'],
-            response_name="nonexistent",
-            file_ending="csv"
-        )
-
-    # Test retrieving invalid file type
-    with pytest.raises(FileNotFoundError):
-        experiment_manager.get_experiment_response_data(
-            run=0,
-            experiment_id=experiment['id'],
-            response_name=f"0_{experiment['id']}_metric1",
-            file_ending="invalid"
-        )
-
-def test_zip_experiment_data(experiment_manager):
-    """Test zipping experiment data"""
-    experiment = experiment_manager.create_experiment(
-        name="Test Experiment",
-        config={"test": "config"}
-    )
-    
-    # Create mock orchestrator
-    mock_orchestrator = unittest.mock.Mock()
-    
-    # Create test response data
-    responses = {
-        "metric1": MetricResponseVariable(
-            orchestrator=mock_orchestrator,
-            name="metric1",
-            experiment_start=1000,
-            experiment_end=2000,
-            right_window="10s",
-            left_window="10s",
-            description={
-                "metric_name": "test_metric",
-                "step": 1,
-                "left_window": "10s",
-                "right_window": "10s"
-            },
-            target="oxn"
-        ),
-        "trace1": TraceResponseVariable(
-            orchestrator=mock_orchestrator,
-            name="trace1",
-            experiment_start=1000,
-            experiment_end=2000,
-            right_window="10s",
-            left_window="10s",
-            description={
-                "service_name": "test-service",
-                "limit": 100,
-                "left_window": "10s",
-                "right_window": "10s"
-            }
-        )
-    }
-    
-    # Set the data directly
-    responses["metric1"].data = pd.DataFrame({
-        "timestamp": [1, 2, 3],
-        "value": [10.0, 20.0, 30.0],
-        "cpu_usage": [0.5, 0.7, 0.9],
-        "memory_mb": [256, 512, 1024],
-        "requests_per_sec": [100, 150, 200]
-    })
-    responses["trace1"].data = pd.DataFrame({
-        "id": [1, 2],
-        "name": ["trace1", "trace2"], 
-        "duration": [100, 200],
-        "status": ["success", "success"],
-        "error_count": [0, 0],
-        "span_count": [5, 8]
-    })
-
-    # Write data in different formats
-    experiment_manager.write_experiment_data(
-        run=0,
-        experiment_id=experiment['id'],
-        responses=responses,
-        formats=["csv", "json"]
-    )
-
-    # Test zipping experiment data
-    zip_response = experiment_manager.zip_experiment_data(
-        experiment_id=experiment['id']
-    )
-
-    # the zip response is a PosixPath
-    assert isinstance(zip_response, Path)
-    assert zip_response.name == f"{experiment['id']}.zip"
-    assert zip_response.exists()
-    assert zip_response.is_file()
-    
-
-    # Test zipping non-existent experiment data
-    with pytest.raises(FileNotFoundError):
-        experiment_manager.zip_experiment_data(
-            experiment_id="nonexistent"
-        )
-
-def test_list_experiment_variables(experiment_manager):
-    """Test listing experiment variables"""
-    # Create test experiment with data
-    experiment = experiment_manager.create_experiment(
-        name="Test Experiment",
-        config={"test": "config"}
-    )
-
-    mock_orchestrator = unittest.mock.Mock()
-    
-    # Create and write test data
-    responses = {
-        "metric1": MetricResponseVariable(
-            orchestrator=mock_orchestrator,
-            name="metric1",
-            experiment_start=1000,
-            experiment_end=2000,
-            right_window="10s",
-            left_window="10s",
-            description={
-                "metric_name": "test_metric",
-                "step": 1,
-                "left_window": "10s",
-                "right_window": "10s"
-            },
-            target="oxn"
-        ),
-        "trace1": TraceResponseVariable(
-            orchestrator=mock_orchestrator,
-            name="trace1",
-            experiment_start=1000,
-            experiment_end=2000,
-            right_window="10s",
-            left_window="10s",
-            description={
-                "service_name": "test-service",
-                "limit": 100,
-                "left_window": "10s",
-                "right_window": "10s"
-            }
-        )
-    }
-
-    responses["metric1"].data = pd.DataFrame({
-        "timestamp": [1, 2, 3],
-        "value": [10.0, 20.0, 30.0],
-        "cpu_usage": [0.5, 0.7, 0.9],
-        "memory_mb": [256, 512, 1024],
-        "requests_per_sec": [100, 150, 200]
-    })
-    responses["trace1"].data = pd.DataFrame({
-        "id": [1, 2],
-        "name": ["trace1", "trace2"], 
-        "duration": [100, 200],
-        "status": ["success", "success"],
-        "error_count": [0, 0],
-        "span_count": [5, 8]
-    })
-    
-    experiment_manager.write_experiment_data(
-        run=0,
-        experiment_id=experiment['id'],
-        responses=responses,
-        formats=["csv", "json"]
-    )
-    
-    # Test listing variables
-    variables = experiment_manager.list_experiment_variables(experiment['id'])
-    assert variables is not None
-    print(variables)
-    var_names, file_endings = variables
-    assert f"metric1" in var_names
-    assert f"trace1" in var_names
-    assert "csv" in file_endings
-    assert "json" in file_endings
-    
-    # Test non-existent experiment
-    assert experiment_manager.list_experiment_variables("nonexistent") is None

@@ -1,5 +1,6 @@
 global:
   namespace: oxn
+  clusterRole: oxn-platform
 
 backend-chart:
   enabled: true
