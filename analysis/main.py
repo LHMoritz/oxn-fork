@@ -18,8 +18,9 @@ app.add_middleware(
     allow_headers=["*"],  
 )
 
-# more or less singelton classes
+
 VOLUME_MOUNT = "/mnt/oxn-data"
+ANALYIS_MOUNT = "/mnt/analysis-datastore"
 trace_model = load_model()
 storage_handler = LocalStorageHandler(VOLUME_MOUNT)
 
@@ -39,11 +40,19 @@ class Conditional_Prob(BaseModel):
     faulty_Error : Optional[float]
     faulty_No_Error : Optional[float]
 
+class TimeToResults(BaseModel):
+    pass
+
+class DataLength(BaseModel):
+    pass
+
 class AnalysisResponse(BaseModel):
     experiment_id : str
-    metrics : Optional[List[VariableMetrics]]
-    probability : Optional[List[Conditional_Prob]]
+    metrics : List[VariableMetrics]
+    probability : List[Conditional_Prob]
     message : Message
+    dataLenght : DataLength
+    timeToResults : TimeToResults
 
 
 ERROR_MESSAGES = {

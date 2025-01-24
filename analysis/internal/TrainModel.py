@@ -5,8 +5,8 @@ import pandas as pd
 from torch.utils.data import DataLoader, random_split
 from TraceModel import TraceModel, vizualize_training_err_and_acc
 import torch.nn as nn
-import constants
-from analysis.internal.TraceVariableDatasetInference import TraceVariableDatasetInference
+import internal.constants as constants
+from TraceVariableDatasetInference import TraceVariableDatasetInference
 import torch
 
 def build_new_mock_model():
@@ -35,7 +35,7 @@ def build_new_mock_model():
      dataset = pd.concat([var.adf_matrices for var in con.variables], ignore_index=True)
      one_hot_encoding_col_names = con.one_hot_encoding_column_names
      col_names_for_input_data = con.column_names
-     torch_dataset = TraceVariableDataset(dataframe=dataset, labels=one_hot_encoding_col_names, input_names=col_names_for_input_data)
+     torch_dataset = TraceVariableDatasetInference(dataframe=dataset, labels=one_hot_encoding_col_names, input_names=col_names_for_input_data)
      train_size = int(0.8 * len(torch_dataset)) 
      test_size = len(torch_dataset) - train_size
      training_data, test_data = random_split(torch_dataset, [train_size, test_size])
@@ -52,6 +52,7 @@ def build_new_mock_model():
      my_trace_model.save_model_dict(constants.MODEL_PATH)
      vizualize_training_err_and_acc(err=errors, acc=acc)
 
-
+"""
 if __name__=="__name__":
      build_new_mock_model()
+"""
