@@ -5,7 +5,6 @@ from pathlib import Path
 
 from internal.store import LocalFSStore, FileFormat
 
-
 class TestLocalFSStore(unittest.TestCase):
     def setUp(self):
         """Set up a temporary directory for the test."""
