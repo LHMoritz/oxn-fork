@@ -81,10 +81,7 @@ class TraceModel(nn.Module):
      
      def infer(self, input: torch.Tensor )-> torch.Tensor:
           input = input.unsqueeze(0)
-          print(input.shape)
           input = self.forward(input)
-          print(input)
-          print(input.shape)
           input = self.soft_max(input)
           return input
  

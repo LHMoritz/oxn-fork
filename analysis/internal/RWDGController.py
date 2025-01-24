@@ -1,11 +1,11 @@
 
 from urllib import response
-from TraceResponseVariable import TraceResponseVariable
+from internal.TraceResponseVariable import TraceResponseVariable
 import pandas as pd
-import constants
+import internal.constants as constants
 import numpy as np
-from utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df, get_treatment_column, get_index_for_service_label
-from exceptions import ColumnsNotPresent
+from internal.utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df, get_treatment_column, get_index_for_service_label
+from internal.exceptions import ColumnsNotPresent
 import logging
 
 '''
@@ -20,7 +20,7 @@ It is part of the RWDG Trace model and therefore part for the data wranglin for 
 # TODO : how much do the distribution differ from each other between fault and no fault for each response variable?
 # we still have the assumtion for a 
 
-
+logger = logging.getLogger(__name__)
 
 def mean_normalization( val : float, mean: float, min: float , max : float) -> float:
      nominator = val - mean
@@ -66,7 +66,6 @@ class RWDGController:
                     for idx in range(len(numerical_column_names)):
                          var.adf_matrices[self.column_names[idx]].apply(mean_normalization, args=(avg_values[idx], min_values[idx], max_values[idx]))
           
-          logger
 
      '''
      This functions labels the trace with a boolean column:
@@ -156,7 +155,8 @@ class RWDGController:
                          indices = stack[-1]
                          self.handle_internal_span(indices, adjency_matrix, span_duration)
                          continue
-                    else: continue
+                    else:
+                         continue
 
                ref_span_id = row[constants.REF_TYPE_SPAN_ID]
 
@@ -174,7 +174,7 @@ class RWDGController:
                     row_ind = constants.SERVICES[service_name]
                     col_ind = constants.SERVICES[ref_service_name]
                except Exception as e:
-                    print(f"ref_service_name or service_name : {ref_service_name}, {service_name} not found")
+                    #print(f"ref_service_name or service_name : {ref_service_name}, {service_name} not found")
                     continue
                if adjency_matrix[row_ind][col_ind][0] == -1:
                     adjency_matrix[row_ind][col_ind] = (1 , duration)

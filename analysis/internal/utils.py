@@ -1,11 +1,11 @@
 """
 Some utility functions I need in several classes
 """
-import constants
-from TraceModel import TraceModel
+import internal.constants as constants
+from internal.TraceModel import TraceModel
 import torch.nn as nn
 import torch
-from exceptions import ServiceUnknown
+from internal.exceptions import ServiceUnknown
 
 
 """

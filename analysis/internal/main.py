@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader, random_split
 from TraceModel import TraceModel, vizualize_training_err_and_acc
 import torch.nn as nn
 import matplotlib.pyplot as plt
-import constants
+import internal.constants as constants
 from analysis.internal.TraceVariableDatasetInference import TraceVariableDatasetInference
 from ModelController import ModelController
 import torch
@@ -43,10 +43,10 @@ def test_inference():
 
 
 
-
+"""
 if __name__=='__main__':
      test_inference()
-
+"""
 
 
 

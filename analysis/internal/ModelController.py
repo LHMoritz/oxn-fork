@@ -1,17 +1,15 @@
 
-from TraceResponseVariable import TraceResponseVariable
-import constants
-from utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df , get_index_for_service_label
+from internal.TraceResponseVariable import TraceResponseVariable
+import internal.constants as constants
+from internal.utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df , get_index_for_service_label
 import torch
-import torch.nn as nn
-from TraceModel import TraceModel
-from TraceVariableDatasetInference import TraceVariableDatasetInference
-import numpy as np
+from internal.TraceModel import TraceModel
+from internal.TraceVariableDatasetInference import TraceVariableDatasetInference
 from torcheval.metrics import MulticlassPrecision , MulticlassF1Score , MulticlassRecall
-from StorageClient import LocalStorageHandler
-import pandas as pd
+from internal.StorageClient import LocalStorageHandler
+import logging
 
-
+logger = logging.getLogger(__name__)
 
 class ModelController:
 
@@ -34,8 +32,7 @@ class ModelController:
           if variable.adf_matrices is not None:
                variable_dataset = TraceVariableDatasetInference(variable.adf_matrices,  self.one_hot_labels, self.input_labels)
                predicted_labels = []
-               actual_lables = [self.index_of_actual_label] * len(variable.adf_matrices)
-               print(len(variable.adf_matrices))
+               #actual_lables = [self.index_of_actual_label] * len(variable.adf_matrices)
                for x in range(len(variable.adf_matrices)):
                     input , _ = variable_dataset[x]
                     output = self.model.infer(input)
@@ -43,21 +40,50 @@ class ModelController:
                     predicted_labels.append(max_index)
 
                variable.predictions = torch.tensor(predicted_labels)
-          #variable.confusion_matrix = multiclass_confusion_matrix(torch.Tensor(predicted_labels), torch.Tensor(actual_lables), self.num_classes).numpy()
      
 
      def evaluate_variables(self) -> tuple[dict[str, list[dict[str, float]]], dict[str, list[dict[str, float]]]]:
-          print("starting tom evaluate varibales")
+          logger.info("starting to infer and evaluate variables")
           for var in self.variables:
-               print(f"evaluating for {var.service_name}")
-               self._infer_variable(variable=var)
-               self._f1_for_variable(var)
-               self._recall_for_variable(var)
-               self._precision_for_variable(var)
+               try:
+                    logger.info(f"evaluating for {var.service_name}")
+                    self._infer_variable(variable=var)
+                    self._f1_for_variable(var)
+                    self._recall_for_variable(var)
+                    self._precision_for_variable(var)
+               except Exception as e:
+                    logger.error(f"Error in evaluation the variable: {var.service_name} : {str(e)}")
           
-          prob_dict = self._save_cond_prob_to_disk()
-          metric_dict = self._save_metrics_to_disk()
-          return metric_dict, prob_dict
+          metrics = self._get_metrics()
+          probs = self._get_probs()
+          return metrics , probs
+          
+     
+     def _get_metrics(self) -> dict[str, list[dict[str, float]]]:
+          metrics = {}
+          for var in self.variables:
+               metrics_for_var = {}
+               if var.micro_f1_score is not None:
+                    metrics_for_var["micro_f1_score"] = var.micro_f1_score
+               if var.micro_precision is not None:
+                    metrics_for_var["micro_precision"] = var.micro_precision
+               if var.micro_recall is not None:
+                    metrics_for_var["micro_recall"] = var.micro_recall
+               
+               if len(metrics_for_var) > 0:
+                    metrics[var.service_name] = metrics_for_var
+          
+          return metrics
+
+     def _get_probs(self) -> dict[str, list[dict[str, float]]]:
+          probs = {}
+          for var in self.variables:
+               if len(var.error_ratio) > 0:
+                    probs[var.service_name] = var.error_ratio
+          
+          return probs
+          
+          
 
      '''
      For the next three function I will take the micro average between the classes or evaluation
@@ -89,26 +115,6 @@ class ModelController:
 
      def aggregate_over_the_experiment() -> dict[str, float]:
           pass
-
-     # TODO be careful with the filehandling
-     def _save_metrics_to_disk(self) -> dict[str, list[dict[str, float]]]:
-          metric_dict = {}
-          for var in self.variables:
-               variable_dict = {}
-               for metric in constants.METRICS:
-                    variable_dict[metric] = getattr(var, metric)
-               metric_dict[var.service_name] = variable_dict
-          
-          self.storage_handler.write_json_to_directory(f"metrics_all_variables_{self.experiment_id}", metric_dict )
-          return metric_dict
-     
-     def _save_cond_prob_to_disk(self) -> dict[str, list[dict[str, float]]]:
-          prob_dict = {}
-          for var in self.variables:
-               prob_dict[var.service_name] = var.error_ratio
-
-          self.storage_handler.write_json_to_directory(f"prob_all_variables{self.experiment_id}", prob_dict)
-          return prob_dict
 
 
 
