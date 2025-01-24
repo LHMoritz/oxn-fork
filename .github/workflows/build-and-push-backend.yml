@@ -1,14 +1,20 @@
 name: Build and Push Backend Docker Image
 
 on:
-  workflow_run:
-    workflows: ["Build and Push Analysis Docker Image"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
 
 jobs:
+  run-backend-test:
+    name: Trigger Backend Test
+    uses: ./.github/workflows/backend-test.yml
+
   push_to_registry:
     name: Push Docker Image to Hub
+    needs: run-backend-test
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
