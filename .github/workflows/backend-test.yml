@@ -1,4 +1,4 @@
-# .github/workflows/docker-test.yml
+# .github/workflows/backend-test.yml
 name: Build Backend Service and Run Unit Tests
 
 on:
