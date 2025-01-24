@@ -2,7 +2,6 @@ import unittest
 import tempfile
 import shutil
 from pathlib import Path
-
 from internal.store import LocalFSStore, FileFormat
 
 class TestLocalFSStore(unittest.TestCase):
