@@ -3,6 +3,8 @@ name: Build Backend Service and Run Unit Tests
 
 on:
   push:
+    branches-ignore:
+      - main
     paths:
       - 'backend/**'
   workflow_call:
