@@ -16,7 +16,6 @@ jobs:
     name: Push Docker Image to Hub
     needs: run-backend-test
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
