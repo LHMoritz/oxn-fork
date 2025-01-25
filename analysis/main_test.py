@@ -2,14 +2,18 @@
 Since, the program is heavily dependent on the on the input data. I will write some test using a mock database basically.
 """
 
-from internal.AnalysisManager import AnalysisManager
-from internal.utils import load_model
-from internal.StorageClient import LocalStorageHandler
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
+from analysis.internal.AnalysisManager import AnalysisManager
+from analysis.internal.utils import load_model
+from analysis.internal.StorageClient import LocalStorageHandler
 import logging
 
-OXN_MOUNT = "./internal/oxn"
-trace_model = load_model()
-storage_handler = LocalStorageHandler(OXN_MOUNT)
+
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -19,6 +23,11 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+OXN_MOUNT = "./internal/oxn"
+ANALYSIS_MOUNT = "./analyis/internal/oxn"
+trace_model = load_model()
+storage_handler = LocalStorageHandler(OXN_MOUNT, OXN_MOUNT)
 
 
 # ex_id : "01737208087"
@@ -82,7 +91,7 @@ def test_no_label_present_in_config(experiment_id) -> None:
      except Exception as e:
           logger.error(str(e))
 
-# ex_id
+# ex_id : 
 def test_data_for_ex_also_inlcudes_metrics(experiment_id) -> None:
      try:
           logger.info(f"starting experiment with id {experiment_id}")
@@ -108,7 +117,7 @@ def test_batch_experiments_not_supported(experiment_id) -> None:
 #test_no_config_present("01737200116")
 #test_no_data_present("62864836929")
 #test_no_label_present_in_config("1999")
-test_batch_experiments_not_supported("01737200116")
+#test_batch_experiments_not_supported("01737200116")
 
 
 

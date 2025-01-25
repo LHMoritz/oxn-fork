@@ -3,12 +3,12 @@ This class acts as a Boundary Class for the fastAPI.
 """
 
 
-from internal.RWDGController import RWDGController
-from internal.TraceResponseVariable import TraceResponseVariable
-from internal.StorageClient import LocalStorageHandler
-from internal.TraceModel import TraceModel
-from internal.exceptions import OXNFileNotFound, NoDataForExperiment, ConfigFileNotFound, LabelNotPresent, BatchExperimentsNotSupported
-from internal.ModelController import ModelController
+from analysis.internal.RWDGController import RWDGController
+from analysis.internal.TraceResponseVariable import TraceResponseVariable
+from analysis.internal.StorageClient import LocalStorageHandler
+from analysis.internal.TraceModel import TraceModel
+from analysis.internal.exceptions import OXNFileNotFound, NoDataForExperiment, ConfigFileNotFound, LabelNotPresent, BatchExperimentsNotSupported
+from analysis.internal.ModelController import ModelController
 import logging
 import time
 
@@ -23,7 +23,7 @@ ERROR_MESSAGES = {
     LabelNotPresent: "Could not find label for supervised learning in config file: {}",
 }
 
-def batch_experiment_predicate(file_name : str) -> bool:
+def batch_predicate(file_name : str) -> bool:
      return "batch" in file_name
 
 
@@ -42,18 +42,23 @@ class AnalysisManager:
      
      def _get_data_for_variables(self) -> list[TraceResponseVariable]:
           files_list = self.storage_handler.list_files_in_dir(self.experiment_id)
-          no_batch_files = list(filter(batch_experiment_predicate, files_list))
-          if len(no_batch_files) == 0:
-               logger.error("Batch Experiments nmot yet supported for Trace Analysis")
-               raise BatchExperimentsNotSupported("Batch Experiments nmot yet supported for Trace Analysis")
           if len(files_list) == 0 :
                logger.error(f"Could not find any data for ex: {self.experiment_id}")
                raise OXNFileNotFound(f"Cannot find data for experiment with ID: {self.experiment_id}")
+          
+          batch_files = list(filter(batch_predicate, files_list ))
+          if len(batch_files) > 0:
+               logger.error("Batch Experiments not yet supported")
+               raise BatchExperimentsNotSupported("Batch Experiments not yet supported")
 
           response_variables : list[TraceResponseVariable] = []
 
           for file in files_list:
                if "config" in file:
+                    continue
+               # checking for metric data
+               if "trace" not in file:
+                    logging.debug(f"file with name: {file} not a trace variable")
                     continue
                tup = self.storage_handler.get_file_from_dir(file)
                if tup is None:
@@ -84,12 +89,11 @@ class AnalysisManager:
                "experiment_id" : self.experiment_id,
                "metrics" : tup[0] if  tup is not None else [],
                "probability" : tup[1] if tup is not None else [],
-               #"message" : analysis_manager.construct_message(message),
                "failedVariables" : str(self.failed_files),
                "timeToResult" : self.time_to_result
           }
           self.storage_handler.write_json_to_directory(f"{self.experiment_id}_analysis_results", result)
-     
+     """
      def _construct_message(self, e: Exception | None) -> str:
           if e is None:
                return "Ok"
@@ -99,3 +103,4 @@ class AnalysisManager:
                     return message.format(str(e))
                
           return f"An error occurred: {str(e)}"
+     """

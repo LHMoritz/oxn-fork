@@ -4,12 +4,9 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./mnt/:/mnt/oxn-data/experiments
+      - ./internal/oxn:/mnt/oxn-data
+      - ./internal/analysis:/mnt/analysis-datastore
     ports:
-      - "8000:8000"
+      - "8001:8001"
     environment:
-      - PYTHONPATH=/analysis
-      - LOG_LEVEL=DEBUG
       - PYTHONUNBUFFERED=1
-
-  

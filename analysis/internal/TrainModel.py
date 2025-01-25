@@ -5,7 +5,7 @@ import pandas as pd
 from torch.utils.data import DataLoader, random_split
 from TraceModel import TraceModel, vizualize_training_err_and_acc
 import torch.nn as nn
-import internal.constants as constants
+import analysis.internal.constants as constants
 from TraceVariableDatasetInference import TraceVariableDatasetInference
 import torch
 

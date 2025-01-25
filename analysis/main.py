@@ -1,11 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from internal.AnalysisManager import AnalysisManager
-from internal.utils import load_model
-from internal.StorageClient import LocalStorageHandler
-from pydantic import BaseModel
-from typing import Optional, List
-from internal.exceptions import OXNFileNotFound, NoDataForExperiment, ConfigFileNotFound, LabelNotPresent
+from analysis.internal.AnalysisManager import AnalysisManager
+from analysis.internal.utils import load_model
+from analysis.internal.StorageClient import LocalStorageHandler
+import logging
 
 app = FastAPI(title="Analysis API", version="1.0.0")
 
@@ -18,83 +16,40 @@ app.add_middleware(
     allow_headers=["*"],  
 )
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
+
+# mount paths to the K8s persistent volumes
 VOLUME_MOUNT = "/mnt/oxn-data"
 ANALYIS_MOUNT = "/mnt/analysis-datastore"
+
+# "Singleton classes"
 trace_model = load_model()
-storage_handler = LocalStorageHandler(VOLUME_MOUNT)
-
-# data validation
-
-class Message(BaseModel):
-    message : str
-
-class VariableMetrics(BaseModel):
-    micro_precision: float
-    micro_recall : float
-    micro_f1_score : float
-
-class Conditional_Prob(BaseModel):
-    good_Error : Optional[float]
-    good_No_Error : Optional[float]
-    faulty_Error : Optional[float]
-    faulty_No_Error : Optional[float]
-
-class TimeToResults(BaseModel):
-    pass
-
-class DataLength(BaseModel):
-    pass
-
-class AnalysisResponse(BaseModel):
-    experiment_id : str
-    metrics : List[VariableMetrics]
-    probability : List[Conditional_Prob]
-    message : Message
-    dataLenght : DataLength
-    timeToResults : TimeToResults
+storage_handler = LocalStorageHandler(VOLUME_MOUNT, ANALYIS_MOUNT)
 
 
-ERROR_MESSAGES = {
-    FileNotFoundError: "Error Accessing the Database: {}",
-    OXNFileNotFound: "Could not find experiment in the Database: {}",
-    NoDataForExperiment: "No Data present for experiment: {}",
-    ConfigFileNotFound: "Could not find Configuration for experiment: {}",
-    LabelNotPresent: "Could not find label for supervised learning in config file: {}",
-}
-
-def construct_message(e: Exception) -> str:
-    for exception_type, message in ERROR_MESSAGES.items():
-        if isinstance(e, exception_type):
-            return message.format(str(e))
-    return f"An error occurred: {str(e)}"
-
-
-@app.get("/analyze", response_model=AnalysisResponse)
-def analyze_experiment(experiment_id : str):
-
-    response_massage : str = None
-    metric_dict : str = None
-    prob_dict : str = None
-
+def analysis_background_task(experiment_id : str): 
     try:
-
+        logger.info(f"starting experiment with id {experiment_id}")
         analysis_manager = AnalysisManager(experiment_id=experiment_id, local_storage_handler=storage_handler, trace_model=trace_model)
-        metric_dict , prob_dict = analysis_manager.analyze_experimment()
-
+        analysis_manager.analyze_experiment()
     except Exception as e:
-        response_massage = construct_message(e)
+        logger.error(f"An error occured: {str(e)}")
+        
+
+@app.get("/analyze")
+def analyze_experiment(experiment_id : str, background_task : BackgroundTasks):
+
+    background_task.add_task(analysis_background_task, experiment_id)
+    return {"message" : f"processing analysis for experiment_id: {experiment_id}"}
     
-    response = {
-        "experiment_id" : experiment_id,
-        "metrics" : metric_dict if  metric_dict is not None else [],
-        "probability" : prob_dict if prob_dict is not None else [],
-        "message" : response_massage
-    }
-
-    return response
-
-
 @app.get("/health")
 def health_check():
     return {"Hello": "Healty sign from Analysis :)"}
