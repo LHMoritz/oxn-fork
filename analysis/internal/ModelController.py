@@ -1,12 +1,12 @@
 
-from internal.TraceResponseVariable import TraceResponseVariable
-import internal.constants as constants
-from internal.utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df , get_index_for_service_label
+from analysis.internal.TraceResponseVariable import TraceResponseVariable
+import analysis.internal.constants as constants
+from analysis.internal.utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df , get_index_for_service_label
 import torch
-from internal.TraceModel import TraceModel
-from internal.TraceVariableDatasetInference import TraceVariableDatasetInference
+from analysis.internal.TraceModel import TraceModel
+from analysis.internal.TraceVariableDatasetInference import TraceVariableDatasetInference
 from torcheval.metrics import MulticlassPrecision , MulticlassF1Score , MulticlassRecall
-from internal.StorageClient import LocalStorageHandler
+from analysis.internal.StorageClient import LocalStorageHandler
 import logging
 
 logger = logging.getLogger(__name__)

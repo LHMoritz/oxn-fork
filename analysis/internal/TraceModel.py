@@ -6,10 +6,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from typing import Callable
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import pandas as pd
-import os
+
 
 
 class TraceModel(nn.Module):
@@ -101,7 +101,10 @@ class TraceModel(nn.Module):
      def save_model_dict(self, PATH) -> None: 
           #print(model.state_dict())
           torch.save(self.state_dict(), PATH)
-     
+
+"""
+
+
 def vizualize_training_err_and_acc(err : list[float], acc : list[float]) -> None:
      x_axis = list(range(len(err)))
      plt.plot(x_axis, err, label='Mean Error', marker='o')
@@ -117,6 +120,8 @@ def vizualize_test_err_and_acc(err : list[float], acc : list[float]) -> None:
      plt.title("Test")
      plt.legend()
      plt.show()
+
+"""
 
 
 

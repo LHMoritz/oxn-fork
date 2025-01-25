@@ -2,12 +2,12 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import os
-import internal.constants as constants
+import analysis.internal.constants as constants
 import pandas as pd
 from pathlib import Path
 import json
-from internal.exceptions import  BatchExperimentsNotSupported, LabelNotPresent, ConfigFileNotFound
-from internal.utils import get_treatment_column
+from analysis.internal.exceptions import  BatchExperimentsNotSupported, LabelNotPresent, ConfigFileNotFound
+from analysis.internal.utils import get_treatment_column
 import numpy as np
 import logging
 import re
@@ -40,10 +40,14 @@ def config_predicate(name:str) -> bool:
 
 class LocalStorageHandler(StorageHandler):
 
-     def __init__(self, base_path :str) -> None:
+     def __init__(self, oxn_data_path :str, analyis_path : str) -> None:
           super().__init__()
-          self.experiment_path = Path(base_path) / 'experiments'
-          self.analysis_path = Path(base_path) / 'analysis'
+          self.experiment_path = Path(oxn_data_path) / 'experiments'
+          self.analysis_path = Path(analyis_path) #/ 'analysis'
+          logger.info("Sucessfully initialized StorageHandler")
+          #logger.info(self.experiment_path)
+          #logger.info(self.analysis_path)
+          #logger.info(os.listdir(self.experiment_path))
      
      """
      Gets the label for the experiment (the Microservice name in which the fault was injected)
@@ -63,13 +67,18 @@ class LocalStorageHandler(StorageHandler):
                data = json.load(file)
 
           try:
-               add_security_context = data['spec']['experiment']['treatments'][0]['add_security_context']
-               if "label" not in add_security_context['params']:
-                    logger.error("Label for supervised learning not found")
-                    raise LabelNotPresent("Label for supervised learning not found")
-               a = add_security_context['params']['label']
-               logger.info(a)
-               return  a
+               treatments = data['spec']['experiment']['treatments']
+               for treatment in treatments:
+                    if "add_security_context" in treatment:
+                         add_security_context = treatment["add_security_context"]
+                         logging.debug(add_security_context)
+                         if "params" in add_security_context:
+                              params = add_security_context["params"]
+                              
+                              if "label" in params:
+                                   return params["label"]
+
+               raise LabelNotPresent("Label for supervised learning not found")
           except KeyError as e:
                logger.error(f"could not find label for supervised Learning: {e}")
                raise LabelNotPresent("Label for supervised learning not found")

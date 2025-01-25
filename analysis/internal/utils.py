@@ -1,12 +1,14 @@
 """
 Some utility functions I need in several classes
 """
-import internal.constants as constants
-from internal.TraceModel import TraceModel
+import analysis.internal.constants as constants
+from analysis.internal.TraceModel import TraceModel
 import torch.nn as nn
 import torch
-from internal.exceptions import ServiceUnknown
+from analysis.internal.exceptions import ServiceUnknown
+import logging
 
+logger = logging.getLogger(__name__)
 
 """
 Here we have to account for the case that there is no fault injected
@@ -22,21 +24,23 @@ def build_colum_names_for_adf_mat_df() -> list[str]:
      for _ , out_val in constants.SERVICES.items():
           for _ , in_val in constants.SERVICES.items():
                result.append(f"{out_val}_{in_val}")
-
-     #result.append(constants.ERROR_IN_TRACE_COLUMN)
-     #print(result)
      return result
 
 """
 This function loads the Model
 """
 def load_model() -> TraceModel:
-     model = TraceModel(nn.CrossEntropyLoss(), constants.MODEL_DIMENSIONS, nn.ReLU())
-     state_dict = torch.load(constants.MODEL_PATH, weights_only=True)
-     model.load_state_dict(state_dict)
-     # set the model to Evaluation mode to infer on unseen data
-     model.eval()
-     return model
+     try:
+          model = TraceModel(nn.CrossEntropyLoss(), constants.MODEL_DIMENSIONS, nn.ReLU())
+          state_dict = torch.load(constants.MODEL_PATH, weights_only=True)
+          model.load_state_dict(state_dict)
+          # set the model to Evaluation mode to infer on unseen data
+          model.eval()
+          logging.info("successfully deserialized the model from disk")
+          return model
+     except Exception as e:
+          logger.error("Could not load serialzed trace model from disk, exiting process")
+          exit(1)
 
 def get_treatment_column(column_names : list[str]) -> str:
      for col in column_names:
@@ -50,9 +54,9 @@ def get_index_for_service_label(label : str) -> int:
           index : int = constants.SERVICES[label]
           return index
      except KeyError as e:
-           raise ServiceUnknown("Service for the label is unknown")
+          raise ServiceUnknown("ServiceName for the label is unknown")
 
-
+"""
 if __name__=='__main__':
      build_colum_names_for_adf_mat_df()
      a = get_treatment_column(['index', 'trace_id', 'span_id', 'operation', 'start_time', 'end_time',
@@ -60,3 +64,5 @@ if __name__=='__main__':
        'ref_type_span_ID', 'ref_type_trace_ID', 'add_security_context',
        'loss_treatment'])
      print(a)
+
+"""

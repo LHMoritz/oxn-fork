@@ -107,6 +107,9 @@ However, this gives us the opporunity to build interesting KPIs around the Class
      - 1 output layer [Dimensions : number of Microservices, activation : softmax (so it can be interpreted as probability)]
 
      We will train with Adam Algorithm
+
+
+
      
      
 

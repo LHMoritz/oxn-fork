@@ -1,11 +1,11 @@
 
 from urllib import response
-from internal.TraceResponseVariable import TraceResponseVariable
+from analysis.internal.TraceResponseVariable import TraceResponseVariable
 import pandas as pd
-import internal.constants as constants
+import analysis.internal.constants as constants
 import numpy as np
-from internal.utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df, get_treatment_column, get_index_for_service_label
-from internal.exceptions import ColumnsNotPresent
+from analysis.internal.utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df, get_treatment_column, get_index_for_service_label
+from analysis.internal.exceptions import ColumnsNotPresent
 import logging
 
 '''
