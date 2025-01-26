@@ -17,6 +17,8 @@ from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
 from backend.internal.utils import dict_product, update_dict_with_parameter_variations
 from backend.internal.store import DocumentStore, FileFormat
 import io
+import os
+import requests
 logger = logging.getLogger(__name__)
 """
 Experiment Config filename : <experiment_id>_config.json
@@ -200,6 +202,8 @@ class ExperimentManager:
                         logger.error(f"response data is None for {response.name}")
 
             self.store.save(f"{experiment_id}_report", report_data, FileFormat.YAML)
+            # Call the analysis service here
+            self.call_analysis_service(experiment_id)
 
         except Exception as e:
             logger.error(f"Error running experiment: {e}")
@@ -209,6 +213,25 @@ class ExperimentManager:
         finally:
             self.update_experiment_config(experiment_id, {'status': 'COMPLETED'})
             self.release_lock()
+
+    def call_analysis_service(self, experiment_id: str) -> None:
+        """Calls the analysis service to analyze the experiment results"""
+        try:
+            analysis_url = os.getenv("ANALYSIS_URL", "http://analysis-module:8001")
+            response = requests.get(
+                f"{analysis_url}/analyze",
+                params={"experiment_id": experiment_id}
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"Error calling analysis service: {response.status_code}")
+                return
+                
+            logger.info(f"Analysis service successfully called for experiment {experiment_id}")
+            
+        except Exception as e:
+            logger.error(f"Error calling analysis service: {str(e)}")
+
 
     def update_experiment_config(self, experiment_id, updates):
         """Update experiment config"""

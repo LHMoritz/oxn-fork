@@ -24,12 +24,22 @@ spec:
         env:
         - name: BACKEND_URL
           value: "http://backend-module:8000"
+        - name: OXN_RESULTS_PATH
+          value: "/mnt/oxn-data"
+        - name: OXN_ANALYSIS_PATH
+          value: "/mnt/analysis-datastore"
         ports:
         - containerPort: 8001
         volumeMounts:
         - name: analysis-datastore
           mountPath: /mnt/analysis-datastore
+        - name: backend-storage
+          mountPath: /mnt/oxn-data
       volumes:
       - name: analysis-datastore
         persistentVolumeClaim:
           claimName: {{ .Chart.Name }}-analysis-datastore-pvc
+      - name: backend-storage
+        persistentVolumeClaim:
+          claimName: backend-module-backend-pvc
+
