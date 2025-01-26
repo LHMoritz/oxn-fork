@@ -4,7 +4,8 @@ from analysis.internal.AnalysisManager import AnalysisManager
 from analysis.internal.utils import load_model
 from analysis.internal.StorageClient import LocalStorageHandler
 import logging
-
+import os
+import requests
 app = FastAPI(title="Analysis API", version="1.0.0")
 
 
@@ -27,8 +28,8 @@ logger = logging.getLogger(__name__)
 
 
 # mount paths to the K8s persistent volumes
-VOLUME_MOUNT = "/mnt/oxn-data"
-ANALYIS_MOUNT = "/mnt/analysis-datastore"
+VOLUME_MOUNT = os.getenv("OXN_RESULTS_PATH", "/mnt/oxn-data")
+ANALYIS_MOUNT = os.getenv("OXN_ANALYSIS_PATH", "/mnt/analysis-datastore")
 
 # "Singleton classes"
 trace_model = load_model()
@@ -44,7 +45,7 @@ def analysis_background_task(experiment_id : str):
         logger.error(f"An error occured: {str(e)}")
         
 
-@app.get("/analyze")
+@app.get("/analyze") # Called when an experiment has finished and saved the results to the storage
 def analyze_experiment(experiment_id : str, background_task : BackgroundTasks):
 
     background_task.add_task(analysis_background_task, experiment_id)

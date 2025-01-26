@@ -1,5 +1,6 @@
 from pathlib import Path
 from gevent import monkey
+import os
 
 from backend.internal.errors import StoreException
 monkey.patch_all()
@@ -55,7 +56,7 @@ async def startup_event():
     logger.addHandler(handler) """
 
 ############### Store and Experiment Manager ###############
-base_path = "/mnt/oxn-data"
+base_path = os.getenv("OXN_RESULTS_PATH", "/mnt/oxn-data")
 store = LocalFSStore(base_path)
 experiment_manager = ExperimentManager(Path(base_path), store)
 experiments_dir = Path(base_path) / 'experiments'

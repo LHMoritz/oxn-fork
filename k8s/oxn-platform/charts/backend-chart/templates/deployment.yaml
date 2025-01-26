@@ -26,7 +26,19 @@ spec:
         volumeMounts:
         - name: backend-storage
           mountPath: /mnt/oxn-data
+        - name: analysis-datastore
+          mountPath: /mnt/analysis-datastore
+        env:
+        - name: ANALYSIS_URL
+          value: "http://analysis-module:8001"
+        - name: OXN_RESULTS_PATH
+          value: "/mnt/oxn-data"
+        - name: OXN_ANALYSIS_PATH
+          value: "/mnt/analysis-datastore"
       volumes:
       - name: backend-storage
         persistentVolumeClaim:
           claimName: {{ .Chart.Name }}-backend-pvc
+      - name: analysis-datastore
+        persistentVolumeClaim:
+          claimName: analysis-module-analysis-datastore-pvc
