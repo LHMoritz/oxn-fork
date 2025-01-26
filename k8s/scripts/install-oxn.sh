@@ -133,15 +133,10 @@ echo "To run an experiment: ./run-experiment.sh <experiment-yaml-file> [addition
 echo "To extract results: ./extract-results.sh <remote-results-path> <local-destination-dir>"
 
 echo "Installing OXN Platform..."
-kubectl create namespace oxn --dry-run=client -o yaml | kubectl apply -f -
 if [ "$1" == "--dev" ]; then
-    helm install oxn-platform ../oxn-platform --set backend-chart.enabled=false --set backend-dev-chart.enabled=true \
-    --namespace oxn \
-    --create-namespace
+    helm install oxn-platform ../oxn-platform --set backend-chart.enabled=false --set backend-dev-chart.enabled=true
 else
-    helm install oxn-platform ../oxn-platform \
-        --namespace oxn \
-    --create-namespace
+    helm install oxn-platform ../oxn-platform
 fi
 
 echo "Waiting for OXN Platform pods to be ready..."
@@ -149,4 +144,3 @@ kubectl wait --for=condition=ready pod \
     --all \
     -n oxn \
     --timeout=300s
-    
