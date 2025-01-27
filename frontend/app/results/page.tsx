@@ -1,12 +1,29 @@
-
+"use client";
+import { ExperimentType } from "@/types";
 import { ExperimentsTable } from "@/components/dynamic-table/table"
 import { allResultsConfig } from "@/components/dynamic-table/table-columns"
-import { allResults } from "@/mock-data/results"
+import { useState, useEffect } from "react";
+import { useApi } from "@/hooks/use-api";
 import { prepareResultsTableData } from "@/utils/results";
 
+export default function ResultsPage() {
+  const [tableData, setTableData] = useState<ExperimentType[]>([]);
+  const { get, loading } = useApi();
 
-export default async function ResultsPage() {
-  const tableData = prepareResultsTableData(allResults);
+  const fetchResults = async () => {
+    try {
+      const response = await get("/results");
+      const preparedData = prepareResultsTableData(response);
+      setTableData(preparedData);
+    } catch (error) {
+      console.error("Error fetching results:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchResults();
+  }, []);
+
   return (
     <div>
       <div>
