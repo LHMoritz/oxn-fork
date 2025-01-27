@@ -51,7 +51,7 @@ export default function ParsedContentDisplay({
   const onStartExperiment = async () => {
     try {
       // TODO: Uncomment API call and remove hardcoded response below
-      const response = await post(`/experiments/${experimentId}/run`, {
+      const response = await post(`/experiments/${experimentId}/runsync`, {
         runs: 1,
         output_format: "json"
       });
