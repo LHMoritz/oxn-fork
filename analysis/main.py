@@ -5,7 +5,6 @@ from analysis.internal.utils import load_model
 from analysis.internal.StorageClient import LocalStorageHandler
 import logging
 import os
-import requests
 app = FastAPI(title="Analysis API", version="1.0.0")
 
 
