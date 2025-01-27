@@ -94,6 +94,7 @@ async def create_experiment(experiment: ExperimentCreate):
         config=experiment.config
     )
 
+# Is this api outedated? - As we use the /experiments/{experiment_id}/runsync route now
 @app.post("/experiments/{experiment_id}/run", response_model=Dict)
 async def run_experiment(
     experiment_id: str,
@@ -293,7 +294,7 @@ async def list_experiments(
     """
     List all experiments
     """
-    experiments = experiment_manager.list_experiments()
+    experiments = experiment_manager.list_experiments_status()
     response = []
     for e in experiments:
         response.append(ExperimentStatus(

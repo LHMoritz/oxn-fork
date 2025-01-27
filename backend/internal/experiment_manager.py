@@ -254,6 +254,17 @@ class ExperimentManager:
                     experiments[document] = experiment_config
         return experiments
     
+    def list_experiments_status(self):
+        """List all Status of all experiments"""
+        all_documents = self.store.list_keys()
+        experiments = {}
+        for document in all_documents:
+            if not document.endswith("_config"):
+                experiment_config = self.store.load(document, FileFormat.JSON)
+                if experiment_config is not None and isinstance(experiment_config, dict):
+                    experiments[document] = experiment_config
+        return experiments
+    
 
     def acquire_lock(self):
         """File-based locking using fcntl"""
