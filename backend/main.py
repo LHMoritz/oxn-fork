@@ -216,6 +216,15 @@ async def get_benchmark_data(experiment_id: str):
     # TODO: Implement CSV file download response
     pass
 
+@app.get("/results")
+async def get_experiment_result():
+    """
+        Get all experiment results
+    """
+    # TODO: Implement CSV file download response
+    pass
+
+
 @app.get("/experiments/{experiment_id}/report")
 async def get_experiment_report(experiment_id: str):
     """
