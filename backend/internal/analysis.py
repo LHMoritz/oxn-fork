@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, List
 import logging
-from backend.internal.fault_detection import DetectionEvent, InjectedFault, FaultDetectionAnalyzer
+from backend.internal.fault_detection import DetectionAnalysisResult, DetectionEvent, InjectedFault, FaultDetectionAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class ExperimentAnalyzer:
         
         return faults
     
-    def analyze_fault_detection(self, report: Dict) -> List[Dict]:
+    def analyze_fault_detection(self, report: Dict) -> List[DetectionAnalysisResult]:
         """Analyze fault detection for an experiment"""
         faults = self.extract_faults_from_report(report)
         return self.detection_analyzer.analyze_experiment(faults)

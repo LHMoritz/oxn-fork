@@ -216,6 +216,7 @@ class ExperimentManager:
             import traceback
             logger.error(f"stacktrace: {traceback.format_exc()}")
             self.update_experiment_config(experiment_id, {'status': 'FAILED', 'error_message': str(e)})
+            raise e
         finally:
             self.update_experiment_config(experiment_id, {'status': 'COMPLETED'})
             self.release_lock()
@@ -394,7 +395,7 @@ class ExperimentManager:
         """Save fault detection results for an experiment"""
         self.store.save(f"{experiment_id}_{mechanism}_detection", results, FileFormat.JSON)
         
-    def analyze_fault_detection(self, experiment_id: str) -> Dict:
+    def analyze_fault_detection(self, experiment_id: str):
         """Analyze fault detection for an experiment"""
         report = self.get_experiment_report(experiment_id)
         if report is None:
@@ -415,6 +416,10 @@ class ExperimentManager:
         detections = prometheus_analyzer.get_raw_detection_data(start_time, end_time)
         results = analyzer.analyze_fault_detection(report)
 
+        serializable_results = [result.to_dict() for result in results]
+
+
+
         # Save detections
         self.store.save(
             f"{experiment_id}_detections",
@@ -423,12 +428,12 @@ class ExperimentManager:
         )
         # Save results
         self.store.save(
-            f"{experiment_id}_fault_detection",
-            {'results': results},
-            FileFormat.JSON
-        )
+        f"{experiment_id}_fault_detection",
+        {'results': serializable_results},
+        FileFormat.JSON
+    )
         
-        return results
+        return serializable_results
         
 
     def get_experiment_fault_detection(self, experiment_id: str) -> Dict:

@@ -143,15 +143,18 @@ async def run_experiment_sync(
         
     
     logger.info(f"Running experiment synchronously: {experiment_id}")
-    experiment_manager.run_experiment(
-        experiment_id,
-        output_formats=run_config.output_formats,
-        runs=run_config.runs
-    )
+    try:
+        experiment_manager.run_experiment(
+            experiment_id,
+            output_formats=run_config.output_formats,
+            runs=run_config.runs
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
     return {
         "status": "accepted",
-        "message": "Experiment started successfully",
+        "message": "Experiment completed successfully",
         "experiment_id": experiment_id
     }
 
@@ -252,7 +255,11 @@ async def create_batch_experiment(batch_experiment: BatchExperimentCreate):
 
 @app.post("/experiments/batch/{batch_id}/run")
 async def run_batch_experiment(batch_id: str, experiment_config: ExperimentRun, analyze: bool = Query(False, description="Enable analysis after experiment completion")):
-    return experiment_manager.run_batch_experiment(batch_id, experiment_config.output_formats, experiment_config.runs, analyze)
+    try:
+        return experiment_manager.run_batch_experiment(batch_id, experiment_config.output_formats, experiment_config.runs, analyze)
+    except Exception as e:
+        logger.error(f"Error running batch experiment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/experiments/batch/{batch_id}/{sub_experiment_id}/report")

@@ -402,7 +402,7 @@
     },
     "loadgen": {
       "run_time": "5m",
-      "max_users": 650,
+      "max_users": 500,
       "spawn_rate": 50,
       "locust_files": [
         "/backend/locust/locust_basic_interaction.py",

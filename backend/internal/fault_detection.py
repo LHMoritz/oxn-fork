@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from typing import Dict, List, Protocol
 import logging
+
+from backend.internal.prometheus import Prometheus
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,20 @@ class InjectedFault:
     type: str
     params: Dict
 
+@dataclass
+class DetectionAnalysisResult:
+    """Represents the result of analyzing a fault detection"""
+    fault_name: str
+    detected: bool
+    detection_time: str | None
+    detection_latency: float | None
+    true_positives: List[Dict]
+    false_positives: List[Dict]
+    def to_dict(self) -> dict:
+        """Convert the dataclass instance to a dictionary"""
+        return asdict(self)
+    
+
 class FaultDetectionAnalyzer(ABC):
     """Base class for fault detection analysis"""
 
@@ -37,11 +53,11 @@ class FaultDetectionAnalyzer(ABC):
         pass
     
     @abstractmethod
-    def analyze_detection(self, fault: InjectedFault, detections: List[DetectionEvent]) -> Dict:
+    def analyze_detection(self, fault: InjectedFault, detections: List[DetectionEvent]) -> DetectionAnalysisResult:
         """Analyze if and when a fault was detected"""
         pass
     
-    def analyze_experiment(self, faults: List[InjectedFault]) -> List[Dict]:
+    def analyze_experiment(self, faults: List[InjectedFault]) -> List[DetectionAnalysisResult]:
         """Analyze detection for all faults in an experiment"""
         end_time = datetime.now()
         start_time = end_time - timedelta(hours=24)
@@ -56,17 +72,13 @@ class FaultDetectionAnalyzer(ABC):
             logger.debug(f"Analyzing fault: {fault.name} ({fault.type})")
             result = self.analyze_detection(fault, detections)
             results.append(result)
-            if result['detected']:
-                logger.info(f"Fault {fault.name} was detected after {result['detection_latency']}s")
-            else:
-                logger.warning(f"Fault {fault.name} was not detected")
         
         return results
 
 class PrometheusDetectionAnalyzer(FaultDetectionAnalyzer):
     """Prometheus-specific implementation of fault detection analysis"""
     
-    def __init__(self, prometheus):
+    def __init__(self, prometheus: Prometheus):
         self.prometheus = prometheus
         logger.info("Initialized PrometheusDetectionAnalyzer with base URL: %s", prometheus.base_url)
 
@@ -120,43 +132,58 @@ class PrometheusDetectionAnalyzer(FaultDetectionAnalyzer):
         logger.info(f"Found {len(detections)} valid detections")
         return detections
     
-    def analyze_detection(self, fault: InjectedFault, detections: List[DetectionEvent]) -> Dict:
+    def analyze_detection(self, fault: InjectedFault, detections: List[DetectionEvent]) -> DetectionAnalysisResult:
         """Analyze if and when a fault was detected"""
         logger.debug(f"Analyzing detection for fault {fault.name} from {fault.start_time} to {fault.end_time}")
         
-        relevant_detections = [
+        true_positives = [
             d for d in detections 
-            if fault.start_time <= d.firing_time <= fault.end_time + timedelta(minutes=1)
+            if fault.start_time <= d.firing_time <= fault.end_time
+        ]
+
+        false_positives = [
+            d for d in detections 
+            if d.firing_time < fault.start_time or d.firing_time > fault.end_time
         ]
         
-        logger.debug(f"Found {len(relevant_detections)} relevant detections")
+        logger.debug(f"Found {len(true_positives)} true positives and {len(false_positives)} false positives")
         
-        if not relevant_detections:
+        if not true_positives:
             logger.warning(f"No detections found for fault {fault.name}")
-            return {
-                'fault_name': fault.name,
-                'detected': False,
-                'detection_time': None,
-                'detection_latency': None,
-                'alerts_triggered': []
-            }
-        
-        first_detection = min(relevant_detections, key=lambda d: d.firing_time)
-        detection_latency = (first_detection.firing_time - fault.start_time).total_seconds()
-        
-        logger.info(f"Fault {fault.name} detected after {detection_latency}s with alert {first_detection.name}")
-        
-        return {
-            'fault_name': fault.name,
-            'detected': True,
-            'detection_time': first_detection.firing_time.isoformat(),
-            'detection_latency': detection_latency,
-            'alerts_triggered': [
-                {
+            return DetectionAnalysisResult(
+                fault_name=fault.name,
+                detected=False,
+                detection_time=None,
+                detection_latency=None,
+                true_positives=[],
+                false_positives=[{
                     'name': d.name,
                     'time': d.firing_time.isoformat(),
                     'severity': d.severity,
                     'labels': d.labels
-                } for d in relevant_detections
-            ]
-        } 
+                } for d in false_positives]
+            )
+        
+        first_detection = min(true_positives, key=lambda d: d.firing_time)
+        detection_latency = (first_detection.firing_time - fault.start_time).total_seconds()
+        
+        logger.info(f"Fault {fault.name} detected after {detection_latency}s with alert {first_detection.name}")
+        
+        return DetectionAnalysisResult(
+            fault_name=fault.name,
+            detected=True,
+            detection_time=first_detection.firing_time.isoformat(),
+            detection_latency=detection_latency,
+            true_positives=[{
+                'name': d.name,
+                'time': d.firing_time.isoformat(),
+                'severity': d.severity,
+                'labels': d.labels
+            } for d in true_positives],
+            false_positives=[{
+                'name': d.name,
+                'time': d.firing_time.isoformat(),
+                'severity': d.severity,
+                'labels': d.labels
+            } for d in false_positives]
+        )
