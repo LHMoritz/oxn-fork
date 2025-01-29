@@ -347,6 +347,43 @@ class ExperimentManager:
         key = f"{batch_id}_{sub_experiment_id}_{response_name}.{file_ending}"
         return self.store.load(key, FileFormat.JSON)
         
+    def get_analysis_data(self) -> Dict:
+        """
+        Retrieves analysis data from the configured analysis path
+        
+        Returns:
+            Dict: Dictionary containing the analysis data from all JSON files
+            
+        Raises:
+            HTTPException: If no data is found or if there's an error loading the data
+        """
+        analysis_path = os.getenv("OXN_ANALYSIS_PATH", "/mnt/analysis-datastore")
+        
+        try:
+            # Check if path exists and contains data
+            if not os.path.exists(analysis_path) or len(os.listdir(analysis_path)) == 0:
+                raise HTTPException(
+                    status_code=404, 
+                    detail="No analysis data found"
+                )
+                
+            # Load data from directory
+            data = {}
+            for filename in os.listdir(analysis_path):
+                file_path = os.path.join(analysis_path, filename)
+                if filename.endswith('.json'):
+                    with open(file_path, 'r') as f:
+                        data[filename] = json.load(f)
+                        
+            return data
+            
+        except Exception as e:
+            logger.error(f"Error loading analysis data: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error loading analysis data: {str(e)}"
+            )
+
 
 
         
