@@ -293,12 +293,12 @@ class KubernetesOrchestrator(Orchestrator):
             The address of the Jaeger service
 
         """
-        assert self.experiment_config["experiment"] is not None
-        assert self.experiment_config["experiment"]["services"] is not None
-        assert self.experiment_config["experiment"]["services"]["jaeger"] is not None
+        assert self.experiment_config is not None
+        assert self.experiment_config["services"] is not None
+        assert self.experiment_config["services"]["jaeger"] is not None
         
-        jaeger_name = self.experiment_config["experiment"]["services"]["jaeger"]["name"]
-        jaeger_namespace = self.experiment_config["experiment"]["services"]["jaeger"]["namespace"]
+        jaeger_name = self.experiment_config["services"]["jaeger"]["name"]
+        jaeger_namespace = self.experiment_config["services"]["jaeger"]["namespace"]
         return self.get_address_for_service(
             name=jaeger_name,
             namespace=jaeger_namespace,
@@ -313,11 +313,11 @@ class KubernetesOrchestrator(Orchestrator):
 
         """
         
-        assert self.experiment_config["experiment"] is not None
-        assert self.experiment_config["experiment"]["services"] is not None
-        assert self.experiment_config["experiment"]["services"]["prometheus"] is not None
+        assert self.experiment_config is not None
+        assert self.experiment_config["services"] is not None
+        assert self.experiment_config["services"]["prometheus"] is not None
         
-        prometheus_configs = self.experiment_config["experiment"]["services"]["prometheus"]
+        prometheus_configs = self.experiment_config["services"]["prometheus"]
                
         for prometheus_config in prometheus_configs:
             assert prometheus_config["target"] is not None

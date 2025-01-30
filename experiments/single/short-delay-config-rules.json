@@ -1,7 +1,4 @@
 {
-    "name": "big",
-    "config": {
-  "experiment": {
     "name": "latest",
     "version": "0.0.1",
     "orchestrator": "kubernetes",
@@ -349,6 +346,16 @@
     ],
     "treatments": [
       {
+        "kubernetes_prometheus_rules": {
+          "action": "kubernetes_prometheus_rules",
+          "params": {
+            "latency_threshold": 100,
+            "evaluation_window": "120s"
+          }
+        }
+      },
+
+      {
         "add_security_context": {
           "action": "security_context_kubernetes",
           "params": {
@@ -372,7 +379,7 @@
             "label": "astronomy-shop-recommendationservice",
             "delay_time": "120ms",
             "delay_jitter": "120ms",
-            "duration": "2m",
+            "duration": "1m",
             "interface": "eth0"
           }
         }
@@ -391,8 +398,8 @@
       ]
     },
     "loadgen": {
-      "run_time": "5m",
-      "max_users": 600,
+      "run_time": "3m",
+      "max_users": 500,
       "spawn_rate": 50,
       "locust_files": [
         "/backend/locust/locust_basic_interaction.py",
@@ -405,9 +412,3 @@
       }
     }
   }
-},
-"parameter_variations":	{
-  "experiment.treatments.1.delay_treatment.params.duration": ["2m", "3m"],
-  "experiment.treatments.1.delay_treatment.params.delay_time": ["90ms", "120ms", "150ms"]
-}
-}

@@ -1,21 +1,19 @@
 import zipfile
-import yaml
 from backend.internal.analysis import ExperimentAnalyzer
 from backend.internal.errors import StoreException
-from backend.internal.fault_detection import DetectionEvent, PrometheusDetectionAnalyzer
-from backend.internal.models.response import ResponseVariable
-from fastapi import HTTPException
+from backend.internal.fault_detection import PrometheusDetectionAnalyzer
 from pathlib import Path
 import json
 import time
 from datetime import datetime, timedelta
 import fcntl
 import logging
-from fastapi.responses import FileResponse
 from typing import Dict, Optional, Tuple, List
 import pandas as pd
 from backend.internal.engine import Engine
 from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
+from backend.internal.models.experiment import Experiment
+from backend.internal.models.fault_detection import DetectionAnalysisResult
 from backend.internal.prometheus import Prometheus
 from backend.internal.utils import dict_product, update_dict_with_parameter_variations
 from backend.internal.store import DocumentStore, FileFormat
@@ -47,7 +45,7 @@ class ExperimentManager:
         # Ensure directories exist
         self.experiments_dir.mkdir(parents=True, exist_ok=True)
 
-    def create_experiment(self, name, config):
+    def create_experiment(self, name, config: Experiment):
         """Create new experiment directory and config file"""
         if not self.acquire_lock():
             logger.info("Lock already held, skipping experiment check")
@@ -64,7 +62,7 @@ class ExperimentManager:
                 'started_at': None,
                 'completed_at': None,
                 'error_message': None,
-                'spec': config,
+                'spec': config.model_dump(mode="json"),
             }
             
             # Save experiment config
@@ -74,7 +72,7 @@ class ExperimentManager:
         return experiment
     
 
-    def create_batch_experiment(self, name: str, config: dict, parameter_variations: dict):
+    def create_batch_experiment(self, name: str, config: Experiment, parameter_variations: dict):
         """
         Create a new batch experiment
         """
@@ -90,7 +88,7 @@ class ExperimentManager:
             'started_at': datetime.now().isoformat(),
             'completed_at': None,
             'error_message': None,
-            'spec': config,
+            'spec': config.model_dump(mode="json"),
             'parameter_variations': parameter_variations,
         }
 
@@ -103,7 +101,7 @@ class ExperimentManager:
         for i, parameters in enumerate(all_parameter_combinations):
             # patch the config with the parameters
             logger.debug(f"parameters: {parameters}")
-            sub_config = update_dict_with_parameter_variations(config, parameters)
+            sub_config = update_dict_with_parameter_variations(config.model_dump(mode="json"), parameters)
 
             sub_experiment = {
                 'id': f"{i}",
@@ -128,9 +126,16 @@ class ExperimentManager:
         
         return batch_config
     
-    def get_experiment_config(self, experiment_id):
+    def get_experiment_config(self, experiment_id) -> Experiment:
         """Get experiment config"""
-        return self.store.load(f"{experiment_id}_config", FileFormat.JSON)
+        experiment_config = self.store.load(f"{experiment_id}_config", FileFormat.JSON)
+        if experiment_config is None:
+            raise ValueError(f"No experiment config found for experiment {experiment_id}")
+        try:
+            return Experiment(**experiment_config['spec'])
+        except Exception as e:
+            logger.error(f"could not load experiment config: {e}")
+            raise e
     
     def run_batch_experiment(self, batch_id: str, output_formats: List[str], runs: int, analyse_fault_detection: bool = False):
         """Run a batch experiment"""
@@ -179,7 +184,7 @@ class ExperimentManager:
             logger.info(f"Changing experiment status to RUNNING")
             self.update_experiment_config(experiment_id, {'status': 'RUNNING'})
             logger.debug(f"experiment config: {self.get_experiment_config(experiment_id)}")
-            experiment = self.get_experiment_config(experiment_id)['spec']
+            experiment = self.get_experiment_config(experiment_id).model_dump(mode="json")
 
             orchestrator = KubernetesOrchestrator(experiment_config=experiment)
         
@@ -244,8 +249,11 @@ class ExperimentManager:
         """Update experiment config"""
         experiment_config = self.get_experiment_config(experiment_id)
         try:
-            experiment_config.update(updates)
-            self.store.save(experiment_id, experiment_config, FileFormat.JSON)
+            # WIP: this is not the best way to do this Of course.
+            # Earlier code did not implement a typed model for the experiment config.
+            new_config = experiment_config.model_dump(mode="json")
+            new_config.update(updates)
+            self.store.save(experiment_id, new_config, FileFormat.JSON)
         except Exception as e:
             logger.error(f"could not update experiment config: {e}")
         
@@ -256,9 +264,13 @@ class ExperimentManager:
         experiments = {}
         for document in all_documents:
             if document.endswith("_config"):
-                experiment_config = self.store.load(document, FileFormat.JSON)
-                if experiment_config is not None and isinstance(experiment_config, dict):
-                    experiments[document] = experiment_config
+                try:
+                    experiment_config = self.store.load(document, FileFormat.JSON)
+                    if experiment_config is not None and isinstance(experiment_config, dict):
+                        experiments[document] = experiment_config
+                except Exception as e:
+                    logger.error(f"could not load experiment config: {e}")
+                    continue
         return experiments
     
     def list_experiments_status(self):
@@ -395,14 +407,14 @@ class ExperimentManager:
         """Save fault detection results for an experiment"""
         self.store.save(f"{experiment_id}_{mechanism}_detection", results, FileFormat.JSON)
         
-    def analyze_fault_detection(self, experiment_id: str):
+    def analyze_fault_detection(self, experiment_id: str) -> List[DetectionAnalysisResult]:
         """Analyze fault detection for an experiment"""
         report = self.get_experiment_report(experiment_id)
         if report is None:
             raise ValueError(f"No report found for experiment {experiment_id}")
         
         # TODO find a place to keep a reference to the prometheus client
-        experiment = self.get_experiment_config(experiment_id)['spec']
+        experiment = self.get_experiment_config(experiment_id).model_dump(mode="json")
         if experiment is None:
             raise ValueError(f"No experiment config found for experiment {experiment_id}")
         orchestrator = KubernetesOrchestrator(experiment_config=experiment)
@@ -417,9 +429,6 @@ class ExperimentManager:
         results = analyzer.analyze_fault_detection(report)
 
         serializable_results = [result.to_dict() for result in results]
-
-
-
         # Save detections
         self.store.save(
             f"{experiment_id}_detections",
@@ -429,19 +438,23 @@ class ExperimentManager:
         # Save results
         self.store.save(
         f"{experiment_id}_fault_detection",
-        {'results': serializable_results},
+        serializable_results,
         FileFormat.JSON
     )
         
-        return serializable_results
+        return results
         
 
-    def get_experiment_fault_detection(self, experiment_id: str) -> Dict:
+    def get_experiment_fault_detection(self, experiment_id: str) -> List[DetectionAnalysisResult]:
         """Get fault detection for an experiment"""
-        fault_detection = self.store.load(f"{experiment_id}_fault_detection", FileFormat.JSON)
-        if fault_detection is None:
+        fault_detection_raw = self.store.load(f"{experiment_id}_fault_detection", FileFormat.JSON)
+        if fault_detection_raw is None:
             raise ValueError(f"No fault detection found for experiment {experiment_id}")
-        return fault_detection   
+        try:
+            return [DetectionAnalysisResult(**result) for result in fault_detection_raw]   
+        except Exception as e:
+            logger.error(f"could not load fault detection: {e}")
+            raise e
     
     def get_experiment_detections(self, experiment_id: str) -> dict:
         """Get raw detection data for an experiment"""

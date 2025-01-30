@@ -45,7 +45,7 @@ class LocustFileLoadgenerator:
         self.log = log
     def _read_config(self):
         """Read the load generation section of an experiment specification"""
-        loadgen_section: dict = self.config["experiment"]["loadgen"]
+        loadgen_section: dict = self.config["loadgen"]
         self.stages = loadgen_section.get("stages", None)
         self.run_time = int(time_string_to_seconds(loadgen_section["run_time"]))
         logger.info(f"Run time: {self.run_time}")

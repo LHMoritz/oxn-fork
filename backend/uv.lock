@@ -53,6 +53,7 @@ dependencies = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "psutil" },
+    { name = "pydantic-to-typescript" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-mock" },
@@ -85,6 +86,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.23.5" },
     { name = "pandas", specifier = ">=2.1.2" },
     { name = "psutil", specifier = ">=5.9.4" },
+    { name = "pydantic-to-typescript", specifier = ">=2.0.0" },
     { name = "pytest", specifier = ">=7.0.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.0" },
@@ -1239,6 +1241,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/78/d8/c080592d80edd3441ab7f88f865f51dae94a157fc64283c680e9f32cf6da/pydantic_core-2.27.1-cp313-none-win32.whl", hash = "sha256:8065914ff79f7eab1599bd80406681f0ad08f8e47c880f17b416c9f8f7a26d05", size = 1833713 },
     { url = "https://files.pythonhosted.org/packages/83/84/5ab82a9ee2538ac95a66e51f6838d6aba6e0a03a42aa185ad2fe404a4e8f/pydantic_core-2.27.1-cp313-none-win_amd64.whl", hash = "sha256:ba630d5e3db74c79300d9a5bdaaf6200172b107f263c98a0539eeecb857b2337", size = 1987897 },
     { url = "https://files.pythonhosted.org/packages/df/c3/b15fb833926d91d982fde29c0624c9f225da743c7af801dace0d4e187e71/pydantic_core-2.27.1-cp313-none-win_arm64.whl", hash = "sha256:45cf8588c066860b623cd11c4ba687f8d7175d5f7ef65f7129df8a394c502de5", size = 1882983 },
+]
+
+[[package]]
+name = "pydantic-to-typescript"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/59/ac/8dc13be6720267b5edffb3b0d8c1abdcccc5743d7bda4257ab0a5dccc7b9/pydantic_to_typescript-2.0.0.tar.gz", hash = "sha256:06e92e8d10759ffebe3abdd4de14015bbf80809fa9960273be6041d8509662be", size = 35484 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c3/9c/f51312f3063a8b6e1e09e6527a81d3b1828ad5fc8a65c14376f85cf65502/pydantic_to_typescript-2.0.0-py3-none-any.whl", hash = "sha256:5bc5e1a940c1a39e4e3a6124bd3bda1b0fc6df85c673a4781b94a1f4150cae15", size = 9693 },
 ]
 
 [[package]]

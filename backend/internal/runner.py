@@ -160,7 +160,7 @@ class ExperimentRunner:
 
     def _build_treatments(self) -> None:
         """Build a representation of treatments defined in config"""
-        treatment_section = self.config["experiment"]["treatments"]
+        treatment_section = self.config["treatments"]
         if self.random_treatment_order:
             random.shuffle(treatment_section)
         for treatment in treatment_section:

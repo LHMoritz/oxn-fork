@@ -61,8 +61,8 @@ class Engine:
     ) -> Tuple[dict[str, ResponseVariable], dict[str, dict[str, dict[str, str]]]]:
         """Run an experiment 1 time"""
         assert self.spec
-        assert self.spec["experiment"]
-        assert self.spec["experiment"]["orchestrator"]
+        assert self.spec
+        assert self.spec["orchestrator"]
         self.generator = LocustFileLoadgenerator(orchestrator=self.orchestrator, config=self.spec, log=self.doLocustLog)
         names = []
         self.runner = ExperimentRunner(

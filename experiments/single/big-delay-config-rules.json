@@ -1,7 +1,4 @@
 {
-    "name": "big",
-    "config": {
-  "experiment": {
     "name": "latest",
     "version": "0.0.1",
     "orchestrator": "kubernetes",
@@ -415,5 +412,3 @@
       }
     }
   }
-}
-}

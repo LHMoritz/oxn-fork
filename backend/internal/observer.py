@@ -37,7 +37,7 @@ class Observer:
         if not self.config or not self.experiment_start or not self.experiment_end:
             return
 
-        responses = self.config["experiment"]["responses"]
+        responses = self.config["responses"]
         for response in responses:
             response_type = response["type"]
             name = response["name"]

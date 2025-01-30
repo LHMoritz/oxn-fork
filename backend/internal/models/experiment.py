@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from dataclasses import asdict
+from typing import Any, Dict, List, Optional, Union, Literal
 
 from pydantic import BaseModel, Field, constr
 
@@ -29,7 +30,7 @@ class Responses(BaseModel):
     name: str
     target: str
     metric_name: str
-    type: str = Field('metric', const=True)
+    type: Literal['metric']
     step: int
     left_window: str
     right_window: str
@@ -37,7 +38,7 @@ class Responses(BaseModel):
 
 class Responses1(BaseModel):
     name: str
-    type: str = Field('trace', const=True)
+    type: Literal['trace']
     service_name: str
     left_window: str
     right_window: str
@@ -74,17 +75,12 @@ class Loadgen(BaseModel):
     locust_files: Optional[List[str]] = None
     target: Optional[Target] = None
 
-
 class Experiment(BaseModel):
     name: Optional[str] = None
     version: str
     orchestrator: str
     services: Optional[Services] = None
     responses: List[Union[Responses, Responses1]]
-    treatments: Optional[List[Dict[constr(regex=r'^.*$'), Treatments]]] = None
+    treatments: Optional[List[Dict[str, Treatments]]] = None
     sue: Sue
     loadgen: Loadgen
-
-
-class Model(BaseModel):
-    experiment: Experiment

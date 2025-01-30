@@ -35,7 +35,7 @@ from datetime import datetime
 from backend.internal.experiment_manager import ExperimentManager
 from fastapi.responses import FileResponse, StreamingResponse
 from backend.internal.store import LocalFSStore
-
+from backend.internal.models.experiment import Experiment
 
 
 app = FastAPI(title="OXN API", version="1.0.0")
@@ -63,12 +63,9 @@ experiment_manager = ExperimentManager(Path(base_path), store)
 experiments_dir = Path(base_path) / 'experiments'
 
 ############### Pydantic models for request/response validation ###############
-class ExperimentCreate(BaseModel):
-    name: str
-    config: Dict
 class BatchExperimentCreate(BaseModel):
     name: str
-    config: Dict
+    config: Experiment
     parameter_variations: Dict[str, List[Union[str, float]]] 
 class ExperimentRun(BaseModel):
     runs: int = 1
@@ -84,7 +81,7 @@ class ExperimentStatus(BaseModel):
 
 
 @app.post("/experiments", response_model=ExperimentStatus)
-async def create_experiment(experiment: ExperimentCreate):
+async def create_experiment(experiment: Experiment):
     """
     Create a new experiment with configuration.
     Stores experiment metadata and creates necessary directories.
@@ -92,7 +89,7 @@ async def create_experiment(experiment: ExperimentCreate):
     logger.info(f"API: Creating experiment: {experiment.name}")
     return experiment_manager.create_experiment(
         name=experiment.name,
-        config=experiment.config
+        config=experiment
     )
 
 # Is this api outedated? - As we use the /experiments/{experiment_id}/runsync route now
