@@ -1,24 +1,49 @@
 'use client';
 import { useState } from "react";
-import { PreviewMultipleFiles } from "./preview-multiple-files";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Button } from "@/components/ui/button";
+import { Cable, Save } from "lucide-react";
+import { useApi } from "@/hooks/use-api";
 
 interface ConfigureFilesProps {
-  files: File[];
-  parsedContents: any[];
+  file: File;
+  parsedContent: any;
   onRemoveFile: (index: number) => void;
-  experimentType: string;
 }
 
 export const ConfigureFiles: React.FC<ConfigureFilesProps> = ({
-  experimentType,
-  files,
-  parsedContents,
+  file,
+  parsedContent,
   onRemoveFile,
 }) => {
+  const [isFileCreated, setIsFileCreated] = useState(false);
+
   const [delayDuration, setDelayDuration] = useState<number>(0);
   const [instrumentationInterval, setInstrumentationInterval] = useState<number>(0);
+  const [experimentId, setExperimentId] = useState(null);
+
+
+  const { error: errorOnStart, loading: loadingOnStart, fetchData: onStartExperiment } = useApi({
+    url: `/experiments`,
+    method: "POST",
+    body: {
+      name: `${file.name}`,
+      config: parsedContent
+    }
+  })
+
+  const { error: errorOnCreate, loading: loadingOnCreate, fetchData: onCreateExperiment } = useApi({
+    url: `/experiments/${experimentId}/batch`,
+    method: "POST",
+    body: {
+      runs: 1,
+      output_format: "json"
+    }
+  })
+
 
   return (
     <div className="space-y-6">
@@ -48,13 +73,24 @@ export const ConfigureFiles: React.FC<ConfigureFilesProps> = ({
         </div>
       </div>
 
-      {/* Display Files */}
-      <PreviewMultipleFiles
-        experimentType={experimentType}
-        files={files}
-        parsedContents={parsedContents}
-        onRemoveFile={onRemoveFile}
-      />
+      <div className="w-[800px]">
+        <SyntaxHighlighter language="yaml" style={oneDark} wrapLines>
+          {JSON.stringify(parsedContent, null, 2)}
+        </SyntaxHighlighter>
+      </div>
+
+
+      <div className="flex justify-end gap-2 my-4 w-full">
+        <Button disabled={isFileCreated || loadingOnCreate} onClick={onCreateExperiment} variant="outline">
+          <Save />
+          {isFileCreated ? 'File created!' : 'Create file'}
+        </Button>
+
+        <Button disabled={!isFileCreated || loadingOnStart} onClick={onStartExperiment}>
+          <Cable />
+          Start Batch
+        </Button>
+      </div>
     </div>
   );
 };

@@ -5,7 +5,7 @@ import { formatDate } from "@/utils/date";
 import { ResultsActions } from "../table-actions/results-actions";
 import { Badge } from "@/components/ui/badge";
 
-export const resultsColumns: ColumnDef<any>[] = [
+export const reportColumns: ColumnDef<any>[] = [
   {
     accessorKey: "experimentDate",
     header: ({ column }) => {

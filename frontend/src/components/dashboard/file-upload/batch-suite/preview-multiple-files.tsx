@@ -5,8 +5,8 @@ import { FileText, ChevronDown, ChevronUp, Trash, Save, Cable } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { useTheme } from "next-themes";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useApi } from "@/hooks/use-api";
 
 interface PreviewMultipleFilesProps {
   files: File[];
@@ -16,26 +16,13 @@ interface PreviewMultipleFilesProps {
 }
 
 export const PreviewMultipleFiles: React.FC<PreviewMultipleFilesProps> = ({ experimentType, files, parsedContents, onRemoveFile }) => {
-  const { theme } = useTheme();
   const [expandedFileIndex, setExpandedFileIndex] = useState<number | null>(null);
-  const [isSavedFile, setIsSavedFile] = useState(false);
 
-  const onCreateExperiment = async () => {
-    alert('Creating experiment...');
-  };
-
-  const onStartExperiment = async () => {
-    alert('Starting experiment...');
-  }
-
-  const handleFileSave = () => {
-    setIsSavedFile(true);
-    onCreateExperiment();
-  }
-
-  const handleStartExperiment = () => {
-    onStartExperiment();
-  }
+  const { error: errorOnStart, loading: loadingOnStart, fetchData: onStartExperiment } = useApi({
+    url: '/experiments/suite',
+    method: "POST",
+    body: []
+  })
 
   const toggleFileExpansion = (index: number) => {
     setExpandedFileIndex(expandedFileIndex === index ? null : index);
@@ -71,7 +58,7 @@ export const PreviewMultipleFiles: React.FC<PreviewMultipleFilesProps> = ({ expe
             </div>
             {expandedFileIndex === index && (
               <div className="p-3 w-[800px]">
-                <SyntaxHighlighter language="yaml" style={theme === "dark" ? oneDark : oneLight} wrapLines>
+                <SyntaxHighlighter language="yaml" style={oneDark} wrapLines>
                   {JSON.stringify(parsedContents[index], null, 2)}
                 </SyntaxHighlighter>
               </div>
@@ -81,14 +68,9 @@ export const PreviewMultipleFiles: React.FC<PreviewMultipleFilesProps> = ({ expe
       </ScrollArea>
 
       <div className="flex justify-end gap-2 my-4 w-full">
-        <Button disabled={isSavedFile} onClick={handleFileSave} variant="outline">
-          <Save />
-          {isSavedFile ? 'File saved!' : 'Save file'}
-        </Button>
-
-        <Button disabled={!isSavedFile} onClick={handleStartExperiment}>
+        <Button disabled={loadingOnStart} onClick={onStartExperiment}>
           <Cable />
-          Start Experiment
+          Start Experiments
         </Button>
       </div>
     </div>

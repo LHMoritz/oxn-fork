@@ -18,7 +18,7 @@ interface StartDialogProps {
 }
 
 const StartDialog: React.FC<StartDialogProps> = ({ experimentType, title }) => {
-  const allowMultiple = experimentType !== 'single'; //Batch or suite can have multiple file uploads
+  const allowMultiple = experimentType === 'suite'; //Single and batch have single file upload
   return (
     <Dialog>
       <DialogTrigger>

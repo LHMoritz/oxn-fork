@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ResultDetailsTable } from "@/components/tables/result-details";
+import { ReportDetailsTable } from "@/components/tables/report-details";
 
 
 export default function ResultDetails(props: any) {
@@ -15,12 +15,12 @@ export default function ResultDetails(props: any) {
         <div>
           <Button variant="ghost">
             <ChevronLeft />
-            <Link href="/results">Go back</Link>
+            <Link href="/reports">Go back</Link>
           </Button>
         </div>
       </div>
       <div className="container mx-auto">
-        <ResultDetailsTable />
+        <ReportDetailsTable />
       </div>
     </div>
   )

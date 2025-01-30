@@ -3,7 +3,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/date";
 
-export const resultDetailsColumns: ColumnDef<any>[] = [
+export const reportDetailsColumns: ColumnDef<any>[] = [
   {
     accessorKey: 'runDate',
     header: ({ column }) => {

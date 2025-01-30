@@ -15,7 +15,7 @@ interface FileUploaderProps {
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({
-  filesAccepted = [".yaml"],
+  filesAccepted = [".yaml", ".json"],
   experimentType,
   allowMultiple = false,
 }) => {
@@ -110,7 +110,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         <EditableFile file={selectedFiles[0]} parsedContent={parsedContents[0]} onRemoveFile={() => handleRemoveFile(0)} />
       )}
       {experimentType === "batch" && filesUploaded && filesParsed && (
-        <ConfigureFiles experimentType={experimentType} files={selectedFiles} parsedContents={parsedContents} onRemoveFile={handleRemoveFile} />
+        <ConfigureFiles file={selectedFiles[0]} parsedContent={parsedContents[0]} onRemoveFile={() => handleRemoveFile(0)} />
       )}
       {experimentType === "suite" && filesUploaded && filesParsed && (
         <PreviewMultipleFiles experimentType={experimentType} onRemoveFile={handleRemoveFile} files={selectedFiles} parsedContents={parsedContents} />

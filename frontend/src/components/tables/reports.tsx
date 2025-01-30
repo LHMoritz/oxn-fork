@@ -1,11 +1,11 @@
 'use client';
 import { useEffect, useState } from "react";
 import { DynamicTable } from ".";
-import { resultsColumns } from "./table-columns/results-columns";
+import { reportColumns } from "./table-columns/report-columns";
 import { useApi } from "@/hooks/use-api";
 import { Button } from "../ui/button";
 
-export const ResultsTable: React.FC<{}> = ({ }) => {
+export const ReportsTable: React.FC<{}> = ({ }) => {
 
   const [results, setResults] = useState<any[]>([]);
 
@@ -27,7 +27,7 @@ export const ResultsTable: React.FC<{}> = ({ }) => {
       )}
 
       {loading && <p>Loading experiments...</p>}
-      {!loading && !error && <DynamicTable data={results} columns={resultsColumns} />}
+      {!loading && !error && <DynamicTable data={results} columns={reportColumns} />}
     </div>
   )
 }

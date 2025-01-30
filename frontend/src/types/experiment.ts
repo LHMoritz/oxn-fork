@@ -1,5 +1,5 @@
 export type experimentType = 'single' | 'batch' | 'suite';
-export type experimentStatus = 'PENDING' | 'COMPLETED';
+export type experimentStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
 
 export interface Experiments {
   id: string;
@@ -9,5 +9,4 @@ export interface Experiments {
   started_at: string;
   completed_at: string;
   error_message: string;
-  spec: any;
 }

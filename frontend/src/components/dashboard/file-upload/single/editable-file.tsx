@@ -13,8 +13,8 @@ interface EditableFileProps {
 
 export const EditableFile: React.FC<EditableFileProps> = ({ file, parsedContent, onRemoveFile }) => {
 
-  const [isSavedFile, setIsSavedFile] = useState(false);
-  const [jsonFileValue, setJsonFileValue] = useState(JSON.stringify(parsedContent, null, 2));
+  const [isFileCreated, setIsFileCreated] = useState(false);
+  const [editableFile, setEditableFile] = useState(JSON.stringify(parsedContent, null, 2));
   const [experimentId, setExperimentId] = useState(null);
 
   const { data: responseAfterSave, error: errorOnCreate, loading: loadingOnCreate, fetchData: onCreateExperiment } = useApi({
@@ -40,8 +40,8 @@ export const EditableFile: React.FC<EditableFileProps> = ({ file, parsedContent,
   }, [responseAfterSave])
 
 
-  const handleFileSave = () => {
-    setIsSavedFile(true);
+  const handleFileCreate = () => {
+    setIsFileCreated(true);
     onCreateExperiment();
   }
 
@@ -50,8 +50,8 @@ export const EditableFile: React.FC<EditableFileProps> = ({ file, parsedContent,
       onStartExperiment();
   }
 
-  const onChange = (val: any) => {
-    setJsonFileValue(val);
+  const onChange = (newFileValue: any) => {
+    setEditableFile(newFileValue);
   };
 
   return (
@@ -66,17 +66,17 @@ export const EditableFile: React.FC<EditableFileProps> = ({ file, parsedContent,
       <div className="mt-4">
         <h3 className="text-lg font-semibold mb-2">File Preview:</h3>
         <div className="max-h-[50vh] max-w-[850px] overflow-auto">
-          <CodeMirror value={jsonFileValue} theme="dark" editable onChange={onChange} />
+          <CodeMirror value={editableFile} theme="dark" editable onChange={onChange} />
         </div>
       </div>
 
       <div className="flex justify-end gap-2 my-4 w-full">
-        <Button disabled={isSavedFile || loadingOnCreate} onClick={handleFileSave} variant="outline">
+        <Button disabled={isFileCreated || loadingOnCreate} onClick={handleFileCreate} variant="outline">
           <Save />
-          {isSavedFile ? 'File saved!' : 'Save file'}
+          {isFileCreated ? 'File created!' : 'Create file'}
         </Button>
 
-        <Button disabled={!isSavedFile || loadingOnStart} onClick={handleStartExperiment}>
+        <Button disabled={!isFileCreated || loadingOnStart} onClick={handleStartExperiment}>
           <Cable />
           Start Experiment
         </Button>

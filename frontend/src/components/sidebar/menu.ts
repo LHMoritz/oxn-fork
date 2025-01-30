@@ -18,9 +18,9 @@ export const menuItems = [
     icon: MonitorCog,
   },
   {
-    id: "results",
-    title: "Results",
-    url: "/results",
+    id: "reports",
+    title: "Reports",
+    url: "/reports",
     icon: FileChartLine,
   },
 ];

@@ -1,13 +1,13 @@
-import { ResultsTable } from "@/components/tables/results";
+import { ReportsTable } from "@/components/tables/reports";
 
-export default function ResultsPage() {
+export default function ReportsPage() {
   return (
     <div>
       <div>
-        <h1 className="text-xl font-bold">Results</h1>
+        <h1 className="text-xl font-bold">Reports</h1>
       </div>
       <div className="container mx-auto">
-        <ResultsTable />
+        <ReportsTable />
       </div>
     </div>
   )
