@@ -2143,7 +2143,7 @@ class KubernetesPrometheusRulesTreatment(Treatment):
     
     def params(self) -> dict:
         return {
-            "latency_threshold": int,
+            "latency_threshold": (int, float),  # Allow both int and float
             "evaluation_window": str
         }
 
@@ -2153,6 +2153,12 @@ class KubernetesPrometheusRulesTreatment(Treatment):
                 self.messages.append(
                     f"Required parameter {key} missing for {self.treatment_type}"
                 )
+            elif key == "latency_threshold":
+                #  int or float
+                if not isinstance(self.config[key], (int, float)):
+                    self.messages.append(
+                        f"Parameter {key} has to be a number (int or float) for {self.treatment_type}"
+                    )
             elif not isinstance(self.config[key], val):
                 self.messages.append(
                     f"Parameter {key} has to be of type {val} for {self.treatment_type}"

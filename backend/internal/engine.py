@@ -11,6 +11,7 @@ import yaml
 from jsonschema import validate
 from pathlib import Path
 
+from backend.internal.models.experiment import Experiment
 from backend.internal.models.response import ResponseVariable
 from backend.internal.runner import ExperimentRunner
 from backend.internal.docker_orchestration import DockerComposeOrchestrator
@@ -29,14 +30,14 @@ class Engine:
     This class encapsulates all behavior needed to execute observability experiments.
     """
 
-    def __init__(self, orchestrator_class=None, spec=None, id=None):
+    def __init__(self, spec: Experiment, id=None):
         self.id = id
         """The id of the experiment"""
         self.spec = spec
         """The loaded experiment specification"""
         self.reporter = Reporter()
         """A reference to a reporter instance"""
-        self.orchestrator = orchestrator_class or KubernetesOrchestrator
+        self.orchestrator = KubernetesOrchestrator(experiment_config=spec)
         """A reference to an orchestrator instance"""
         self.generator = None
         """A reference to a load generator instance"""
@@ -55,15 +56,12 @@ class Engine:
         self.doLocustLog = False
     def run(
         self,
-        orchestration_timeout=None,
+        orchestration_timeout=120,
         randomize=False,
         accounting=False,
     ) -> Tuple[dict[str, ResponseVariable], dict[str, dict[str, dict[str, str]]]]:
         """Run an experiment 1 time"""
-        assert self.spec
-        assert self.spec["experiment"]
-        assert self.spec["experiment"]["orchestrator"]
-        self.generator = LocustFileLoadgenerator(orchestrator=self.orchestrator, config=self.spec, log=self.doLocustLog)
+        self.generator = LocustFileLoadgenerator(orchestrator=self.orchestrator, config=self.spec.model_dump(mode="json"), log=self.doLocustLog)
         names = []
         self.runner = ExperimentRunner(
             config=self.spec,
@@ -75,7 +73,7 @@ class Engine:
         )
         self.runner.execute_compile_time_treatments()
         self.orchestrator.orchestrate()
-        if not self.orchestrator.ready(expected_services=None, timeout=orchestration_timeout):
+        if not self.orchestrator.ready(timeout=orchestration_timeout):
             self.runner.clean_compile_time_treatments()
             self.orchestrator.teardown()
             raise OrchestrationException(

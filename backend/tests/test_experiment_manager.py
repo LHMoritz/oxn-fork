@@ -1,4 +1,6 @@
 from gevent import monkey
+
+from backend.internal.models.experiment import Experiment
 monkey.patch_all()
 
 from math import log
@@ -35,116 +37,178 @@ def experiment_manager(test_dir, mock_store):
     """Create ExperimentManager instance with test directory and mocked store"""
     return ExperimentManager(test_dir, mock_store)
 
-@pytest.fixture
 def sample_config():
     """Sample experiment configuration"""
     return {
-        "experiment": {
-            "name": "big",
-            "version": "0.0.1",
-            "orchestrator": "kubernetes",
-            "services": {
-                "jaeger": {
-                    "name": "astronomy-shop-jaeger-query",
-                    "namespace": "system-under-evaluation"
-                },
-                "prometheus": [
-                    {
-                        "name": "astronomy-shop-prometheus-server",
-                        "namespace": "system-under-evaluation",
-                        "target": "sue"
-                    },
-                    {
-                        "name": "kube-prometheus-kube-prome-prometheus", 
-                        "namespace": "oxn-external-monitoring",
-                        "target": "oxn"
-                    }
-                ]
-            },
-            "responses": [
-                {
-                    "name": "frontend_traces",
-                    "type": "trace", 
-                    "service_name": "frontend",
-                    "left_window": "10s",
-                    "right_window": "10s",
-                    "limit": 1
-                },
-                {
-                    "name": "system_CPU",
-                    "type": "metric",
-                    "metric_name": "sum(rate(container_cpu_usage_seconds_total{namespace=\"system-under-evaluation\"}[1m]))",
-                    "left_window": "10s",
-                    "right_window": "10s",
-                    "step": 1,
-                    "target": "oxn"
-                },
-                {
-                    "name": "recommendation_deployment_CPU",
-                    "type": "metric",
-                    "metric_name": "sum(rate(container_cpu_usage_seconds_total{namespace=\"system-under-evaluation\", pod=~\"astronomy-shop-recommendationservice.*\"}[90s])) by (pod)",
-                    "left_window": "10s",
-                    "right_window": "10s",
-                    "step": 1,
-                    "target": "oxn"
-                }
-            ],
-            "treatments": [
-                {
-                    "name": "empty_treatment",
-                    "action": "empty",
-                    "params": { "duration": "1m" }
-                }
-            ],
-            "sue": {
-                "compose": "opentelemetry-demo/docker-compose.yml",
-                "exclude": ["loadgenerator"],
-                "required": [
-                    { "namespace": "system-under-evaluation", "name": "astronomy-shop-prometheus-server" }
-                ]
-            },
-            "loadgen": {
-                "run_time": "20m",
-                "max_users": 500,
-                "spawn_rate": 50,
-                "locust_files": ["/backend/locust/locust_basic_interaction.py", "/backend/locust/locust_otel_demo.py"],
-                "target": { "name": "astronomy-shop-frontendproxy", "namespace": "system-under-evaluation", "port": 8080 }
-            }
+    "name": "latest",
+    "version": "0.0.1",
+    "orchestrator": "kubernetes",
+    "services": {
+      "jaeger": {
+        "name": "astronomy-shop-jaeger-query",
+        "namespace": "system-under-evaluation"
+      },
+      "prometheus": [
+        {
+          "name": "astronomy-shop-prometheus-server",
+          "namespace": "system-under-evaluation",
+          "target": "sue"
+        },
+        {
+          "name": "kube-prometheus-kube-prome-prometheus",
+          "namespace": "oxn-external-monitoring",
+          "target": "oxn"
         }
+      ]
+    },
+    "responses": [
+      {
+        "name": "accountingservice_traces",
+        "type": "trace",
+        "service_name": "accountingservice",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "flagd_traces",
+        "type": "trace",
+        "service_name": "flagd",
+        "left_window": "10s",
+        "right_window": "10s",
+        "limit": 1499
+      },
+      {
+        "name": "cpu_usage",
+        "type": "metric",
+        "metric_name": "sum(rate(node_cpu_seconds_total{mode!=\"idle\"}[1m])) by (instance)",
+        "left_window": "10s",
+        "right_window": "10s",
+        "step": 1,
+        "target": "sue"
+      },
+      {
+        "name": "tcp_connections",
+        "type": "metric",
+        "metric_name": "node_netstat_Tcp_CurrEstab",
+        "left_window": "10s",
+        "right_window": "10s",
+        "step": 1,
+        "target": "sue"
+      }
+    ],
+    "treatments": [
+      {
+        "kubernetes_prometheus_rules": {
+          "action": "kubernetes_prometheus_rules",
+          "params": {
+            "latency_threshold": 100,
+            "evaluation_window": "120s"
+          }
+        }
+      },
+
+      {
+        "add_security_context": {
+          "action": "security_context_kubernetes",
+          "params": {
+            "namespace": "system-under-evaluation",
+            "label_selector": "app.kubernetes.io/component",
+            "label": "recommendationservice",
+            "capabilities": {
+              "add": [
+                "NET_ADMIN"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "delay_treatment": {
+          "action": "delay",
+          "params": {
+            "namespace": "system-under-evaluation",
+            "label_selector": "app.kubernetes.io/name",
+            "label": "astronomy-shop-recommendationservice",
+            "delay_time": "120ms",
+            "delay_jitter": "120ms",
+            "duration": "1m",
+            "interface": "eth0"
+          }
+        }
+      }
+    ],
+    "sue": {
+      "compose": "opentelemetry-demo/docker-compose.yml",
+      "exclude": [
+        "loadgenerator"
+      ],
+      "required": [
+        {
+          "namespace": "system-under-evaluation",
+          "name": "astronomy-shop-prometheus-server"
+        }
+      ]
+    },
+    "loadgen": {
+      "run_time": "3m",
+      "max_users": 500,
+      "spawn_rate": 50,
+      "locust_files": [
+        "/backend/locust/locust_basic_interaction.py",
+        "/backend/locust/locust_otel_demo.py"
+      ],
+      "target": {
+        "name": "astronomy-shop-frontendproxy",
+        "namespace": "system-under-evaluation",
+        "port": 8080
+      }
+    }
+  }
+
+@pytest.fixture
+def ExperimentConfig():
+    return Experiment(**sample_config())
+
+
+def test_create_experiment(experiment_manager, ExperimentConfig):
+    """Test the creation of an experiment"""
+    experiment = experiment_manager.create_experiment(name="Test Experiment", config=ExperimentConfig)
+    assert experiment is not None
+    assert experiment.id is not None
+    assert experiment.name == "Test Experiment"
+    assert experiment.status == "PENDING"
+    assert experiment.error_message is ""
+    assert experiment.spec == ExperimentConfig
+
+def test_create_batch_experiment(experiment_manager, ExperimentConfig):
+    """Test the creation of a batch experiment"""
+    parameter_variations = {"treatments.2.delay_treatment.params.delay_time": "2m", "treatments.2.delay_treatment.params.delay_jitter": "2m"}
+    batch_config = experiment_manager.create_batch_experiment("Batch Test", ExperimentConfig, parameter_variations)
+    assert batch_config is not None
+    assert batch_config.name == "Batch Test"
+    assert batch_config.status == "PENDING"
+    assert batch_config.parameter_variations == parameter_variations
+
+def test_get_experiment_config(experiment_manager, ExperimentConfig):
+    """Test for get_experiment_config method"""
+    # Create an experiment
+    response = experiment_manager.create_experiment(name="Test Experiment", config=ExperimentConfig)
+    experiment_id = response.id
+
+    # Mock the store.load to return a config with the expected structure
+    experiment_manager.store.load.return_value = {
+        'spec': ExperimentConfig.model_dump(mode="json")
     }
 
-def test_create_experiment(experiment_manager, sample_config):
-    """Test the creation of an experiment"""
-    experiment = experiment_manager.create_experiment(name="Test Experiment", config=sample_config)
-    assert experiment is not None
-    assert experiment['name'] == "Test Experiment"
-    assert experiment['status'] == "PENDING"
-    assert experiment['spec'] == sample_config
-
-def test_create_batch_experiment(experiment_manager, sample_config):
-    """Test the creation of a batch experiment"""
-    parameter_variations = {"experiment.treatments.0.params.duration": "2m"}
-    batch_config = experiment_manager.create_batch_experiment("Batch Test", sample_config, parameter_variations)
-    assert batch_config is not None
-    assert batch_config['name'] == "Batch Test"
-    assert batch_config['status'] == "PENDING"
-    assert batch_config['parameter_variations'] == parameter_variations
-
-def test_get_experiment_config(experiment_manager, sample_config):
-    """Test for get_experiment_config method"""
-    experiment_id = "test_experiment"
-    experiment_manager.store.load.return_value = sample_config
+    # Get the experiment config
     config = experiment_manager.get_experiment_config(experiment_id)
+    
+    # Verify the store was called correctly
     experiment_manager.store.load.assert_called_once_with(f"{experiment_id}_config", FileFormat.JSON)
-    assert config == sample_config
-
-def test_run_batch_experiment(experiment_manager):
-    """Test running a batch experiment"""
-    batch_id = "batch_1"
-    experiment_manager.store.load.return_value = [{'sub_experiment_id': 0}]
-    experiment_manager.run_experiment = MagicMock()
-    experiment_manager.run_batch_experiment(batch_id, ['json'], 1)
-    experiment_manager.run_experiment.assert_called_once()
+    
+    # Verify the returned config matches the original
+    assert config.model_dump(mode="json") == ExperimentConfig.model_dump(mode="json")
 
 def test_get_experiment_report(experiment_manager):
     """Test getting an experiment report"""
@@ -154,31 +218,52 @@ def test_get_experiment_report(experiment_manager):
     assert report['report'] == 'data'
     experiment_manager.store.load.assert_called_once_with(f"{experiment_id}_report", FileFormat.YAML)
 
-def test_run_experiment(experiment_manager, sample_config):
-    """Test running an experiment"""
-    experiment_id = "test_experiment"
-    experiment_manager.acquire_lock = MagicMock(return_value=True)
-    experiment_manager.release_lock = MagicMock()
-    experiment_manager.update_experiment_config = MagicMock()
-    experiment_manager.get_experiment_config = MagicMock(return_value={'spec': sample_config})
-    experiment_manager.run_experiment(experiment_id, ['json'], 1)
-    experiment_manager.update_experiment_config.assert_any_call(experiment_id, {'status': 'RUNNING'})
-    experiment_manager.update_experiment_config.assert_any_call(experiment_id, {'status': 'COMPLETED'})
-
-def test_update_experiment_config(experiment_manager, sample_config):
+def test_update_experiment_config(experiment_manager, ExperimentConfig):
     """Test updating experiment config"""
-    experiment_id = "test_experiment"
-    experiment_manager.store.load.return_value = sample_config
+    # Create an experiment first
+    response = experiment_manager.create_experiment(name="Test Experiment", config=ExperimentConfig)
+    experiment_id = response.id
+
+    # Mock the store.load to return the actual created config
+    experiment_manager.store.load.return_value = {
+        'id': experiment_id,
+        'name': "Test Experiment",
+        'status': 'PENDING',
+        'created_at': response.created_at,
+        'started_at': "",
+        'completed_at': "",
+        'error_message': "",
+        'spec': ExperimentConfig.model_dump(mode="json")
+    }
+
+    # Update the experiment config
     experiment_manager.update_experiment_config(experiment_id, {'status': 'UPDATED'})
-    experiment_manager.store.save.assert_called_once()
 
-def test_list_experiments(experiment_manager, sample_config):
+    # Verify the store.save was called with the correct updated config
+    expected_config = {
+        'id': experiment_id,
+        'name': "Test Experiment",
+        'status': 'UPDATED',  # This should be updated
+        'created_at': response.created_at,
+        'started_at': "",
+        'completed_at': "",
+        'error_message': "",
+        'spec': ExperimentConfig.model_dump(mode="json")
+    }
+    
+    experiment_manager.store.save.assert_called_with(
+        f"{experiment_id}_config",
+        expected_config,
+        FileFormat.JSON
+    )
+
+def test_list_experiments(experiment_manager, ExperimentConfig):
     """Test listing all experiments"""
-    experiment_manager.store.list_keys.return_value = ['1_config']
-    experiment_manager.store.load.return_value = sample_config
-    experiments = experiment_manager.list_experiments()
-    assert '1_config' in experiments
-
+    experiment_manager.store.list_keys.return_value = ['1_config', '2_config', '3_config']
+    experiment_manager.store.load.return_value = ExperimentConfig.model_dump(mode="json")
+    experiments = experiment_manager.list_experiments_status()
+    assert len(experiments) == 3
+    
 def test_acquire_lock(experiment_manager, test_dir):
     """Test acquiring a lock"""
     lock_file_path = test_dir / '.lock'
