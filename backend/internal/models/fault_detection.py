@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Dict, List
 import logging
 
+from pydantic import BaseModel
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -34,3 +36,15 @@ class DetectionAnalysisResult:
     def to_dict(self) -> dict:
         """Convert the dataclass instance to a dictionary"""
         return asdict(self)
+    
+class FaultDetectionAnalysisResponse(BaseModel):
+    """Represents the response from the fault detection analysis"""
+    fault_name: str
+    detected: bool
+    detection_time: str | None
+    detection_latency: float | None
+    true_positives: List[Dict]
+    false_positives: List[Dict]
+    def to_dict(self) -> dict:
+        """Convert the pydantic instance to a dictionary"""
+        return self.model_dump()

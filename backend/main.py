@@ -4,6 +4,7 @@ import os
 import json
 
 from backend.internal.errors import StoreException
+from backend.internal.models.fault_detection import FaultDetectionAnalysisResponse
 monkey.patch_all()
 
 from typing import Dict, List, Optional, Union
@@ -173,65 +174,13 @@ async def get_experiment_status(experiment_id: str):
         raise HTTPException(status_code=404, detail="Experiment not found")
     response = ExperimentStatus(
         id=experiment_id,
-        name=experiment["name"],
-        status=experiment["status"],
-        started_at=experiment["started_at"],
-        completed_at=experiment["completed_at"],
-        error_message=experiment["error_message"]
+        name=experiment.name,
+        status=experiment.status,
+        started_at=experiment.started_at,
+        completed_at=experiment.completed_at,
+        error_message=experiment.error_message
     )
     return response
-
-""" '''gets the resulting data for the given experiment id and respone variable id and the file format. If file is found it will be returned. Else a 404 not found will be given.
-Supported file types are json and csv. '''
-@app.get("/experiments/{experiment_id}/data/{response_name}/", response_class=None)
-async def get_experiment_data(
-    experiment_id: str,
-    response_name : str,
-    format: str = Query("csv", regex="^(json|csv)$")
-):
-    if format not in {"json", "csv"}:
-        raise HTTPException(status_code=400, detail="Invalid type. Only 'json' and 'csv' are allowed.")
-    try:
-        return experiment_manager.get_experiment_data(experiment_id=experiment_id, response_name=response_name, file_ending=format)
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=f"response variable: {response_name} for experiment: {experiment_id} not found")
-   
-'''Lists the reponse variables in the directory for a given, experiment id with file ending suffixes. Gives back empty lists if experiemnt id is not
-a directory, or the directory is emtpy. Will be mainly used by the analysis service'''
-@app.get("/experiments/{experiment_id}" , response_model=None)
-async def list_experiment_files(
-    experiment_id : str
-):
-    res  =  experiment_manager.list_experiment_variables(experiment_id=experiment_id)
-    if res is not None:
-        return {"response_names": res[0], "response_file_suffixes": res[1]}
-    else:
-        return {"response_names": [], "response_file_suffixes": []} """
-
-@app.get("/experiments/{experiment_id}/benchmark")
-async def get_benchmark_data(experiment_id: str):
-    """
-    Get benchmark results for experiment.
-    Returns CSV file with detection times and accuracy metrics.
-    """
-    # TODO: Implement CSV file download response
-    pass
-
-@app.get("/results")
-async def get_experiment_result():
-    """
-        Get all experiment results
-    """
-    # TODO: Implement CSV file download response
-    pass
-
-@app.get("/analysis-data")
-async def get_analysis_data():
-    """
-    Returns analysis data if available
-    """
-    return experiment_manager.get_analysis_data()
-
 
 @app.get("/experiments/{experiment_id}/report")
 async def get_experiment_report(experiment_id: str):
@@ -244,7 +193,7 @@ async def get_experiment_report(experiment_id: str):
         raise HTTPException(status_code=404, detail="Report not found")
     return report
 
-# Additional Feature Endpoints
+
 @app.post("/experiments/batch")
 async def create_batch_experiment(batch_experiment: BatchExperimentCreate):
     logger.info(f"API: Creating batch experiment: {batch_experiment.name}")
@@ -339,10 +288,21 @@ async def get_experiment_config(experiment_id: str):
     """Get experiment configuration"""
     return experiment_manager.get_experiment_config(experiment_id)
 
-@app.get("/experiments/{experiment_id}/analyse-fault-detection")
+@app.get("/experiments/{experiment_id}/analyse-fault-detection", response_model=List[FaultDetectionAnalysisResponse])
 async def analyse_fault_detection(experiment_id: str):
     """Analyse fault detection for an experiment"""
-    return experiment_manager.analyze_fault_detection(experiment_id)
+    results = experiment_manager.analyze_fault_detection(experiment_id)
+    response = []
+    for result in results:
+        response.append(FaultDetectionAnalysisResponse(
+            fault_name=result.fault_name,
+            detected=result.detected,
+            detection_time=result.detection_time,
+            detection_latency=result.detection_latency,
+            true_positives=result.true_positives,
+            false_positives=result.false_positives
+        ))
+    return response
 
 @app.get("/experiments/{experiment_id}/raw-detections")
 async def get_experiment_detections(experiment_id: str):
