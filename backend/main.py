@@ -78,7 +78,7 @@ async def create_experiment(experiment: Experiment):
         config=experiment
     )
 
-# Is this api outedated? - As we use the /experiments/{experiment_id}/runsync route now
+# WIP - Execution not guaranteed to be started
 @app.post("/experiments/{experiment_id}/run", response_model=Dict)
 async def run_experiment(
     experiment_id: str,
@@ -248,7 +248,14 @@ async def get_experiment_config(experiment_id: str):
 @app.get("/experiments/{experiment_id}/analyse-fault-detection", response_model=List[FaultDetectionAnalysisResponse])
 async def analyse_fault_detection(experiment_id: str):
     """Analyse fault detection for an experiment"""
-    results = experiment_manager.analyze_fault_detection(experiment_id)
+    try:
+        results = experiment_manager.analyze_fault_detection(experiment_id)
+    except ValueError as e:
+        logger.error(f"Error analysing fault detection for experiment {experiment_id}: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error analysing fault detection for experiment {experiment_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
     response = []
     for result in results:
         response.append(FaultDetectionAnalysisResponse(

@@ -95,7 +95,7 @@
     ]
   },
   "loadgen": {
-    "run_time": "3m",
+    "run_time": "2m",
     "max_users": 400,
     "spawn_rate": 50,
     "locust_files": [

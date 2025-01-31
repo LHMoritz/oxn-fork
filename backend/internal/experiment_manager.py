@@ -111,9 +111,9 @@ class ExperimentManager:
                 'name': f"{name}_{i}",
                 'status': 'PENDING',
                 'created_at': datetime.now().isoformat(),
-                'started_at': None,
-                'completed_at': None,
-                'error_message': None,
+                'started_at': "",
+                'completed_at': "",
+                'error_message': "",
                 'spec': sub_config,
             }
 
@@ -442,7 +442,7 @@ class ExperimentManager:
             raise ValueError(f"No report found for experiment {experiment_id}")
         
         # TODO find a place to keep a reference to the prometheus client
-        experiment = self.get_experiment_config(experiment_id).model_dump(mode="json")
+        experiment = self.get_experiment_config(experiment_id)
         if experiment is None:
             raise ValueError(f"No experiment config found for experiment {experiment_id}")
         orchestrator = KubernetesOrchestrator(experiment_config=experiment)
