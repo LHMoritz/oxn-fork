@@ -1,7 +1,7 @@
 {
-  "name": "big",
+  "name": "batch-big-delay-config-rules",
   "config": {
-  "name": "latest",
+  "name": "batch-big-delay-config-rules",
   "version": "0.0.1",
   "orchestrator": "kubernetes",
   "services": {

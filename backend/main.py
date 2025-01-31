@@ -36,7 +36,7 @@ from datetime import datetime
 from backend.internal.experiment_manager import ExperimentManager
 from fastapi.responses import FileResponse, StreamingResponse
 from backend.internal.store import LocalFSStore
-from backend.internal.models.experiment import Experiment
+from backend.internal.models.experiment import CreateBatchExperimentRequest, CreateBatchExperimentResponse, CreateExperimentResponse, Experiment, ExperimentStatus, RunExperimentRequest
 
 
 app = FastAPI(title="OXN API", version="1.0.0")
@@ -64,24 +64,9 @@ experiment_manager = ExperimentManager(Path(base_path), store)
 experiments_dir = Path(base_path) / 'experiments'
 
 ############### Pydantic models for request/response validation ###############
-class BatchExperimentCreate(BaseModel):
-    name: str
-    config: Experiment
-    parameter_variations: Dict[str, List[Union[str, float]]] 
-class ExperimentRun(BaseModel):
-    runs: int = 1
-    output_formats: List[str] = ["json"]  # or csv
-
-class ExperimentStatus(BaseModel):
-    id: str
-    name: str
-    status: str
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
-    error_message: Optional[str]
 
 
-@app.post("/experiments", response_model=ExperimentStatus)
+@app.post("/experiments", response_model=CreateExperimentResponse)
 async def create_experiment(experiment: Experiment):
     """
     Create a new experiment with configuration.
@@ -97,7 +82,7 @@ async def create_experiment(experiment: Experiment):
 @app.post("/experiments/{experiment_id}/run", response_model=Dict)
 async def run_experiment(
     experiment_id: str,
-    run_config: ExperimentRun,
+    run_config: RunExperimentRequest,
     background_tasks: BackgroundTasks
 ):
     """
@@ -124,10 +109,10 @@ async def run_experiment(
         "experiment_id": experiment_id
     }
 
-@app.post("/experiments/{experiment_id}/runsync", response_model=Dict)
+@app.post("/experiments/{experiment_id}/runsync", response_model=Experiment)
 async def run_experiment_sync(
     experiment_id: str,
-    run_config: ExperimentRun,
+    run_config: RunExperimentRequest,
 ):
     """
     Start experiment execution asynchronously.
@@ -139,7 +124,6 @@ async def run_experiment_sync(
     if not experiment_manager.get_experiment_config(experiment_id):
         raise HTTPException(status_code=404, detail="Experiment not found")
         
-    
     logger.info(f"Running experiment synchronously: {experiment_id}")
     try:
         experiment_manager.run_experiment(
@@ -169,18 +153,10 @@ async def get_experiment_data(experiment_id: str):
 @app.get("/experiments/{experiment_id}/status", response_model=ExperimentStatus)
 async def get_experiment_status(experiment_id: str):
     """Get current status of an experiment"""
-    experiment = experiment_manager.get_experiment_config(experiment_id)
-    if experiment is None:
+    status = experiment_manager.get_experiment_status(experiment_id)
+    if status is None:
         raise HTTPException(status_code=404, detail="Experiment not found")
-    response = ExperimentStatus(
-        id=experiment_id,
-        name=experiment.name,
-        status=experiment.status,
-        started_at=experiment.started_at,
-        completed_at=experiment.completed_at,
-        error_message=experiment.error_message
-    )
-    return response
+    return status
 
 @app.get("/experiments/{experiment_id}/report")
 async def get_experiment_report(experiment_id: str):
@@ -193,25 +169,22 @@ async def get_experiment_report(experiment_id: str):
         raise HTTPException(status_code=404, detail="Report not found")
     return report
 
-
-@app.post("/experiments/batch")
-async def create_batch_experiment(batch_experiment: BatchExperimentCreate):
+@app.post("/experiments/batch", response_model=CreateBatchExperimentResponse)
+async def create_batch_experiment(batch_experiment: CreateBatchExperimentRequest):
     logger.info(f"API: Creating batch experiment: {batch_experiment.name}")
     return experiment_manager.create_batch_experiment(batch_experiment.name, batch_experiment.config, batch_experiment.parameter_variations)
 
 @app.post("/experiments/batch/{batch_id}/run")
-async def run_batch_experiment(batch_id: str, experiment_config: ExperimentRun, analyze: bool = Query(False, description="Enable analysis after experiment completion")):
+async def run_batch_experiment(batch_id: str, experiment_config: RunExperimentRequest, analyze: bool = Query(False, description="Enable analysis after experiment completion")):
     try:
         return experiment_manager.run_batch_experiment(batch_id, experiment_config.output_formats, experiment_config.runs, analyze)
     except Exception as e:
         logger.error(f"Error running batch experiment: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.get("/experiments/batch/{batch_id}/{sub_experiment_id}/report")
 async def get_batch_experiment_report(batch_id: str, sub_experiment_id: str):
     report = experiment_manager.get_batched_experiment_report(batch_id, sub_experiment_id)
-
     if report is None:
         raise HTTPException(status_code=404, detail="Report not found")
     return report
@@ -239,7 +212,6 @@ async def get_batch_experiment_id(
 ):
     """
     Get the sub experiment id for a given batch id and parameter combination
-    
     Query params should be provided as key-value pairs, e.g. ?param1=value1&param2=value2
     """
     params = request.query_params
@@ -254,8 +226,6 @@ async def get_batch_experiment_id(
     except StoreException as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-'''This endpoint lists all experiments in the file system with corresponding meta data. The difference  to the route : /experiemnts/experiments_id that this route lists
-repsonse variables inside a directory and does not list directories. This route will be mainly used by the frontend.'''
 @app.get("/experiments", response_model=List[ExperimentStatus])
 async def list_experiments(
     status: Optional[str] = None,
@@ -264,20 +234,7 @@ async def list_experiments(
     """
     List all experiments
     """
-    experiments = experiment_manager.list_experiments_status()
-    response = []
-    for e in experiments:
-        response.append(ExperimentStatus(
-            id=experiments[e]["id"],
-            name=experiments[e]["name"],
-            status=experiments[e]["status"],
-            started_at=experiments[e]["started_at"],
-            completed_at=experiments[e]["completed_at"],
-            error_message=experiments[e]["error_message"]
-        ))
-    return response
-
-
+    return experiment_manager.list_experiments_status(status_filter=status, limit=limit)
 @app.get("/health")
 async def health_check():
     """Simple health check endpoint"""

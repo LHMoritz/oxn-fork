@@ -9,6 +9,8 @@ from typing import Any, Dict, List, Optional, Union, Literal
 
 from pydantic import BaseModel, Field, constr
 
+from backend.internal.store import FileFormat
+
 
 class Jaeger(BaseModel):
     name: str
@@ -84,3 +86,43 @@ class Experiment(BaseModel):
     treatments: Optional[List[Dict[str, Treatments]]] = None
     sue: Sue
     loadgen: Loadgen
+
+class CreateExperimentResponse(BaseModel):
+    id: str
+    name: str
+    status: str
+    created_at: str
+    started_at: str
+    completed_at: str
+    error_message: str
+    spec: Experiment
+
+class CreateBatchExperimentResponse(BaseModel):
+    id: str
+    name: str
+    status: str
+    created_at: str
+    started_at: str
+    completed_at: str
+    error_message: str
+    spec: Experiment
+    parameter_variations: Dict[str, Any]
+
+class ExperimentStatus(BaseModel):
+    id: str
+    name: str
+    status: str
+    started_at: str
+    completed_at: str
+    error_message: str
+
+
+class CreateBatchExperimentRequest(BaseModel):
+    name: str
+    config: Experiment
+    parameter_variations: Dict[str, List[Union[str, float]]] 
+
+
+class RunExperimentRequest(BaseModel):
+    runs: int = 1
+    output_formats: List[FileFormat] = [FileFormat.JSON]

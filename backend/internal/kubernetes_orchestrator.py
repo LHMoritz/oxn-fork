@@ -16,22 +16,18 @@ from kubernetes.client.exceptions import ApiException
 from kubernetes.client.models.v1_deployment import V1Deployment
 from kubernetes.client.models.v1_pod import V1Pod
 
+from backend.internal.models.experiment import Experiment
 from backend.internal.models.orchestrator import Orchestrator  # Import the abstract base class
 logger = logging.getLogger(__name__)
 
 from backend.internal.errors import OxnException, OrchestratorException, OrchestratorResourceNotFoundException
 
 class KubernetesOrchestrator(Orchestrator):
-    def __init__(self, experiment_config=None):
+    def __init__(self, experiment_config: Experiment):
         logger.info("Initializing Kubernetes orchestrator")
-        if experiment_config is None:
-            logger.error("No experiment configuration provided. Continue with empty configuration")
-            experiment_config = {}
-        self.experiment_config: dict = experiment_config
-        
-        import sys
-        sys.setrecursionlimit(10000) 
-        
+        #import sys
+        #sys.setrecursionlimit(10000) 
+        self.experiment_config = experiment_config
         try:
             config.load_incluster_config()
             self.kube_client = client.CoreV1Api()
@@ -49,7 +45,7 @@ class KubernetesOrchestrator(Orchestrator):
                 self.list_of_all_pods = []
                 self.list_of_all_services = []
 
-            self.required_services = self.experiment_config.get("experiment", {}).get("sue", {}).get("required", [])
+            self.required_services = self.experiment_config.sue.required
             
         except Exception as e:
             logger.error(f"Error initializing Kubernetes orchestrator: {str(e)}")
@@ -59,18 +55,16 @@ class KubernetesOrchestrator(Orchestrator):
             )
             
     
-    def _check_required_services(self, required_services) -> bool:
+    def _check_required_services(self) -> bool:
         """Check if all of experiment_config.sue.required services are running"""
-        for service in required_services:
-            service_name = service["name"]
-            namespace = service["namespace"]
+        if self.required_services is None:
+            return True
+        for service in self.required_services:
             try:
-                service = self.kube_client.read_namespaced_service(service_name, namespace)
-                #logger.info(f"Service {service_name} in namespace {namespace} is running")
+                service = self.kube_client.read_namespaced_service(service.name, service.namespace)
             except ApiException as e:
-                #logger.error(f"Service {service_name} in namespace {namespace} is not running")
                 raise OxnException(
-                    message=f"Service {service_name} in namespace {namespace} is not running but set as a required service",
+                    message=f"Service {service.name} in namespace {service.namespace} is not running but set as a required service",
                     explanation=str(e),
                 )
         return True
@@ -80,10 +74,8 @@ class KubernetesOrchestrator(Orchestrator):
         logger.info("orchestrate noop implementation")
         pass
 
-    def ready(self, expected_services: List[str] | None, timeout: int = 120) -> bool:
-        if expected_services is None:
-            expected_services = self.required_services
-        return self._check_required_services(expected_services)
+    def ready(self, timeout: int = 120) -> bool:
+        return self._check_required_services()
 
     def teardown(self):
         logger.info("teardown loop implementation")
@@ -98,7 +90,7 @@ class KubernetesOrchestrator(Orchestrator):
         pass
 
     def running_services(self) -> List[str]:
-        return self.list_of_all_services.items
+        return [service.metadata.name for service in self.list_of_all_services]
 
     """
     Get all pods for a given service and execute a command on them and aggregate the results
@@ -294,11 +286,11 @@ class KubernetesOrchestrator(Orchestrator):
 
         """
         assert self.experiment_config is not None
-        assert self.experiment_config["services"] is not None
-        assert self.experiment_config["services"]["jaeger"] is not None
+        assert self.experiment_config.services is not None
+        assert self.experiment_config.services.jaeger is not None
         
-        jaeger_name = self.experiment_config["services"]["jaeger"]["name"]
-        jaeger_namespace = self.experiment_config["services"]["jaeger"]["namespace"]
+        jaeger_name = self.experiment_config.services.jaeger.name
+        jaeger_namespace = self.experiment_config.services.jaeger.namespace
         return self.get_address_for_service(
             name=jaeger_name,
             namespace=jaeger_namespace,
@@ -314,21 +306,19 @@ class KubernetesOrchestrator(Orchestrator):
         """
         
         assert self.experiment_config is not None
-        assert self.experiment_config["services"] is not None
-        assert self.experiment_config["services"]["prometheus"] is not None
+        assert self.experiment_config.services is not None
+        assert self.experiment_config.services.prometheus is not None
         
-        prometheus_configs = self.experiment_config["services"]["prometheus"]
+        prometheus_configs = self.experiment_config.services.prometheus
                
         for prometheus_config in prometheus_configs:
-            assert prometheus_config["target"] is not None
-            if prometheus_config["target"] == target:
-                assert prometheus_config["name"] is not None
-                assert prometheus_config["namespace"] is not None
-                prometheus_name = prometheus_config["name"]
-                prometheus_namespace = prometheus_config["namespace"]
+            assert prometheus_config.target is not None
+            if prometheus_config.target == target:
+                assert prometheus_config.name is not None
+                assert prometheus_config.namespace is not None
                 return self.get_address_for_service(
-                    name=prometheus_name,
-                    namespace=prometheus_namespace,
+                    name=prometheus_config.name,
+                    namespace=prometheus_config.namespace,
                 )
         
         raise OrchestratorException(

@@ -1,5 +1,5 @@
 {
-    "name": "latest",
+    "name": "single-short-delay-config-rules",
     "version": "0.0.1",
     "orchestrator": "kubernetes",
     "services": {

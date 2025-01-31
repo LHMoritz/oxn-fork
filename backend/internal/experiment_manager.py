@@ -1,4 +1,6 @@
 import zipfile
+
+from fastapi import HTTPException
 from backend.internal.analysis import ExperimentAnalyzer
 from backend.internal.errors import StoreException
 from backend.internal.fault_detection import PrometheusDetectionAnalyzer
@@ -12,7 +14,7 @@ from typing import Dict, Optional, Tuple, List
 import pandas as pd
 from backend.internal.engine import Engine
 from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
-from backend.internal.models.experiment import Experiment
+from backend.internal.models.experiment import CreateBatchExperimentResponse, CreateExperimentResponse, Experiment, ExperimentStatus
 from backend.internal.models.fault_detection import DetectionAnalysisResult
 from backend.internal.prometheus import Prometheus
 from backend.internal.utils import dict_product, update_dict_with_parameter_variations
@@ -45,11 +47,11 @@ class ExperimentManager:
         # Ensure directories exist
         self.experiments_dir.mkdir(parents=True, exist_ok=True)
 
-    def create_experiment(self, name, config: Experiment):
+    def create_experiment(self, name, config: Experiment) -> CreateExperimentResponse:
         """Create new experiment directory and config file"""
         if not self.acquire_lock():
-            logger.info("Lock already held, skipping experiment check")
-            return False
+            logger.info("Lock already held.")
+            raise Exception("Lock already held - cannot create experiment")
         try:
             experiment_id = str(self.counter) + str(int(time.time()))
             self.counter += 1
@@ -59,9 +61,9 @@ class ExperimentManager:
                 'name': name,
                 'status': 'PENDING',
                 'created_at': datetime.now().isoformat(),
-                'started_at': None,
-                'completed_at': None,
-                'error_message': None,
+                'started_at': "",
+                'completed_at': "",
+                'error_message': "",
                 'spec': config.model_dump(mode="json"),
             }
             
@@ -69,10 +71,10 @@ class ExperimentManager:
             self.store.save(f"{experiment_id}_config", experiment, FileFormat.JSON)
         finally:
             self.release_lock()
-        return experiment
+        return CreateExperimentResponse(**experiment)
     
 
-    def create_batch_experiment(self, name: str, config: Experiment, parameter_variations: dict):
+    def create_batch_experiment(self, name: str, config: Experiment, parameter_variations: dict) -> CreateBatchExperimentResponse:
         """
         Create a new batch experiment
         """
@@ -85,9 +87,10 @@ class ExperimentManager:
             'id': batch_id,
             'name': name,
             'status': 'PENDING',
-            'started_at': datetime.now().isoformat(),
-            'completed_at': None,
-            'error_message': None,
+            'created_at': datetime.now().isoformat(),
+            'started_at': "",
+            'completed_at': "",
+            'error_message': "",
             'spec': config.model_dump(mode="json"),
             'parameter_variations': parameter_variations,
         }
@@ -124,20 +127,40 @@ class ExperimentManager:
         # Save parameter mapping to JSON
         self.store.save(f"{batch_id}_params_to_id", param_mapping, FileFormat.JSON)
         
-        return batch_config
+        return CreateBatchExperimentResponse(**batch_config)
     
     def get_experiment_config(self, experiment_id) -> Experiment:
         """Get experiment config"""
         experiment_config = self.store.load(f"{experiment_id}_config", FileFormat.JSON)
         if experiment_config is None:
             raise ValueError(f"No experiment config found for experiment {experiment_id}")
+        if not isinstance(experiment_config, dict):
+            raise ValueError(f"Experiment config is not a dictionary for experiment {experiment_id}")
         try:
             return Experiment(**experiment_config['spec'])
         except Exception as e:
             logger.error(f"could not load experiment config: {e}")
             raise e
+        
+    def get_experiment_status(self, experiment_id) -> ExperimentStatus:
+        """Get experiment status file. Contains status, started_at, completed_at, error_message and the config"""
+        experiment_config = self.store.load(f"{experiment_id}_config", FileFormat.JSON)
+        if experiment_config is None:
+            raise ValueError(f"No experiment config found for experiment {experiment_id}")
+        if not isinstance(experiment_config, dict):
+            raise ValueError(f"Experiment config is not a dictionary for experiment {experiment_id}")
+        status = ExperimentStatus(
+            id=experiment_id,
+            name=experiment_config['name'],
+            status=experiment_config['status'],
+            started_at=experiment_config['started_at'],
+            completed_at=experiment_config['completed_at'],
+            error_message=experiment_config['error_message']
+        )
+        return status
     
-    def run_batch_experiment(self, batch_id: str, output_formats: List[str], runs: int, analyse_fault_detection: bool = False):
+
+    def run_batch_experiment(self, batch_id: str, output_formats: List[FileFormat], runs: int, analyse_fault_detection: bool = False):
         """Run a batch experiment"""
         try:
             logger.info(f"Running batch experiment: {batch_id}")
@@ -175,7 +198,7 @@ class ExperimentManager:
         """Get experiment report"""
         return self.store.load(f"{experiment_id}_report", FileFormat.YAML)
     
-    def run_experiment(self, experiment_id, output_formats, runs):
+    def run_experiment(self, experiment_id, output_formats:List[FileFormat], runs):
         """Run experiment"""
         if not self.acquire_lock():
             logger.info("Lock already held, skipping experiment check")
@@ -184,12 +207,9 @@ class ExperimentManager:
             logger.info(f"Changing experiment status to RUNNING")
             self.update_experiment_config(experiment_id, {'status': 'RUNNING'})
             logger.debug(f"experiment config: {self.get_experiment_config(experiment_id)}")
-            experiment = self.get_experiment_config(experiment_id).model_dump(mode="json")
-
-            orchestrator = KubernetesOrchestrator(experiment_config=experiment)
+            experiment = self.get_experiment_config(experiment_id)
         
             engine = Engine(
-                orchestrator_class=orchestrator,
                 spec=experiment,
                 id=experiment_id
             )
@@ -200,7 +220,7 @@ class ExperimentManager:
                 # that are run specific.
                 # Multiple calls to run() will keep on adding to the report data, so we only care about this object when we are done with all runs.
                 # In contrast, we care about the response data for each run, so we need to write it to disk immediately.
-                responses, report_data = engine.run(orchestration_timeout=None, randomize=False, accounting=False)
+                responses, report_data = engine.run(orchestration_timeout=120, randomize=False, accounting=False)
                 
                 for _ , response in responses.items():
                     # construct key
@@ -247,41 +267,49 @@ class ExperimentManager:
 
     def update_experiment_config(self, experiment_id, updates):
         """Update experiment config"""
-        experiment_config = self.get_experiment_config(experiment_id)
         try:
-            # WIP: this is not the best way to do this Of course.
-            # Earlier code did not implement a typed model for the experiment config.
-            new_config = experiment_config.model_dump(mode="json")
-            new_config.update(updates)
-            self.store.save(experiment_id, new_config, FileFormat.JSON)
+            # Load the full config document first
+            config_doc = self.store.load(f"{experiment_id}_config", FileFormat.JSON)
+            if config_doc is None or not isinstance(config_doc, dict):
+                raise ValueError(f"No valid experiment config found for experiment {experiment_id}")
+                
+            # Update the document with the new values
+            config_doc.update(updates)
+            
+            # Save the updated config back to store
+            self.store.save(f"{experiment_id}_config", config_doc, FileFormat.JSON)
         except Exception as e:
             logger.error(f"could not update experiment config: {e}")
-        
-
-    def list_experiments(self):
-        """List all experiments"""
-        all_documents = self.store.list_keys()
-        experiments = {}
-        for document in all_documents:
-            if document.endswith("_config"):
-                try:
-                    experiment_config = self.store.load(document, FileFormat.JSON)
-                    if experiment_config is not None and isinstance(experiment_config, dict):
-                        experiments[document] = experiment_config
-                except Exception as e:
-                    logger.error(f"could not load experiment config: {e}")
-                    continue
-        return experiments
+            raise e
     
-    def list_experiments_status(self):
+    def list_experiments_status(self, status_filter: Optional[str] = None, limit: int = 1000) -> List[ExperimentStatus]:
         """List all Status of all experiments"""
         all_documents = self.store.list_keys()
-        experiments = {}
+        experiments = []
+        length = 0
         for document in all_documents:
-            if not document.endswith("_config"):
+            if document.endswith("_config"):  # Changed condition to look for config files
                 experiment_config = self.store.load(document, FileFormat.JSON)
                 if experiment_config is not None and isinstance(experiment_config, dict):
-                    experiments[document] = experiment_config
+                    if status_filter is not None and experiment_config.get('status') != status_filter:
+                        continue
+                    length += 1
+                    if length > limit:
+                        break
+                    # Extract only the fields needed for ExperimentStatus
+                    status_data = {
+                        'id': experiment_config.get('id', ""),
+                        'name': experiment_config.get('name', ""),
+                        'status': experiment_config.get('status', ""),
+                        'started_at': experiment_config.get('started_at', ""),
+                        'completed_at': experiment_config.get('completed_at', ""),
+                        'error_message': experiment_config.get('error_message', "")
+                    }
+                    try:
+                        experiments.append(ExperimentStatus(**status_data))
+                    except Exception as e:
+                        logger.error(f"could not create experiment status for {status_data}: {e}")
+                        continue
         return experiments
     
 
@@ -461,6 +489,9 @@ class ExperimentManager:
         detections = self.store.load(f"{experiment_id}_detections", FileFormat.JSON)
         if detections is None:
             raise ValueError(f"No detections found for experiment {experiment_id}")
+        # This check needs to be changed if someone wants to store non-dict data for the raw detections
+        if not isinstance(detections, dict):
+            raise ValueError(f"Detections are not a dictionary for experiment {experiment_id}")
         return detections
 
 
