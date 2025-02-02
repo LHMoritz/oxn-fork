@@ -118,8 +118,6 @@ async def run_experiment_sync(
     Start experiment execution asynchronously.
     - Validates experiment exists
     - Checks if another experiment is running
-    - Starts execution in background
-    - Returns immediately with acceptance status
     """
     if not experiment_manager.get_experiment_config(experiment_id):
         raise HTTPException(status_code=404, detail="Experiment not found")
@@ -132,6 +130,7 @@ async def run_experiment_sync(
             runs=run_config.runs
         )
     except Exception as e:
+        experiment_manager.update_experiment_config(experiment_id, {'status': 'FAILED', 'error_message': str(e)})
         raise HTTPException(status_code=500, detail=str(e))
     
     return {

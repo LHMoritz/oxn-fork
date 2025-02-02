@@ -64,6 +64,7 @@ class ExperimentManager:
                 'started_at': "",
                 'completed_at': "",
                 'error_message': "",
+                'analysis_status': "",
                 'spec': config.model_dump(mode="json"),
             }
             
@@ -91,6 +92,7 @@ class ExperimentManager:
             'started_at': "",
             'completed_at': "",
             'error_message': "",
+            'analysis_status': "",
             'spec': config.model_dump(mode="json"),
             'parameter_variations': parameter_variations,
         }
@@ -114,6 +116,7 @@ class ExperimentManager:
                 'started_at': "",
                 'completed_at': "",
                 'error_message': "",
+                'analysis_status': "",
                 'spec': sub_config,
             }
 
@@ -145,6 +148,7 @@ class ExperimentManager:
     def get_experiment_status(self, experiment_id) -> ExperimentStatus:
         """Get experiment status file. Contains status, started_at, completed_at, error_message and the config"""
         experiment_config = self.store.load(f"{experiment_id}_config", FileFormat.JSON)
+        self.update_experiment_config(experiment_id, {'analysis_status': self.check_experiment_status(experiment_id)})
         if experiment_config is None:
             raise ValueError(f"No experiment config found for experiment {experiment_id}")
         if not isinstance(experiment_config, dict):
@@ -155,9 +159,31 @@ class ExperimentManager:
             status=experiment_config['status'],
             started_at=experiment_config['started_at'],
             completed_at=experiment_config['completed_at'],
-            error_message=experiment_config['error_message']
+            error_message=experiment_config['error_message'],
+            analysis_status=experiment_config['analysis_status']
         )
         return status
+    
+    def check_experiment_status(self, experiment_id: str) -> str:
+        """Check experiment status"""
+
+        analysis_path = os.getenv("OXN_ANALYSIS_PATH", "/mnt/analysis-datastore")
+        try:
+            if not os.path.exists(analysis_path):
+                logger.info(f"Analysispath {analysis_path} does not exists")
+                return "ANALYSIS_PATH_NOT_FOUND"
+                
+            for filename in os.listdir(analysis_path):
+                if experiment_id in filename and filename.endswith('.json'):
+                    logger.info(f"Analysis file found: {filename}")
+                    return "ANALYSIS_FILE_FOUND"
+                    
+            logger.info(f"No analysis file found for experiment {experiment_id} in path {analysis_path}")
+            return "ANALYSIS_FILE_NOT_FOUND"
+        
+        except Exception as e:
+            logger.error(f"Error searching for analysis file: {str(e)}")
+        return "ANALYSIS_FILE_NOT_FOUND"
     
 
     def run_batch_experiment(self, batch_id: str, output_formats: List[FileFormat], runs: int, analyse_fault_detection: bool = False):
@@ -206,6 +232,7 @@ class ExperimentManager:
         try:
             logger.info(f"Changing experiment status to RUNNING")
             self.update_experiment_config(experiment_id, {'status': 'RUNNING'})
+            self.update_experiment_config(experiment_id, {'started_at': datetime.now().isoformat()})
             logger.debug(f"experiment config: {self.get_experiment_config(experiment_id)}")
             experiment = self.get_experiment_config(experiment_id)
         
@@ -233,6 +260,7 @@ class ExperimentManager:
                         logger.error(f"response data is None for {response.name}")
 
             self.store.save(f"{experiment_id}_report", report_data, FileFormat.YAML)
+            self.update_experiment_config(experiment_id, {'completed_at': datetime.now().isoformat()})
             # Call the analysis service here
             self.call_analysis_service(experiment_id)
 
@@ -303,7 +331,8 @@ class ExperimentManager:
                         'status': experiment_config.get('status', ""),
                         'started_at': experiment_config.get('started_at', ""),
                         'completed_at': experiment_config.get('completed_at', ""),
-                        'error_message': experiment_config.get('error_message', "")
+                        'error_message': experiment_config.get('error_message', ""),
+                        'analysis_status': experiment_config.get('analysis_status', "")
                     }
                     try:
                         experiments.append(ExperimentStatus(**status_data))
