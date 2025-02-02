@@ -34,7 +34,8 @@ export default function ParsedContentDisplay({
   const onCreateExperiment = async () => {
     try {
       // TODO: Uncomment API call and remove hardcoded response below
-      const response = await post("/experiments", { name: "experiment.yaml", config: parsedContent });
+      console.log("parsedContent", parsedContent)
+      const response = await post("/experiments", parsedContent);
      
       setCreateExperimentResponse(response)
       console.log("File saved response:", response);

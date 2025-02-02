@@ -115,7 +115,7 @@ class ExperimentStatus(BaseModel):
     started_at: str
     completed_at: str
     error_message: str
-
+    analysis_status: str
 
 class CreateBatchExperimentRequest(BaseModel):
     name: str
