@@ -19,6 +19,7 @@ from backend.internal.models.fault_detection import DetectionAnalysisResult
 from backend.internal.prometheus import Prometheus
 from backend.internal.utils import dict_product, update_dict_with_parameter_variations
 from backend.internal.store import DocumentStore, FileFormat
+from backend.internal.models.analysis_status import AnalysisStatus
 import io
 import os
 import requests
@@ -64,7 +65,7 @@ class ExperimentManager:
                 'started_at': "",
                 'completed_at': "",
                 'error_message': "",
-                'analysis_status': "",
+                'analysis_status': AnalysisStatus.NOT_STARTED.value,
                 'spec': config.model_dump(mode="json"),
             }
             
@@ -92,7 +93,7 @@ class ExperimentManager:
             'started_at': "",
             'completed_at': "",
             'error_message': "",
-            'analysis_status': "",
+            'analysis_status': AnalysisStatus.NOT_STARTED.value,
             'spec': config.model_dump(mode="json"),
             'parameter_variations': parameter_variations,
         }
@@ -116,7 +117,7 @@ class ExperimentManager:
                 'started_at': "",
                 'completed_at': "",
                 'error_message': "",
-                'analysis_status': "",
+                'analysis_status': AnalysisStatus.NOT_STARTED.value,
                 'spec': sub_config,
             }
 
@@ -148,7 +149,8 @@ class ExperimentManager:
     def get_experiment_status(self, experiment_id) -> ExperimentStatus:
         """Get experiment status file. Contains status, started_at, completed_at, error_message and the config"""
         experiment_config = self.store.load(f"{experiment_id}_config", FileFormat.JSON)
-        self.update_experiment_config(experiment_id, {'analysis_status': self.check_experiment_status(experiment_id)})
+        experiment_status = self.check_experiment_status(experiment_id, experiment_config)
+        self.update_experiment_config(experiment_id, {'analysis_status': experiment_status})
         if experiment_config is None:
             raise ValueError(f"No experiment config found for experiment {experiment_id}")
         if not isinstance(experiment_config, dict):
@@ -160,30 +162,28 @@ class ExperimentManager:
             started_at=experiment_config['started_at'],
             completed_at=experiment_config['completed_at'],
             error_message=experiment_config['error_message'],
-            analysis_status=experiment_config['analysis_status']
+            analysis_status=experiment_status
         )
-        return status
+        return status   
     
-    def check_experiment_status(self, experiment_id: str) -> str:
+    def check_experiment_status(self, experiment_id: str, experiment_config: dict) -> str:
         """Check experiment status"""
 
         analysis_path = os.getenv("OXN_ANALYSIS_PATH", "/mnt/analysis-datastore")
         try:
             if not os.path.exists(analysis_path):
                 logger.info(f"Analysispath {analysis_path} does not exists")
-                return "ANALYSIS_PATH_NOT_FOUND"
+                return AnalysisStatus.ANALYSIS_DATA_PATH_NOT_FOUND.value
                 
             for filename in os.listdir(analysis_path):
                 if experiment_id in filename and filename.endswith('.json'):
                     logger.info(f"Analysis file found: {filename}")
-                    return "ANALYSIS_FILE_FOUND"
-                    
+                    return AnalysisStatus.FINISHED.value
             logger.info(f"No analysis file found for experiment {experiment_id} in path {analysis_path}")
-            return "ANALYSIS_FILE_NOT_FOUND"
-        
+            return experiment_config['analysis_status']
         except Exception as e:
             logger.error(f"Error searching for analysis file: {str(e)}")
-        return "ANALYSIS_FILE_NOT_FOUND"
+        return AnalysisStatus.INTERNAL_ERROR.value
     
 
     def run_batch_experiment(self, batch_id: str, output_formats: List[FileFormat], runs: int, analyse_fault_detection: bool = False):
@@ -263,6 +263,7 @@ class ExperimentManager:
             self.update_experiment_config(experiment_id, {'completed_at': datetime.now().isoformat()})
             # Call the analysis service here
             self.call_analysis_service(experiment_id)
+            self.update_experiment_config(experiment_id, {'analysis_status': AnalysisStatus.IN_PROGRESS.value})
 
         except Exception as e:
             logger.error(f"Error running experiment: {e}")
