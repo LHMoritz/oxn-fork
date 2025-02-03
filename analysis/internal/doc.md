@@ -63,6 +63,24 @@ However, this gives us the opporunity to build interesting KPIs around the Class
 
 2. How much does the distribution differ from each other in a response variable between good and fault traces?
 
+'''
+     This function is creating the lower and upper bound for the performance anomaly detection per service tuple
+     based on very simple "outlier detection". This could be up for discussion for improvements. For now I would leave it this way as stated in the paper.
+     Here we use int as a val corresponding to the index in the flattened dataframe
+     dict[m_n, [number of observations between MS m and n , average, variance ]]
+     at another point in time we pool the variances with the assuption that the datasets are independent
+ 
+     def get_bounds_for_service_calls(self) -> dict[str , float]:
+          merged = [var.adf_matrices for var in self.variables]
+          result = pd.concat(merged, axis=0, ignore_index=True)
+          columns_for_average = self.column_names
+          average_series = result[columns_for_average].mean()
+          series_dict = average_series.to_dict()
+          print(series_dict)
+          self.weights_of_edges = series_dict
+
+     '''
+
 
 # Model Evaluation and Metrics
 
@@ -99,6 +117,8 @@ However, this gives us the opporunity to build interesting KPIs around the Class
 
      A nice Overview of the metrics can be founf in the following paper: ttps://arxiv.org/abs/2008.05756
 
+     ==> how do I do aggreate over all metrics in a meaningful way?
+
 # The Multilayer Perceptron
 
      The MLP will have 5 layers:
@@ -108,6 +128,22 @@ However, this gives us the opporunity to build interesting KPIs around the Class
 
      We will train with Adam Algorithm
 
+
+# Training the actual Model:
+
+     - accounting service not really instrumented + wrongly doucumented (written in c# and not go)
+          ==> transformed data not really usable
+          ==> every trace consists only of one span
+
+
+# The Choice of the Background Task
+
+     - the analysis microservice should function after the 
+     - lightweight form of a synchronous communication
+
+# Distributed tracing and Microservice Comminication Patterns
+     - child_of ==> synchronous , blocking request response communication
+     - follows_from ==> event-driven , asynchronous?
 
 
      

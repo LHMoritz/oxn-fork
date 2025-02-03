@@ -1,1 +1,5 @@
 .venv
+internal/data
+internal/oxn
+internal/exampleResult
+internal/analysisDatastore

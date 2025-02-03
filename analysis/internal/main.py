@@ -6,7 +6,7 @@ import pandas as pd
 from torch.utils.data import DataLoader, random_split
 from TraceModel import TraceModel, vizualize_training_err_and_acc
 import torch.nn as nn
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import internal.constants as constants
 from analysis.internal.TraceVariableDatasetInference import TraceVariableDatasetInference
 from ModelController import ModelController

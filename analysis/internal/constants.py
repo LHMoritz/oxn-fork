@@ -38,8 +38,13 @@ GOOD_NO_ERROR = "goodNoError"
 '''
 To build the adjency matrix and construct input vectors for the MLP classifier we need need a constant mapping so each vector has the same structure.
 This list comes from the opentelemetry-demo source code wihtin this repository and should be updated if the demo changes or another version is taken.
-
 The Integers as corresponding values will be the corresponding index values to build the Adj. Matrix
+
+I will omit the following Microservices that are in the arcitecture but do not really yield traces:
+
+    - ffpostgres
+    - kafka
+    - grafana
 
 '''
 SERVICES = {
@@ -84,6 +89,6 @@ SERVICES_REVERSE = {
 MODEL_DIMENSIONS = [256, 1500, 1500, 1500, 17]
 #ODEL_PATH = "./model/new_traceModel.pt"
 METRICS = ["micro_precision", "micro_recall", "micro_f1_score"]
-MODEL_PATH = Path("internal/model") / "new_traceModel.pt"
+MODEL_PATH = Path("internal/model") / "real_tracemodel.pt"
 
 

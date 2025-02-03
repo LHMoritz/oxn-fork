@@ -1,1 +1,168 @@
-{"experiment_id": "41737545062", "metrics": {"0_accountingservice": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_adservice": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_cartservice": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_checkoutservice": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_currencyservice": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_emailservice": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_flagd": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_frauddetectionservice": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_frontendproxy": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_frontend": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_paymentservice": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_quoteservice": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_recommendationservice": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}, "0_shippingservice": {"micro_f1_score": 0.0, "micro_precision": 0.0, "micro_recall": 0.0}}, "probability": {"0_accountingservice": {"faultyError": 0.0, "faultyNoError": 1.0, "goodError": 0.0, "goodNoError": 1.0}, "0_adservice": {"faultyError": 0.04878048780487805, "faultyNoError": 0.9512195121951219, "goodError": 0.0, "goodNoError": 1.0}, "0_cartservice": {"faultyError": 0.020869565217391306, "faultyNoError": 0.9791304347826087, "goodError": 0.0, "goodNoError": 1.0}, "0_checkoutservice": {"faultyError": 0.04807692307692308, "faultyNoError": 0.9519230769230769, "goodError": 0.0, "goodNoError": 1.0}, "0_currencyservice": {"faultyError": 0.050505050505050504, "faultyNoError": 0.9494949494949495, "goodError": 0.0, "goodNoError": 1.0}, "0_emailservice": {"faultyError": 0.04807692307692308, "faultyNoError": 0.9519230769230769, "goodError": 0.0, "goodNoError": 1.0}, "0_flagd": {"faultyError": 0.031007751937984496, "faultyNoError": 0.9689922480620154, "goodError": 0.0, "goodNoError": 1.0}, "0_frauddetectionservice": {"faultyError": 0.041237113402061855, "faultyNoError": 0.9587628865979382, "goodError": 0.0, "goodNoError": 1.0}, "0_frontendproxy": {"faultyError": 0.05997109826589595, "faultyNoError": 0.940028901734104, "goodError": 0.06956521739130435, "goodNoError": 0.9304347826086956}, "0_frontend": {"faultyError": 0.02090843547224225, "faultyNoError": 0.9790915645277577, "goodError": 0.0, "goodNoError": 1.0}, "0_paymentservice": {"faultyError": 0.041666666666666664, "faultyNoError": 0.9583333333333334, "goodError": 0.0, "goodNoError": 1.0}, "0_quoteservice": {"faultyError": 0.04081632653061224, "faultyNoError": 0.9591836734693877, "goodError": 0.0, "goodNoError": 1.0}, "0_recommendationservice": {"faultyError": 0.018404907975460124, "faultyNoError": 0.9815950920245399, "goodError": 0.0, "goodNoError": 1.0}, "0_shippingservice": {"faultyError": 0.041237113402061855, "faultyNoError": 0.9587628865979382, "goodError": 0.0, "goodNoError": 1.0}}, "failedVariables": "['41737545062_0_featureflagservice_traces.json', '41737545062_0_ffspostgres_traces.json', '41737545062_0_grafana_traces.json', '41737545062_0_kafka_traces.json', '41737545062_0_otelcollector_traces.json', '41737545062_0_producatalogservice_traces.json']", "timeToResult": 78.66435241699219}
+{
+  "experiment_id": "41737545062",
+  "metrics": {
+    "0_accountingservice": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_adservice": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_cartservice": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_checkoutservice": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_currencyservice": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_emailservice": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_flagd": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_frauddetectionservice": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_frontendproxy": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_frontend": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_paymentservice": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_quoteservice": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_recommendationservice": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "0_shippingservice": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    }
+  },
+  "probability": {
+    "0_accountingservice": {
+      "faultyError": 0.0,
+      "faultyNoError": 1.0,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    },
+    "0_adservice": {
+      "faultyError": 0.04878048780487805,
+      "faultyNoError": 0.9512195121951219,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    },
+    "0_cartservice": {
+      "faultyError": 0.020869565217391306,
+      "faultyNoError": 0.9791304347826087,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    },
+    "0_checkoutservice": {
+      "faultyError": 0.04807692307692308,
+      "faultyNoError": 0.9519230769230769,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    },
+    "0_currencyservice": {
+      "faultyError": 0.050505050505050504,
+      "faultyNoError": 0.9494949494949495,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    },
+    "0_emailservice": {
+      "faultyError": 0.04807692307692308,
+      "faultyNoError": 0.9519230769230769,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    },
+    "0_flagd": {
+      "faultyError": 0.031007751937984496,
+      "faultyNoError": 0.9689922480620154,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    },
+    "0_frauddetectionservice": {
+      "faultyError": 0.041237113402061855,
+      "faultyNoError": 0.9587628865979382,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    },
+    "0_frontendproxy": {
+      "faultyError": 0.05997109826589595,
+      "faultyNoError": 0.940028901734104,
+      "goodError": 0.06956521739130435,
+      "goodNoError": 0.9304347826086956
+    },
+    "0_frontend": {
+      "faultyError": 0.02090843547224225,
+      "faultyNoError": 0.9790915645277577,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    },
+    "0_paymentservice": {
+      "faultyError": 0.041666666666666664,
+      "faultyNoError": 0.9583333333333334,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    },
+    "0_quoteservice": {
+      "faultyError": 0.04081632653061224,
+      "faultyNoError": 0.9591836734693877,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    },
+    "0_recommendationservice": {
+      "faultyError": 0.018404907975460124,
+      "faultyNoError": 0.9815950920245399,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    },
+    "0_shippingservice": {
+      "faultyError": 0.041237113402061855,
+      "faultyNoError": 0.9587628865979382,
+      "goodError": 0.0,
+      "goodNoError": 1.0
+    }
+  },
+  "aggregation": {
+    "micro_precision_agg": -1,
+    "micro_recall_agg": -1,
+    "micro_f1_score_agg": -1
+  },
+  "failedVariables": "['41737545062_0_featureflagservice_traces.json', '41737545062_0_ffspostgres_traces.json', '41737545062_0_grafana_traces.json', '41737545062_0_kafka_traces.json', '41737545062_0_otelcollector_traces.json', '41737545062_0_producatalogservice_traces.json']",
+  "timeToResult": 100.10266590118408
+}

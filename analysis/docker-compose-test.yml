@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./internal/oxn:/mnt/oxn-data
+      - ./internal/oxn/experiments:/mnt/oxn-data
       - ./internal/analysis:/mnt/analysis-datastore
     ports:
       - "8001:8001"
