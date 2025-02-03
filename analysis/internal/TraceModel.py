@@ -9,8 +9,9 @@ from typing import Callable
 #import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 import pandas as pd
+import logging
 
-
+logger = logging.getLogger(__name__)
 
 class TraceModel(nn.Module):
 
@@ -64,19 +65,20 @@ class TraceModel(nn.Module):
           iterations_counter = 0
           while iterations_counter < iterations:
                     for batch, labels in train_loader:
-                         #print(f"Optimizing for batch with ID: {iterations_counter}")
+
                          optimizer.zero_grad()
                          out =  self.forward(batch)
                          loss = self.loss_function(out, labels)
                          # just for vizualizing during training
-                         if iterations_counter % 100 == 0:
+                         if iterations_counter % 10 == 0:
                               accuracy = self.calculate_accuracy(out, labels)
                               accuracies.append(accuracy)
                               errors.append(loss.item())
+                              logger.info(f"optimizing for the {iterations_counter}th batch")
                          loss.backward() 
                          optimizer.step()
                          iterations_counter += 1
-
+          logger.info("finished trainign")
           return errors, accuracies
      
      def infer(self, input: torch.Tensor )-> torch.Tensor:
@@ -87,10 +89,12 @@ class TraceModel(nn.Module):
  
      
      def test_trace_model(self, test_loader : DataLoader) -> tuple[list[float], list[float]]:
+          logger.info("starting testing the data")
           error = []
           acc = []
           for batch , labels in test_loader:
-               out = self.infer(batch)
+               #labels = labels.long()
+               out = self.forward(batch)
                loss = self.loss_function(out, labels)
                error.append(loss.item())
                acc.append(self.calculate_accuracy(out, labels))
@@ -102,8 +106,8 @@ class TraceModel(nn.Module):
           #print(model.state_dict())
           torch.save(self.state_dict(), PATH)
 
-"""
 
+"""
 
 def vizualize_training_err_and_acc(err : list[float], acc : list[float]) -> None:
      x_axis = list(range(len(err)))

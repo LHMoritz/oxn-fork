@@ -29,5 +29,6 @@ dependencies = [
     "torch==2.5.1",
     "torcheval==0.0.7",
     "typing_extensions==4.12.2",
-    "tzdata==2025.1"
+    "tzdata==2025.1",
+    "matplotlib>=3.6.2",
 ]

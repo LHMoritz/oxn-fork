@@ -55,14 +55,3 @@ def get_index_for_service_label(label : str) -> int:
           return index
      except KeyError as e:
           raise ServiceUnknown("ServiceName for the label is unknown")
-
-"""
-if __name__=='__main__':
-     build_colum_names_for_adf_mat_df()
-     a = get_treatment_column(['index', 'trace_id', 'span_id', 'operation', 'start_time', 'end_time',
-       'duration', 'service_name', 'span_kind', 'req_status_code', 'ref_type',
-       'ref_type_span_ID', 'ref_type_trace_ID', 'add_security_context',
-       'loss_treatment'])
-     print(a)
-
-"""

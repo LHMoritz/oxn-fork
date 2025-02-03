@@ -77,22 +77,34 @@ class AnalysisManager:
      def _get_label_for_experiment(self) -> str:
           return self.storage_handler.get_experiment_label(self.experiment_id)
      
+     #TODO : make analysis module always drop a json, even if its empty
      def analyze_experiment(self) -> tuple[dict[str, list[dict[str, float]]], dict[str, list[dict[str, float]]]]:
           logging.info(f"starting analysis")
-          start_time = time.time()
-          self.rwdg_controller.iterate_over_varibales()
-          tup = self.model_controller.evaluate_variables()
-          end_time = time.time()
-          self.time_to_result = end_time - start_time
-          
-          result = {
+
+          result_dict = {
                "experiment_id" : self.experiment_id,
-               "metrics" : tup[0] if  tup is not None else [],
-               "probability" : tup[1] if tup is not None else [],
-               "failedVariables" : str(self.failed_files),
-               "timeToResult" : self.time_to_result
           }
-          self.storage_handler.write_json_to_directory(f"{self.experiment_id}_analysis_results", result)
+
+          tup = None
+          try:
+               start_time = time.time()
+               self.rwdg_controller.iterate_over_varibales()
+               tup = self.model_controller.evaluate_variables()
+               end_time = time.time()
+               self.time_to_result = end_time - start_time
+          except Exception as e:
+               logger.error(f"and exception occured during analyzing the result : {str(e)}")
+               
+          result_dict["metrics"] = tup[0] if  tup is not None else []
+          result_dict["probability"] = tup[1] if tup is not None else []
+          result_dict["aggregation"] = tup[2] if tup is not None else {}
+          result_dict["failedVariables"] = str(self.failed_files)
+          result_dict["timeToResult"] = self.time_to_result
+
+          #logger.info(result_dict)
+
+          self.storage_handler.write_json_to_directory(f"{self.experiment_id}_analysis_results", result_dict)
+     
      """
      def _construct_message(self, e: Exception | None) -> str:
           if e is None:
