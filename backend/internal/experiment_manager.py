@@ -93,7 +93,7 @@ class ExperimentManager:
             'started_at': "",
             'completed_at': "",
             'error_message': "",
-            'analysis_status': AnalysisStatus.NOT_STARTED.value,
+            'analysis_status': AnalysisStatus.NOT_ENABLED.value,
             'spec': config.model_dump(mode="json"),
             'parameter_variations': parameter_variations,
         }
@@ -117,7 +117,7 @@ class ExperimentManager:
                 'started_at': "",
                 'completed_at': "",
                 'error_message': "",
-                'analysis_status': AnalysisStatus.NOT_STARTED.value,
+                'analysis_status': AnalysisStatus.NOT_ENABLED.value,
                 'spec': sub_config,
             }
 
@@ -203,7 +203,7 @@ class ExperimentManager:
                 sub_experiment_id = params['sub_experiment_id']
                 try:
                     logger.info(f"Running sub experiment {sub_experiment_id} with params: {params}")
-                    self.run_experiment(f"{batch_id}_{sub_experiment_id}", output_formats, runs)
+                    self.run_experiment(f"{batch_id}_{sub_experiment_id}", output_formats, runs, False)
                     if analyse_fault_detection:
                         # output data is stored - can be retrieved later using get_experiment_data
                         self.analyze_fault_detection(f"{batch_id}_{sub_experiment_id}")
@@ -224,7 +224,7 @@ class ExperimentManager:
         """Get experiment report"""
         return self.store.load(f"{experiment_id}_report", FileFormat.YAML)
     
-    def run_experiment(self, experiment_id, output_formats:List[FileFormat], runs):
+    def run_experiment(self, experiment_id, output_formats:List[FileFormat], runs, analysisEnabled:bool):
         """Run experiment"""
         if not self.acquire_lock():
             logger.info("Lock already held, skipping experiment check")
@@ -262,8 +262,9 @@ class ExperimentManager:
             self.store.save(f"{experiment_id}_report", report_data, FileFormat.YAML)
             self.update_experiment_config(experiment_id, {'completed_at': datetime.now().isoformat()})
             # Call the analysis service here
-            self.call_analysis_service(experiment_id)
-            self.update_experiment_config(experiment_id, {'analysis_status': AnalysisStatus.IN_PROGRESS.value})
+            if analysisEnabled:
+                self.call_analysis_service(experiment_id)
+                self.update_experiment_config(experiment_id, {'analysis_status': AnalysisStatus.IN_PROGRESS.value})
 
         except Exception as e:
             logger.error(f"Error running experiment: {e}")

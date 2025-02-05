@@ -100,7 +100,8 @@ async def run_experiment(
         experiment_manager.run_experiment,
         experiment_id,
         output_formats=run_config.output_formats,
-        runs=run_config.runs
+        runs=run_config.runs,
+        analysisEnabled=True
     )
     
     return {
@@ -127,7 +128,8 @@ async def run_experiment_sync(
         experiment_manager.run_experiment(
             experiment_id,
             output_formats=run_config.output_formats,
-            runs=run_config.runs
+            runs=run_config.runs,
+            analysisEnabled=True
         )
     except Exception as e:
         experiment_manager.update_experiment_config(experiment_id, {'status': 'FAILED', 'error_message': str(e)})
