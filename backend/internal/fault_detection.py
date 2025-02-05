@@ -25,10 +25,8 @@ class FaultDetectionAnalyzer(ABC):
         """Analyze if and when a fault was detected"""
         pass
     
-    def analyze_experiment(self, faults: List[InjectedFault]) -> List[DetectionAnalysisResult]:
+    def analyze_experiment(self, faults: List[InjectedFault], start_time: datetime, end_time: datetime) -> List[DetectionAnalysisResult]:
         """Analyze detection for all faults in an experiment"""
-        end_time = datetime.now()
-        start_time = end_time - timedelta(hours=24)
         logger.info(f"Analyzing experiment from {start_time} to {end_time}")
         logger.info(f"Number of faults to analyze: {len(faults)}")
         
