@@ -17,6 +17,7 @@ import psutil
 import docker
 
 from backend.internal.errors import OxnException, PrometheusException, JaegerException
+from backend.internal.models.experiment import Experiment
 from backend.internal.treatments import (
     DeploymentScaleTreatment,
     EmptyDockerComposeTreatment,
@@ -86,7 +87,7 @@ class ExperimentRunner:
     def __init__(
             self,
             orchestrator:Orchestrator,
-            config=None,
+            config: Experiment,
             experiment_id=None,
             additional_treatments=None,
             random_treatment_order=False,
@@ -160,14 +161,15 @@ class ExperimentRunner:
 
     def _build_treatments(self) -> None:
         """Build a representation of treatments defined in config"""
-        treatment_section = self.config["experiment"]["treatments"]
-        if self.random_treatment_order:
-            random.shuffle(treatment_section)
-        for treatment in treatment_section:
-            key = next(iter(treatment))
-            description = treatment[key]
-            params = description["params"]
-            action = description["action"]
+        treatment_section = self.config.treatments
+        if treatment_section is None:
+            return
+            
+        for treatment_dict in treatment_section:
+            key = next(iter(treatment_dict))
+            treatment = treatment_dict[key]
+            action = treatment.action
+            params = treatment.params
             self.treatments[key] = self._build_treatment(
                 action=action, params=params, name=key, orchestrator=self.orchestrator
             )

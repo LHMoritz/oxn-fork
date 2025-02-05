@@ -17,7 +17,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Chart.Name }}-backend-pvc
+  name: backend-module-backend-pvc
   namespace: {{ .Values.global.namespace }}
 spec:
   accessModes:

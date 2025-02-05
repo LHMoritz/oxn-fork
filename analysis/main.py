@@ -32,7 +32,7 @@ ANALYIS_MOUNT = os.getenv("OXN_ANALYSIS_PATH", "/mnt/analysis-datastore")
 
 # "Singleton classes"
 trace_model = load_model()
-storage_handler = LocalStorageHandler(VOLUME_MOUNT, ANALYIS_MOUNT)
+storage_handler = LocalStorageHandler(VOLUME_MOUNT, 'experiments' , ANALYIS_MOUNT)
 
 
 def analysis_background_task(experiment_id : str): 

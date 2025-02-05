@@ -4,9 +4,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
+from dataclasses import asdict
+from typing import Any, Dict, List, Optional, Union, Literal
 
 from pydantic import BaseModel, Field, constr
+
+from backend.internal.store import FileFormat
 
 
 class Jaeger(BaseModel):
@@ -29,7 +32,7 @@ class Responses(BaseModel):
     name: str
     target: str
     metric_name: str
-    type: str = Field('metric', const=True)
+    type: Literal['metric']
     step: int
     left_window: str
     right_window: str
@@ -37,7 +40,7 @@ class Responses(BaseModel):
 
 class Responses1(BaseModel):
     name: str
-    type: str = Field('trace', const=True)
+    type: Literal['trace']
     service_name: str
     left_window: str
     right_window: str
@@ -74,17 +77,52 @@ class Loadgen(BaseModel):
     locust_files: Optional[List[str]] = None
     target: Optional[Target] = None
 
-
 class Experiment(BaseModel):
     name: Optional[str] = None
     version: str
     orchestrator: str
     services: Optional[Services] = None
     responses: List[Union[Responses, Responses1]]
-    treatments: Optional[List[Dict[constr(regex=r'^.*$'), Treatments]]] = None
+    treatments: Optional[List[Dict[str, Treatments]]] = None
     sue: Sue
     loadgen: Loadgen
 
+class CreateExperimentResponse(BaseModel):
+    id: str
+    name: str
+    status: str
+    created_at: str
+    started_at: str
+    completed_at: str
+    error_message: str
+    spec: Experiment
 
-class Model(BaseModel):
-    experiment: Experiment
+class CreateBatchExperimentResponse(BaseModel):
+    id: str
+    name: str
+    status: str
+    created_at: str
+    started_at: str
+    completed_at: str
+    error_message: str
+    spec: Experiment
+    parameter_variations: Dict[str, Any]
+
+class ExperimentStatus(BaseModel):
+    id: str
+    name: str
+    status: str
+    started_at: str
+    completed_at: str
+    error_message: str
+    analysis_status: str
+
+class CreateBatchExperimentRequest(BaseModel):
+    name: str
+    config: Experiment
+    parameter_variations: Dict[str, List[Union[str, float]]] 
+
+
+class RunExperimentRequest(BaseModel):
+    runs: int = 1
+    output_formats: List[FileFormat] = [FileFormat.JSON]

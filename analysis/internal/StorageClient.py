@@ -14,40 +14,20 @@ import re
 
 logger = logging.getLogger(__name__)
 
-class StorageHandler(ABC):
-
-     @abstractmethod
-     def list_files_in_dir(self, dir_name) -> list[str]:
-          '''
-          This class lists all Filenames in a directory
-          '''
      
-     @abstractmethod
-     def write_json_to_directory(self, dir_name, file_name, file_content) -> None:
-          '''
-          writes File to directory given the name and the content
-        '''
-     @abstractmethod
-     def get_file_from_dir(self, file_path):
-          '''
-          retrieves file from directory
-          '''
-     
-
-
 def config_predicate(name:str) -> bool:
      return "config" in name
 
-class LocalStorageHandler(StorageHandler):
 
-     def __init__(self, oxn_data_path :str, analyis_path : str) -> None:
+# TODO add "health check" up on creating the pod to check if the client can access the PV mounts
+
+class LocalStorageHandler():
+
+     def __init__(self, oxn_data_path :str, sub_path :str, analyis_path : str) -> None:
           super().__init__()
-          self.experiment_path = Path(oxn_data_path) / 'experiments'
+          self.experiment_path = Path(oxn_data_path) #/ sub_path
           self.analysis_path = Path(analyis_path) #/ 'analysis'
           logger.info("Sucessfully initialized StorageHandler")
-          #logger.info(self.experiment_path)
-          #logger.info(self.analysis_path)
-          #logger.info(os.listdir(self.experiment_path))
      
      """
      Gets the label for the experiment (the Microservice name in which the fault was injected)
@@ -142,23 +122,6 @@ class LocalStorageHandler(StorageHandler):
                return match.group(1)
           else:
                return file_name
-
-
-"""
-if __name__=='__main__':
-     handler = LocalStorageHandler("oxn")
-     print(handler.list_files_in_dir("01737208087"))
-     print(handler.list_files_in_dir("01737287"))
-     a = {"x" : "y"}
-     handler.write_json_to_directory("analysis", a)
-
-     print(handler.get_experiment_label("01737208087"))
-     tup = handler.get_file_from_dir('01737208087_frontend_traces.json')
-     if tup is not None:
-          print(tup[0].head(5))
-          print(tup[1])
-     
-"""
 
 
 

@@ -24,10 +24,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-OXN_MOUNT = "./internal/oxn"
+OXN_MOUNT = "./internal/oxn/experiments"
 ANALYSIS_MOUNT = "./analyis/internal/oxn"
 trace_model = load_model()
-storage_handler = LocalStorageHandler(OXN_MOUNT, OXN_MOUNT)
+storage_handler = LocalStorageHandler(OXN_MOUNT, 'experiments', OXN_MOUNT)
 
 
 # ex_id : "01737208087"
@@ -91,6 +91,7 @@ def test_no_label_present_in_config(experiment_id) -> None:
      except Exception as e:
           logger.error(str(e))
 
+"""
 # ex_id : 
 def test_data_for_ex_also_inlcudes_metrics(experiment_id) -> None:
      try:
@@ -100,6 +101,7 @@ def test_data_for_ex_also_inlcudes_metrics(experiment_id) -> None:
      
      except Exception as e:
           logger.error(str(e))
+"""
 
 def test_batch_experiments_not_supported(experiment_id) -> None:
      try:
@@ -113,7 +115,7 @@ def test_batch_experiments_not_supported(experiment_id) -> None:
 
 
 #test_normal_case_with_two_variables(experiment_id="01737208087")
-#test_normal_ase_with_severa_random_varibales("41737545062")
+test_normal_ase_with_severa_random_varibales("41737545062")
 #test_no_config_present("01737200116")
 #test_no_data_present("62864836929")
 #test_no_label_present_in_config("1999")

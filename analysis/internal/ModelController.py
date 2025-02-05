@@ -42,24 +42,27 @@ class ModelController:
                variable.predictions = torch.tensor(predicted_labels)
      
 
-     def evaluate_variables(self) -> tuple[dict[str, list[dict[str, float]]], dict[str, list[dict[str, float]]]]:
-          logger.info("starting to infer and evaluate variables")
-          for var in self.variables:
-               try:
-                    logger.info(f"evaluating for {var.service_name}")
-                    self._infer_variable(variable=var)
-                    self._f1_for_variable(var)
-                    self._recall_for_variable(var)
-                    self._precision_for_variable(var)
-               except Exception as e:
-                    logger.error(f"Error in evaluation the variable: {var.service_name} : {str(e)}")
-          
-          metrics = self._get_metrics()
-          probs = self._get_probs()
-          return metrics , probs
-          
+     def evaluate_variables(self) -> tuple[dict[str, list[dict[str, float]]], dict[str, list[dict[str, float]]], dict[str, float]]:
+               logger.info("starting to infer and evaluate variables")
+ 
+               for var in self.variables:
+                    try:
+                         logger.info(f"evaluating for {var.service_name}")
+                         self._infer_variable(variable=var)
+                         self._f1_for_variable(var)
+                         self._recall_for_variable(var)
+                         self._precision_for_variable(var)
+                    except Exception as e:
+                         logger.error(f"Error in evaluation the variable: {var.service_name} : {str(e)}")
+               
+               aggregation = self.aggregate_over_the_experiment()
+               metrics = self._get_metrics()
+               probs = self._get_probs()
+               return metrics , probs, aggregation
+    
      
      def _get_metrics(self) -> dict[str, list[dict[str, float]]]:
+          logger.info(f"getting the metrics for the experiment with id : {self.experiment_id}")
           metrics = {}
           for var in self.variables:
                metrics_for_var = {}
@@ -76,15 +79,14 @@ class ModelController:
           return metrics
 
      def _get_probs(self) -> dict[str, list[dict[str, float]]]:
+          logger.info(f"getting the probs for the experiment with id : {self.experiment_id}")
           probs = {}
           for var in self.variables:
                if len(var.error_ratio) > 0:
                     probs[var.service_name] = var.error_ratio
           
           return probs
-          
-          
-
+     
      '''
      For the next three function I will take the micro average between the classes or evaluation
      '''
@@ -110,11 +112,53 @@ class ModelController:
                metric.update(variable.predictions, actual_lables)
                variable.micro_f1_score = metric.compute().item()
 
-     def _get_highest_misclassification(self, variable : TraceResponseVariable) -> None:
-          pass
+     
+     """
+          Here I am doing a weighted average over all the  the results.
+          The weights will be the length of the raw data of the response varibales.
+     """
+     def aggregate_over_the_experiment(self) -> dict[str, float]:
 
-     def aggregate_over_the_experiment() -> dict[str, float]:
-          pass
+          logger.info(f"starting aggregation for experiment with id : {self.experiment_id}")
+
+          aggregations = {}
+          lengths , sum  = self.get_lengths_response_variables()
+
+          nominator_precision = 0
+          nominator_recall = 0
+          nominator_f1 = 0
+          for var in self.variables:
+               if var.micro_f1_score is not None:
+                    nominator_f1 += lengths[var.service_name] * var.micro_f1_score
+               if var.micro_precision is not None:
+                    nominator_precision += lengths[var.service_name] * var.micro_precision
+               if var.micro_recall is not None:
+                    nominator_recall += lengths[var.service_name] * var.micro_recall
+          
+          if sum == 0:
+               aggregations["micro_precision_agg"] = -1
+               aggregations["micro_recall_agg"] = -1
+               aggregations["micro_f1_score_agg"] = -1
+          else:
+               aggregations["micro_precision_agg"] = nominator_precision / sum
+               aggregations["micro_recall_agg"] = nominator_recall / sum
+               aggregations["micro_f1_score_agg"] =  nominator_f1 / sum
+          
+          return aggregations
+
+     def get_lengths_response_variables(self) -> tuple[dict[str, int], int]:
+          lenghts = {}
+          sum = 0
+          for var in self.variables:
+               var_length = len(var.adf_matrices)
+               lenghts[var.service_name] = var_length
+               sum += var_length
+
+          #logger.info(f"lenght dictionary : {lenghts}")
+          #logger.info(sum)
+          return lenghts, sum
+
+
 
 
 

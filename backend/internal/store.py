@@ -1,9 +1,20 @@
 from typing import Optional, List, Dict, Union
 from enum import Enum
+
 class FileFormat(Enum):
     JSON = "json"
     CSV = "csv"
     YAML = "yaml"
+
+class StoreError(Exception):
+    """Custom error type for store operations"""
+    def __init__(self, message: str, filename: str, original_error: Optional[Exception] = None):
+        self.message = message
+        self.filename = filename
+        self.original_error = original_error
+        super().__init__(f"{message} - File: {filename}" + 
+                        (f" - Original error: {str(original_error)}" if original_error else ""))
+
 class DocumentStore:
     """
     Interface for a multi-format document store
@@ -23,10 +34,11 @@ class DocumentStore:
 
     def list_keys(self) -> List[str]:
         """List all keys in the document store"""
-        pass
+        return []
+
     def list_files(self) -> List[str]:
         """List all files in the document store"""
-        pass
+        return []
 
 import os
 import json
@@ -77,20 +89,26 @@ class LocalFSStore(DocumentStore):
         if not os.path.exists(file_path):
             return None
 
-        if format == FileFormat.JSON:
-            with open(file_path, 'r') as f:
-                return json.load(f)
-        elif format == FileFormat.CSV:
-            with open(file_path, 'r') as f:
-                reader = csv.DictReader(f)
-                # some values are integers
-                return [{k: int(v) if v.isdigit() else v for k, v in row.items()} 
-                   for row in reader]
-        elif format == FileFormat.YAML:
-            with open(file_path, 'r') as f:
-                return yaml.safe_load(f)
-        else:
-            raise ValueError(f"Unsupported format: {format}")
+        try:
+            if format == FileFormat.JSON:
+                with open(file_path, 'r') as f:
+                    return json.load(f)
+            elif format == FileFormat.CSV:
+                with open(file_path, 'r') as f:
+                    reader = csv.DictReader(f)
+                    return [{k: int(v) if v.isdigit() else v for k, v in row.items()} 
+                       for row in reader]
+            elif format == FileFormat.YAML:
+                with open(file_path, 'r') as f:
+                    return yaml.safe_load(f)
+            else:
+                raise ValueError(f"Unsupported format: {format}")
+        except Exception as e:
+            raise StoreError(
+                message="Failed to load file",
+                filename=file_path,
+                original_error=e
+            )
 
     def delete(self, key: str) -> None:
         """

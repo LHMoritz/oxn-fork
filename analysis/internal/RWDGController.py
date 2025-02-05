@@ -13,16 +13,18 @@ This class Takes in  a dataframe from with distributed tracing data and generate
 with 'adjency matrices' for each trace that captures the average response times between services.
 It is part of the RWDG Trace model and therefore part for the data wranglin for the Multilayer perceptron.
 '''
-# TODO : add internal spans to the next parent there , test
-
-# TODO : interesting KPI: how many faulty traces do have error fields in there, how many "good traces have error fields"
-
 # TODO : how much do the distribution differ from each other between fault and no fault for each response variable?
 # we still have the assumtion for a 
 
 logger = logging.getLogger(__name__)
 
 def mean_normalization( val : float, mean: float, min: float , max : float) -> float:
+     if val == 0.0:
+          return val
+
+     if mean == 0.0 or max == 0.0:
+          return 0.0
+
      nominator = val - mean
      denominator = max - min
      if denominator > 0:
@@ -36,7 +38,7 @@ class RWDGController:
           self.variables : list[TraceResponseVariable] = variables
           self.experiment_id : str = experiment_id
           #self.weights_of_edges : dict[str, float] = None
-          self.service_name_mapping : dict[str , int] = constants.SERVICES # TODO change later to call a route on that
+          self.service_name_mapping : dict[str , int] = constants.SERVICES 
           self.service_name_mapping_backward = constants.SERVICES_REVERSE
           self.column_names = build_colum_names_for_adf_mat_df()
           self.injected_service = get_index_for_service_label(injected_service)
@@ -48,9 +50,14 @@ class RWDGController:
 
      '''Normalizes the calculated weight matrices after the mean normalization
           This has the affect that each value is in range [0, 1] '''
+     
+     # TODO : This is not properly working
+
+     # if cell in column is null it should NOT be included ==> might require implementation yourself
+
      def normalizes_response_variables(self):
 
-          # we do not want to do it with error_code columns, just the 
+          # we do not want to do it with error_code columns, just the request time columns
           numerical_column_names = self.column_names[:len(self.column_names) -1]
 
           for var in self.variables:
@@ -59,9 +66,18 @@ class RWDGController:
                     max_values = []
                     min_values = []
                     for col in numerical_column_names:
-                         avg_values.append(var.adf_matrices[col].mean())
-                         max_values.append(var.adf_matrices[col].max())
-                         min_values.append(var.adf_matrices[col].min())
+                         non_zero_values = var.adf_matrices[col][var.adf_matrices[col] != 0.0]
+                         if len(non_zero_values) > 0:
+                              avg = float(non_zero_values.mean())
+                         else:
+                              avg = 0.0
+                         avg_values.append(avg)
+                         max_values.append(float(var.adf_matrices[col].max()))
+                         min_values.append(float(var.adf_matrices[col].min()))
+
+                    #logger.info(f"these are the mean values: {avg_values}")
+                    #logger.info(f"these are the min values: {min_values}")
+                    #logger.info(f"these are the max values: {max_values}")
 
                     for idx in range(len(numerical_column_names)):
                          var.adf_matrices[self.column_names[idx]].apply(mean_normalization, args=(avg_values[idx], min_values[idx], max_values[idx]))
@@ -175,6 +191,7 @@ class RWDGController:
                     col_ind = constants.SERVICES[ref_service_name]
                except Exception as e:
                     #print(f"ref_service_name or service_name : {ref_service_name}, {service_name} not found")
+                    logger.info(f"ref_service_name or service_name : {ref_service_name}, {service_name} not found")
                     continue
                if adjency_matrix[row_ind][col_ind][0] == -1:
                     adjency_matrix[row_ind][col_ind] = (1 , duration)
@@ -222,23 +239,6 @@ class RWDGController:
           except KeyError as e:
                return []
      
-     '''
-     This function is creating the lower and upper bound for the performance anomaly detection per service tuple
-     based on very simple "outlier detection". This could be up for discussion for improvements. For now I would leave it this way as stated in the paper.
-     Here we use int as a val corresponding to the index in the flattened dataframe
-     dict[m_n, [number of observations between MS m and n , average, variance ]]
-     at another point in time we pool the variances with the assuption that the datasets are independent
- 
-     def get_bounds_for_service_calls(self) -> dict[str , float]:
-          merged = [var.adf_matrices for var in self.variables]
-          result = pd.concat(merged, axis=0, ignore_index=True)
-          columns_for_average = self.column_names
-          average_series = result[columns_for_average].mean()
-          series_dict = average_series.to_dict()
-          print(series_dict)
-          self.weights_of_edges = series_dict
-
-     '''
 
      '''
      I am using conditional probability here for calculating the KPI:
@@ -271,34 +271,3 @@ class RWDGController:
                if len_goody_traces > 0:
                     var.error_ratio[constants.GOOD_ERROR] = good_traces_with_error / len_goody_traces
                     var.error_ratio[constants.GOOD_NO_ERROR] = good_traces_no_error / len_goody_traces
-
-
-"""
-if __name__=='__main__':
-     
-     handler = LocalStorageHandler("oxn")
-     files_list = handler.list_files_in_dir("01737208087")
-     if len(files_list) == 0:
-         print("What?")
-
-     response_variables : list[TraceResponseVariable] = []
-
-     for file in files_list:
-          if "config" in file:
-               continue
-          tup = handler.get_file_from_dir(file)
-          if tup is None:
-               print("Why non")
-               exit()
-          response_variables.append(TraceResponseVariable(tup[0],"01737208087", tup[1] ))
-     
-     for var in response_variables:
-          print(var.data.head(5))
-          print(var.data.columns)
-     
-     ex_label = handler.get_experiment_label("01737208087")
-     
-     con = RWDGController(response_variables, "01737208087",ex_label )
-     
-     con.iterate_over_varibales()
-"""

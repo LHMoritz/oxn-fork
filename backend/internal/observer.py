@@ -9,6 +9,7 @@ from typing import Dict, List, Optional
 from operator import attrgetter
 
 import pandas as pd
+from backend.internal.models.experiment import Experiment, Responses, Responses1
 from backend.internal.models.orchestrator import Orchestrator
 
 
@@ -25,7 +26,7 @@ class Observer:
     an experiment description and then observing the variables during or after an experiment.
     """
 
-    def __init__(self, config: dict, orchestrator):
+    def __init__(self, config: Experiment, orchestrator):
         self.config = config
         self.orchestrator = orchestrator
         self.experiment_start: Optional[float] = None
@@ -37,33 +38,35 @@ class Observer:
         if not self.config or not self.experiment_start or not self.experiment_end:
             return
 
-        responses = self.config["experiment"]["responses"]
+        responses = self.config.responses
         for response in responses:
-            response_type = response["type"]
-            name = response["name"]
+            response_type = response.type
+            name = response.name
 
-            if response_type == "metric":
+            if response_type == "metric" and isinstance(response, Responses):
                 response_variable = MetricResponseVariable(
                     orchestrator=self.orchestrator,
                     name=name,
                     experiment_start=self.experiment_start,
                     experiment_end=self.experiment_end,
-                    description=response,
-                    target=response["target"],
-                    right_window=response["right_window"],
-                    left_window=response["left_window"],
+                    # TODO: clean this up. Needed because of spaghetti code in responses.py
+                    description=response.model_dump(mode="json"),
+                    target=response.target,
+                    right_window=response.right_window,
+                    left_window=response.left_window,
                 )
                 self._response_variables[name] = response_variable
             
-            elif response_type == "trace":
+            elif response_type == "trace" and isinstance(response, Responses1):
                 response_variable = TraceResponseVariable(
                     orchestrator=self.orchestrator,
                     name=name,
                     experiment_start=self.experiment_start,
                     experiment_end=self.experiment_end,
-                    description=response,
-                    right_window=response["right_window"],
-                    left_window=response["left_window"],
+                    # TODO: clean this up. Needed because of spaghetti code in responses.py
+                    description=response.model_dump(mode="json"),
+                    right_window=response.right_window,
+                    left_window=response.left_window,
                 )
                 self._response_variables[name] = response_variable
 
@@ -76,7 +79,7 @@ class Observer:
         max_time = 0
         for response in self.variables().values():
             # If we ever implement a response variable that does not have a right window, this will break
-            in_seconds = time_string_to_seconds(response.right_window)
+            in_seconds = time_string_to_seconds(response.right_window) # type: ignore
             if in_seconds > max_time:
                 max_time = in_seconds
         return max_time
@@ -86,7 +89,7 @@ class Observer:
         max_time = 0
         for response in self.variables().values():
             # If we ever implement a response variable that does not have a left window, this will break
-            in_seconds = time_string_to_seconds(response.left_window)
+            in_seconds = time_string_to_seconds(response.left_window) # type: ignore
             if in_seconds > max_time:
                 max_time = in_seconds
         return max_time

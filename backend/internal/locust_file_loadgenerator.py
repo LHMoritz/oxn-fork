@@ -1,3 +1,4 @@
+import gevent
 import importlib
 from importlib.machinery import ModuleSpec
 import importlib.util
@@ -44,7 +45,7 @@ class LocustFileLoadgenerator:
         self.log = log
     def _read_config(self):
         """Read the load generation section of an experiment specification"""
-        loadgen_section: dict = self.config["experiment"]["loadgen"]
+        loadgen_section: dict = self.config["loadgen"]
         self.stages = loadgen_section.get("stages", None)
         self.run_time = int(time_string_to_seconds(loadgen_section["run_time"]))
         logger.info(f"Run time: {self.run_time}")
@@ -106,6 +107,7 @@ class LocustFileLoadgenerator:
         assert self.env.runner is not None, "Locust runner must be initialized before starting"
         
         self.env.runner.start(self.max_users, self.spawn_rate)
+        self.greenlets.spawn(gevent.sleep, self.run_time)
         #self.greenlets.spawn(stats_printer(self.env.stats))
         #self.greenlets.spawn(stats_history, self.env.runner)
 
