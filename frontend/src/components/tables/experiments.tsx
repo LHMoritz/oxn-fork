@@ -9,11 +9,21 @@ export const ExperimentsTable: React.FC<{}> = ({ }) => {
 
   const [experiments, setExperiments] = useState<any[]>([]);
 
-  const { data, loading, error, fetchData } = useApi({ url: "/experiments" });
+  const { data, loading, error, fetchData } = useApi({ url: "/experiments", showToast: false });
 
   useEffect(() => {
     if (data) setExperiments(data);
   }, [data]);
+
+  const updateExperimentStatus = (experimentId: string, newStatus: string, newAnalysisStatus: string) => {
+    setExperiments((prevExperiments) =>
+      prevExperiments.map((exp) =>
+        exp.id === experimentId
+          ? { ...exp, status: newStatus, analysis_status: newAnalysisStatus }
+          : exp
+      )
+    );
+  };
 
   return (
     <div>
@@ -28,8 +38,13 @@ export const ExperimentsTable: React.FC<{}> = ({ }) => {
 
       {loading && <p>Loading experiments...</p>}
 
-      {!loading && !error && <DynamicTable filterColumnKey="id" data={experiments} columns={experimentsColumns} />}
-      {/* <DynamicTable filterColumnKey="id" data={experimentsMockData} columns={experimentsColumns} /> */}
+      {!loading && !error && (
+        <DynamicTable
+          filterColumnKey="id"
+          data={experiments}
+          columns={experimentsColumns(updateExperimentStatus)}
+        />
+      )}
     </div>
   )
 }

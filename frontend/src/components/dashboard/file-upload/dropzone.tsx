@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 
 interface DropzoneProps {
   onFileSelect: (files: File[] | File) => void;
-  filesAccepted?: string[];
+  filesAccepted: string[];
   allowMultiple?: boolean;
 };
 
-export default function Dropzone({ onFileSelect, filesAccepted = [".yaml"], allowMultiple = false }: DropzoneProps) {
+export default function Dropzone({ onFileSelect, filesAccepted, allowMultiple = false }: DropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const allowedExtensions = filesAccepted.map((ext) => ext.trim().toLowerCase());
@@ -17,8 +17,6 @@ export default function Dropzone({ onFileSelect, filesAccepted = [".yaml"], allo
   const isValidFileType = (fileName: string) => {
     return allowedExtensions.some((ext) => fileName.toLowerCase().endsWith(ext));
   };
-
-
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target as HTMLInputElement;
@@ -52,7 +50,6 @@ export default function Dropzone({ onFileSelect, filesAccepted = [".yaml"], allo
 
   return (
     <div>
-
       <div
         className="border-2 border-dashed border-gray-200 rounded-lg flex flex-col gap-1 p-6 items-center cursor-pointer"
         onDrop={handleDrop}
@@ -69,7 +66,7 @@ export default function Dropzone({ onFileSelect, filesAccepted = [".yaml"], allo
 
       </div>
 
-      {/* Hidden File Input */}
+      {/* Hidden Input */}
       <Input
         id="file"
         ref={inputRef}

@@ -57,7 +57,7 @@ export function DynamicTable<TData, TValue>({ data, columns, filterColumnKey = "
     <div>
       {filterColumnKey && <div className="flex items-center py-4">
         <Input
-          placeholder="Filter by ID..."
+          placeholder={`Filter by ${filterColumnKey}`}
           value={(table.getColumn(filterColumnKey)?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn(filterColumnKey)?.setFilterValue(event.target.value)

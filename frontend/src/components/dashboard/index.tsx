@@ -16,7 +16,6 @@ export default function DashboardPage() {
         title="Batch Experiments"
       />
       <StartExperiment
-        disabled
         experimentType="suite"
         icon={<MonitorCog />}
         description="Not available yet"

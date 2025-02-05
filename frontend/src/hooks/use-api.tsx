@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import axios, { AxiosRequestConfig } from "axios";
+import { toast } from "react-toastify";
 
 type HttpMethod = "GET" | "POST";
 
@@ -13,7 +14,8 @@ interface UseApiProps<T> {
   method?: HttpMethod;
   body?: object;
   config?: AxiosRequestConfig;
-  manual?: boolean; // NEW: If true, GET requests will not run automatically
+  manual?: boolean; // If true, GET requests will not run automatically
+  showToast?: boolean;
 }
 
 export function useApi<T>({
@@ -22,6 +24,7 @@ export function useApi<T>({
   body = {},
   config = {},
   manual = false, // Default to automatic GET requests
+  showToast = true,
 }: UseApiProps<T>) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -39,10 +42,22 @@ export function useApi<T>({
         response = await api.post<T>(url, body, config);
       }
       setData(response.data);
+
+      if (showToast) {
+        toast.success('Success!')
+      }
+
+      return response.data;
     } catch (err) {
-      setError(
-        (err as any)?.response?.data?.message || (err as any)?.message || "An error occurred"
-      );
+      const errorMessage =
+        (err as any)?.response?.data?.message || (err as any)?.message || "An error occurred";
+      setError(errorMessage);
+
+      if (showToast) {
+        toast.error(errorMessage);
+      }
+
+      return null;
     } finally {
       setLoading(false);
     }

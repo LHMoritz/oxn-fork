@@ -1,12 +1,11 @@
 "use client";
 import React, { useState } from "react";
-import yaml from "js-yaml";
 import Dropzone from "./dropzone";
-import { EditableFile } from "./single/editable-file";
-import { PreviewMultipleFiles } from "./batch-suite/preview-multiple-files";
+import { SingleFile } from "./single/single-file";
+import { BatchFile } from "./batch/batch-file";
+import { SuiteFiles } from "./suite/suite-files";
 import { Button } from "@/components/ui/button";
-import { Trash, Upload } from "lucide-react";
-import { ConfigureFiles } from "./batch-suite/configure-files";
+import { Trash } from "lucide-react";
 
 interface FileUploaderProps {
   experimentType: string;
@@ -20,51 +19,20 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   allowMultiple = false,
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [parsedContents, setParsedContents] = useState<object[]>([]);
 
   const noFilesUploaded = selectedFiles.length === 0;
   const filesUploaded = selectedFiles.length > 0;
-  const noFilesParsed = parsedContents.length === 0;
-  const filesParsed = parsedContents.length > 0;
 
   const handleFileSelect = (files: File[] | File) => {
-    const filesArray = Array.isArray(files) ? files : [files];
-    setSelectedFiles(filesArray);
-    setParsedContents([]); // Reset parsed contents when selecting new files
-  };
-
-  const handleUpload = () => {
-    if (selectedFiles.length > 0) {
-      const newParsedContents: object[] = [];
-      selectedFiles.forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const yamlContent = event.target?.result as string;
-            const parsedData: any = yaml.load(yamlContent);
-            newParsedContents.push(parsedData);
-            if (newParsedContents.length === selectedFiles.length) {
-              setParsedContents(newParsedContents);
-            }
-          } catch (error) {
-            console.error("Error parsing YAML file:", error);
-          }
-        };
-        reader.readAsText(file);
-      });
-    }
+    setSelectedFiles((prevFiles) => {
+      const filesArray = Array.isArray(files) ? files : [files];
+      return allowMultiple ? [...prevFiles, ...filesArray] : filesArray;
+    });
   };
 
   const handleRemoveFile = (fileIndex: number) => {
-    // Remove the file at the given index
     const updatedFiles = selectedFiles.filter((_, index) => index !== fileIndex);
     setSelectedFiles(updatedFiles);
-
-    // Also remove the corresponding parsed content if it exists
-    if (parsedContents.length > 0) {
-      const updatedParsedContents = parsedContents.filter((_, index) => index !== fileIndex);
-      setParsedContents(updatedParsedContents);
-    }
   };
 
   return (
@@ -77,8 +45,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         />
       )}
 
-      {/* Show Upload Button when a file is uploaded but not yet parsed */}
-      {filesUploaded && noFilesParsed && (
+      {filesUploaded && (
         <div>
           {selectedFiles.map((file, index) => {
             return (
@@ -95,25 +62,19 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
                   <Trash />
                 </Button>
               </div>
-            );
+            )
           })}
-          <div className="flex justify-center mt-4">
-            <Button size="lg" onClick={handleUpload}>
-              <Upload />
-              Upload
-            </Button>
-          </div>
         </div>
       )}
 
-      {experimentType === "single" && filesUploaded && filesParsed && (
-        <EditableFile file={selectedFiles[0]} parsedContent={parsedContents[0]} onRemoveFile={() => handleRemoveFile(0)} />
+      {experimentType === "single" && filesUploaded && (
+        <SingleFile file={selectedFiles[0]} />
       )}
-      {experimentType === "batch" && filesUploaded && filesParsed && (
-        <ConfigureFiles file={selectedFiles[0]} parsedContent={parsedContents[0]} onRemoveFile={() => handleRemoveFile(0)} />
+      {experimentType === "batch" && filesUploaded && (
+        <BatchFile file={selectedFiles[0]} />
       )}
-      {experimentType === "suite" && filesUploaded && filesParsed && (
-        <PreviewMultipleFiles experimentType={experimentType} onRemoveFile={handleRemoveFile} files={selectedFiles} parsedContents={parsedContents} />
+      {experimentType === "suite" && filesUploaded && (
+        <SuiteFiles files={selectedFiles} />
       )}
     </div>
   );

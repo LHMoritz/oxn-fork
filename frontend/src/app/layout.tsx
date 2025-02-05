@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { ThemeProvider } from "@/context/theme-provider";
 import "./globals.css";
 import Layout from "@/components/sidebar";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export const metadata: Metadata = {
   title: "OXN++ Dashboard",
@@ -30,6 +32,7 @@ export default function RootLayout({
               {children}
             </Layout>
           </ThemeProvider>
+          <ToastContainer position="top-right" autoClose={2000} />
         </body>
       </html>
     </>

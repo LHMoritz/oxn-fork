@@ -3,7 +3,7 @@ import { formatDate } from "@/utils/date";
 import { ExperimentsActions } from "../table-actions/experiments-actions";
 import { Badge } from "@/components/ui/badge";
 
-export const experimentsColumns: ColumnDef<any>[] = [
+export const experimentsColumns = (updateExperimentStatus: (id: string, status: string, analysisStatus: string) => void): ColumnDef<any>[] => [
   {
     accessorKey: "id",
     header: "Experiment ID",
@@ -11,11 +11,6 @@ export const experimentsColumns: ColumnDef<any>[] = [
   {
     accessorKey: "name",
     header: "Experiment name",
-  },
-  {
-    accessorKey: "created_at",
-    header: "Created at",
-    cell: ({ row }) => formatDate(row.original.created_at),
   },
   {
     accessorKey: "started_at",
@@ -29,16 +24,17 @@ export const experimentsColumns: ColumnDef<any>[] = [
   },
   {
     accessorKey: "status",
-    header: "Status",
-    cell: ({ row }: any) => {
-      return <Badge className="mx-1">{row.original.status}</Badge>
-    }
+    header: "Experiment Status",
+    cell: ({ row }) => <Badge className="mx-1">{row.original.status}</Badge>,
+  },
+  {
+    accessorKey: "analysis_status",
+    header: "Analysis Status",
+    cell: ({ row }) => <Badge variant="outline" className="mx-1">{row.original.analysis_status}</Badge>,
   },
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row }: any) => {
-      return <ExperimentsActions experimentId={row.original.id} />
-    }
-  }
+    cell: ({ row }) => <ExperimentsActions experimentId={row.original.id} updateExperimentStatus={updateExperimentStatus} />,
+  },
 ];

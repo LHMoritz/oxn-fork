@@ -17,10 +17,10 @@ export const menuItems = [
     url: "/experiments",
     icon: MonitorCog,
   },
-  {
-    id: "reports",
-    title: "Reports",
-    url: "/reports",
-    icon: FileChartLine,
-  },
+  // {
+  //   id: "results",
+  //   title: "Results",
+  //   url: "/results",
+  //   icon: FileChartLine,
+  // },
 ];
