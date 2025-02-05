@@ -61,7 +61,12 @@ class Engine:
         accounting=False,
     ) -> Tuple[dict[str, ResponseVariable], dict[str, dict[str, dict[str, str]]]]:
         """Run an experiment 1 time"""
-        self.generator = LocustFileLoadgenerator(orchestrator=self.orchestrator, config=self.spec.model_dump(mode="json"), log=self.doLocustLog)
+        self.generator = LocustFileLoadgenerator(
+            orchestrator=self.orchestrator,
+            config=self.spec.model_dump(mode="json"),
+            log=self.doLocustLog,
+            run_time=self.spec.loadgen.run_time
+        )
         names = []
         self.runner = ExperimentRunner(
             config=self.spec,
@@ -88,22 +93,30 @@ class Engine:
                     message=f"Error while checking preconditions for treatment {treatment.name} which is class {treatment.__class__}",
                     explanation="\n".join(treatment.messages),
                 )
-        self.generator.start()
-        logger.info("Started load generation")
-        self.loadgen_running = True
         experiment_start = utc_timestamp()
         self.runner.experiment_start = experiment_start
         self.runner.observer.experiment_start = experiment_start
+        
+        self.generator.start()
+        self.loadgen_running = True
+        logger.info("Started load generation")
+
+        # Execute runtime treatments while load generation is running
         self.runner.execute_runtime_treatments()
-        self.runner.clean_compile_time_treatments()
-        self.runner.experiment_end = utc_timestamp()
-        self.runner.observer.experiment_end = self.runner.experiment_end
-        # This runs all of the queries (prometheus, jaeger) at the end, populates self.runner.observer.variables().items()
-        # It sleeps and blocks and then runs the observe() function
-        # of every response variable. All of the data is stored in memory and written to disk at once.
-        # If memory footprint becomes an issue, we can refactor to write the data to disk sequentially.
-        self.runner.observe_response_variables()
+        
+        # Wait for load generation to complete its full duration
         self.generator.stop()
+        self.loadgen_running = False
+        logger.info("Stopped load generation")
+
+        experiment_end = utc_timestamp()
+        self.runner.experiment_end = experiment_end
+        self.runner.observer.experiment_end = experiment_end
+
+        # Clean up and observe results
+        self.runner.clean_compile_time_treatments()
+        self.runner.observe_response_variables()
+        
         self.loadgen_running = False
         logger.info("Stopped load generation")
 

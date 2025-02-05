@@ -118,6 +118,8 @@ class PrometheusDetectionAnalyzer(FaultDetectionAnalyzer):
             logger.warning(f"No detections found for fault {fault.name}")
             return DetectionAnalysisResult(
                 fault_name=fault.name,
+                start_time=fault.start_time,
+                end_time=fault.end_time,
                 detected=False,
                 detection_time=None,
                 detection_latency=None,
@@ -137,6 +139,8 @@ class PrometheusDetectionAnalyzer(FaultDetectionAnalyzer):
         
         return DetectionAnalysisResult(
             fault_name=fault.name,
+            start_time=fault.start_time,
+            end_time=fault.end_time,
             detected=True,
             detection_time=first_detection.firing_time.isoformat(),
             detection_latency=detection_latency,

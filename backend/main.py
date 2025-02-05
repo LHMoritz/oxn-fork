@@ -275,6 +275,8 @@ async def analyse_fault_detection(experiment_id: str):
     for result in results:
         response.append(FaultDetectionAnalysisResponse(
             fault_name=result.fault_name,
+            start_time=result.start_time.isoformat(),
+            end_time=result.end_time.isoformat(),
             detected=result.detected,
             detection_time=result.detection_time,
             detection_latency=result.detection_latency,

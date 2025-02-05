@@ -471,12 +471,17 @@ class ExperimentManager:
         orchestrator = KubernetesOrchestrator(experiment_config=experiment)
         prometheus_client = Prometheus(orchestrator, target="sue")
         prometheus_analyzer = PrometheusDetectionAnalyzer(prometheus_client)
-        end_time = datetime.now()
-        start_time = end_time - timedelta(hours=24)
+
         analyzer = ExperimentAnalyzer(
             detection_analyzer=prometheus_analyzer
         )
-        detections = prometheus_analyzer.get_raw_detection_data(start_time, end_time)
+        logger.info("Extracting experiment start time... ")
+        start_time = analyzer.extract_experiment_start_time(report)
+        logger.info(f"Experiment start time: {start_time}")
+        logger.info("Extracting experiment end time... ")
+        end_time = analyzer.extract_experiment_end_time(report)
+        logger.info(f"Experiment end time: {end_time}")
+        detections = prometheus_analyzer.get_raw_detection_data(start_time = start_time, end_time = end_time)
         results = analyzer.analyze_fault_detection(report)
 
         serializable_results = [result.to_dict() for result in results]
