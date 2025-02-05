@@ -149,7 +149,7 @@ class ExperimentManager:
     def get_experiment_status(self, experiment_id) -> ExperimentStatus:
         """Get experiment status file. Contains status, started_at, completed_at, error_message and the config"""
         experiment_config = self.store.load(f"{experiment_id}_config", FileFormat.JSON)
-        experiment_status = self.check_experiment_status(experiment_id, experiment_config)
+        experiment_status = self.check_analysis_status(experiment_id, experiment_config)
         self.update_experiment_config(experiment_id, {'analysis_status': experiment_status})
         if experiment_config is None:
             raise ValueError(f"No experiment config found for experiment {experiment_id}")
@@ -166,7 +166,7 @@ class ExperimentManager:
         )
         return status   
     
-    def check_experiment_status(self, experiment_id: str, experiment_config: dict) -> str:
+    def check_analysis_status(self, experiment_id: str, experiment_config: dict) -> str:
         """Check experiment status"""
 
         analysis_path = os.getenv("OXN_ANALYSIS_PATH", "/mnt/analysis-datastore")
@@ -425,36 +425,28 @@ class ExperimentManager:
         key = f"{batch_id}_{sub_experiment_id}_{response_name}.{file_ending}"
         return self.store.load(key, FileFormat.JSON)
     
-    def get_analysis_data(self) -> Dict:
-        """
-        Retrieves analysis data from the configured analysis path
-        
-        Returns:
-            Dict: Dictionary containing the analysis data from all JSON files
-            
-        Raises:
-            HTTPException: If no data is found or if there's an error loading the data
-        """
+    def get_analysis_data(self, experiment_id: str) -> Dict:
+        """Retrieves analysis data for a specific experiment"""
         analysis_path = os.getenv("OXN_ANALYSIS_PATH", "/mnt/analysis-datastore")
+        analysis_file = f"{experiment_id}_analysis_results.json"
+        file_path = os.path.join(analysis_path, analysis_file)
         
         try:
-            # Check if path exists and contains data
-            if not os.path.exists(analysis_path) or len(os.listdir(analysis_path)) == 0:
+            if not os.path.exists(file_path):
                 raise HTTPException(
-                    status_code=404, 
-                    detail="No analysis data found"
+                    status_code=404,
+                    detail=f"No analysis results found for experiment {experiment_id}"
                 )
-                
-            # Load data from directory
             data = {}
             for filename in os.listdir(analysis_path):
                 file_path = os.path.join(analysis_path, filename)
                 if filename.endswith('.json'):
                     with open(file_path, 'r') as f:
                         data[filename] = json.load(f)
-                        
             return data
             
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"Error loading analysis data: {str(e)}")
             raise HTTPException(

@@ -4,6 +4,7 @@ import os
 import json
 
 from backend.internal.errors import StoreException
+from backend.internal.models.analysis_status import AnalysisStatus
 from backend.internal.models.fault_detection import FaultDetectionAnalysisResponse
 monkey.patch_all()
 
@@ -205,6 +206,19 @@ async def get_batch_experiment_data(batch_id: str, sub_experiment_id: str):
         media_type="application/zip",
         headers={"Content-Disposition": f"attachment; filename={sub_experiment_id}.zip"}
     )
+
+@app.get("/analysis-data/{experimentId}")
+async def get_analysis_data(experiment_id: str):
+    """
+    Get analysis data of a given experiment id
+    """
+    logger.info(f"Getting analysis results for: {experiment_id}")
+    key = f"{experiment_id}"
+    analysisStatus = experiment_manager.get_experiment_status(experiment_id).analysis_status
+    if analysisStatus == AnalysisStatus.FINISHED.value:
+        return experiment_manager.get_analysis_data(experiment_id)
+    else:
+        raise HTTPException(status_code=404, detail=f"Analysis not found due to Analysis Status: {analysisStatus}")
 
 @app.get("/experiments/batch/{batch_id}/sub_experiment_id")
 async def get_batch_experiment_id(
