@@ -75,7 +75,8 @@ class AnalysisManager:
           return response_variables
      
      def _get_label_for_experiment(self) -> str:
-          return self.storage_handler.get_experiment_label(self.experiment_id)
+          return "recommendationservice"
+          #return self.storage_handler.get_experiment_label(self.experiment_id)
      
      #TODO : make analysis module always drop a json, even if its empty
      def analyze_experiment(self) -> tuple[dict[str, list[dict[str, float]]], dict[str, list[dict[str, float]]]]:

@@ -3,7 +3,7 @@
 from analysis.internal.StorageClient import LocalStorageHandler
 from analysis.internal.RWDGController import RWDGController
 from analysis.internal.TraceResponseVariable import TraceResponseVariable
-from analysis.internal.TraceModel import TraceModel, vizualize_test_err_and_acc, vizualize_training_err_and_acc
+from analysis.internal.TraceModel import TraceModel, visualize_training_acc_per_batch, vizualize_test_acc
 import analysis.internal.constants as constants
 from analysis.internal.TraceVariableDatasetInference import TraceVariableDatasetInference
 from analysis.internal.utils import gen_one_hot_encoding_col_names, build_colum_names_for_adf_mat_df
@@ -87,16 +87,18 @@ class DataTransformerAndAnalyzer():
           test_size = len(torch_dataset) - train_size
           training_data, test_data = random_split(torch_dataset, [train_size, test_size])
 
-          train_dataloader = DataLoader(training_data, batch_size=100, shuffle=False)
+          train_dataloader = DataLoader(training_data, batch_size=100, shuffle=True)
           test_dataloader = DataLoader(test_data, batch_size=1, shuffle=False)
 
-          train_err, train_acc = self.trace_model.train_trace_model(train_loader=train_dataloader, iterations=1000)
+          train_acc_per_epochs, train_acc_per_batch = self.trace_model.train_trace_model(train_loader=train_dataloader, num_epochs=2)
           self.trace_model.save_model_dict(constants.MODEL_PATH)
-          test_err, test_acc = self.trace_model.test_trace_model(test_loader=test_dataloader )
+          test_acc = self.trace_model.test_trace_model(test_loader=test_dataloader )
  
+          visualize_training_acc_per_batch( train_acc_per_batch, train_acc_per_epochs)
+          vizualize_test_acc(test_acc)
+     
 
-          vizualize_training_err_and_acc(train_err, train_acc)
-          vizualize_test_err_and_acc(test_err, test_acc)
+
 
           
 
