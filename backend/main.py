@@ -137,6 +137,7 @@ async def run_experiment_sync(
         raise HTTPException(status_code=500, detail=str(e))
     
     return {
+        # TODO: USE THE RIGHT RESPONSE MODEL !!!!!!!!!!!!!!!!!!!!!!!!!
         "status": "accepted",
         "message": "Experiment completed successfully",
         "experiment_id": experiment_id
