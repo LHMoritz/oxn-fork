@@ -1,0 +1,31 @@
+{
+  "experiment_id": "01737208087",
+  "metrics": {
+    "frontend": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    },
+    "recommendationservice": {
+      "micro_f1_score": 0.0,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0
+    }
+  },
+  "probability": {
+    "frontend": {
+      "faultyError": 0.05454545454545454,
+      "faultyNoError": 0.9454545454545454,
+      "goodError": 0.007874015748031496,
+      "goodNoError": 0.9921259842519685
+    },
+    "recommendationservice": { "goodError": 0.0, "goodNoError": 1.0 }
+  },
+  "aggregation": {
+    "micro_precision_agg": -1,
+    "micro_recall_agg": -1,
+    "micro_f1_score_agg": -1
+  },
+  "failedVariables": "[]",
+  "timeToResult": 4.27370285987854
+}
