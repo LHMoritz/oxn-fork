@@ -16,9 +16,10 @@ export default function DashboardPage() {
         title="Batch Experiments"
       />
       <StartExperiment
+        disabled
         experimentType="suite"
         icon={<MonitorCog />}
-        description="lorem ipsum dolor sit amet"
+        description="Not available yet"
         title="Experiment Suite"
       />
     </div>

@@ -15,14 +15,15 @@ import { FileUploader } from '../file-upload';
 interface StartDialogProps {
   experimentType: string;
   title: string;
+  disabled: boolean;
 }
 
-const StartDialog: React.FC<StartDialogProps> = ({ experimentType, title }) => {
+const StartDialog: React.FC<StartDialogProps> = ({ experimentType, title, disabled }) => {
   const allowMultiple = experimentType === 'suite'; //Single and batch have single file upload
   return (
     <Dialog>
-      <DialogTrigger>
-        <div className='flex items-center gap-2 border-collapse border border-black-300 rounded-md py-2 px-4 cursor-pointer bg-black text-white'>
+      <DialogTrigger disabled={disabled}>
+        <div className={`flex items-center gap-2 border-collapse border border-black-300 rounded-md py-2 px-4 text-white ${disabled ? 'bg-slate-400 cursor-not-allowed' : 'bg-black cursor-pointer'}`}>
           <Cable size={14} />
           <span className='text-sm'>Start {title}</span>
         </div>

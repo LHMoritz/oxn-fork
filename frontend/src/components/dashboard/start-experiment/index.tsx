@@ -13,9 +13,10 @@ interface StartExperimentProps {
   title: string;
   icon: React.ReactNode;
   description: string;
+  disabled?: boolean;
 }
 
-export const StartExperiment: React.FC<StartExperimentProps> = ({ title, icon, description, experimentType }) => {
+export const StartExperiment: React.FC<StartExperimentProps> = ({ title, icon, description, experimentType, disabled = false }) => {
   return (
     <Card className="w-[350px]">
       <CardHeader>
@@ -25,7 +26,7 @@ export const StartExperiment: React.FC<StartExperimentProps> = ({ title, icon, d
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardFooter className="flex justify-end py-6">
-        <StartExperimentDialog title={title} experimentType={experimentType} />
+        <StartExperimentDialog disabled={disabled} title={title} experimentType={experimentType} />
       </CardFooter>
     </Card>
   )

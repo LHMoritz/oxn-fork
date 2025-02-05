@@ -13,7 +13,7 @@ export const ExperimentsTable: React.FC<{}> = ({ }) => {
 
   useEffect(() => {
     if (data) setExperiments(data);
-  }, []);
+  }, [data]);
 
   return (
     <div>
