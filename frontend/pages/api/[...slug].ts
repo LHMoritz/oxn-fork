@@ -1,6 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://backend-module:8000';
+// const BACKEND_URL = process.env.BACKEND_URL || 'http://backend-module:8000';
+const BACKEND_URL = 'http://localhost:8000';
+
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
