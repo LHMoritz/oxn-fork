@@ -117,7 +117,7 @@ async def run_experiment_sync(
     run_config: RunExperimentRequest,
 ):
     """
-    Start experiment execution asynchronously.
+    Start experiment execution synchronously.
     - Validates experiment exists
     - Checks if another experiment is running
     """
@@ -136,12 +136,8 @@ async def run_experiment_sync(
         experiment_manager.update_experiment_config(experiment_id, {'status': 'FAILED', 'error_message': str(e)})
         raise HTTPException(status_code=500, detail=str(e))
     
-    return {
-        # TODO: USE THE RIGHT RESPONSE MODEL !!!!!!!!!!!!!!!!!!!!!!!!!
-        "status": "accepted",
-        "message": "Experiment completed successfully",
-        "experiment_id": experiment_id
-    }
+    updated_experiment = experiment_manager.get_experiment_config(experiment_id)
+    return updated_experiment
 
 @app.get("/experiments/{experiment_id}/data")
 async def get_experiment_data(experiment_id: str):
