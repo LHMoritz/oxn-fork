@@ -26,14 +26,14 @@ class LocustFileLoadgenerator:
     This loads the locust file and runs the locust file
     """
     
-    def __init__(self, orchestrator: Orchestrator, config: dict, log: bool = False):
+    def __init__(self, orchestrator: Orchestrator, config: dict, log: bool = False, run_time: str = "60s"):
         assert orchestrator is not None
         self.orchestrator = orchestrator
         """A reference to the orchestrator instance"""
         assert config is not None
         self.config = config
         """The experiment spec"""
-        self.run_time: int = 0
+        self.run_time: float = time_string_to_seconds(run_time)
         """The total desired run time of the load generation"""
         self.env = None
         """Locust environment"""
@@ -47,7 +47,6 @@ class LocustFileLoadgenerator:
         """Read the load generation section of an experiment specification"""
         loadgen_section: dict = self.config["loadgen"]
         self.stages = loadgen_section.get("stages", None)
-        self.run_time = int(time_string_to_seconds(loadgen_section["run_time"]))
         logger.info(f"Run time: {self.run_time}")
         self.locust_files = loadgen_section.get("locust_files", None)
        
@@ -106,18 +105,25 @@ class LocustFileLoadgenerator:
         assert self.env is not None, "Locust environment must be initialized before starting"
         assert self.env.runner is not None, "Locust runner must be initialized before starting"
         
+        # Start the Locust runner with the configured users and spawn rate
         self.env.runner.start(self.max_users, self.spawn_rate)
-        self.greenlets.spawn(gevent.sleep, self.run_time)
-        #self.greenlets.spawn(stats_printer(self.env.stats))
-        #self.greenlets.spawn(stats_history, self.env.runner)
-
+        
+        # Schedule the runner to stop after run_time seconds
+        stop_greenlet = gevent.spawn_later(self.run_time, self.env.runner.quit)
+        self.greenlets.add(stop_greenlet)
+        
+        # Add stats collection greenlets
+        if self.log:
+            self.greenlets.add(gevent.spawn(stats_printer(self.env.stats)))
+            self.greenlets.add(gevent.spawn(stats_history, self.env.runner))
 
     def stop(self):
-        """Join the greenlet created by locust env (= wait until it has finished)"""
+        """Wait for load generation to complete"""
         if self.env and self.env.runner:
+            # Wait for all greenlets to complete with a timeout slightly longer than run_time
+            self.greenlets.join(timeout=self.run_time + 30)
             self.env.runner.quit()
-            self.greenlets.join(timeout=30)  # Add a timeout to ensure it doesn't stall indefinitely
-            self.greenlets.kill()  # Kill any remaining greenlets if they didn't terminate
+            self.greenlets.kill()
 
     def kill(self):
         """Kill all greenlets spawned by locust"""

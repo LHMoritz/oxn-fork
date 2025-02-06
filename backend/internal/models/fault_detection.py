@@ -28,6 +28,8 @@ class InjectedFault:
 class DetectionAnalysisResult:
     """Represents the result of analyzing a fault detection"""
     fault_name: str
+    start_time: datetime
+    end_time: datetime
     detected: bool
     detection_time: str | None
     detection_latency: float | None
@@ -35,11 +37,17 @@ class DetectionAnalysisResult:
     false_positives: List[Dict]
     def to_dict(self) -> dict:
         """Convert the dataclass instance to a dictionary"""
-        return asdict(self)
+        result = asdict(self)
+        # Convert datetime objects to ISO format strings
+        result['start_time'] = self.start_time.isoformat()
+        result['end_time'] = self.end_time.isoformat()
+        return result
     
 class FaultDetectionAnalysisResponse(BaseModel):
     """Represents the response from the fault detection analysis"""
     fault_name: str
+    start_time: str
+    end_time: str
     detected: bool
     detection_time: str | None
     detection_latency: float | None
