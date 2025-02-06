@@ -207,7 +207,7 @@ async def get_batch_experiment_data(batch_id: str, sub_experiment_id: str):
         headers={"Content-Disposition": f"attachment; filename={sub_experiment_id}.zip"}
     )
 
-@app.get("/analysis-data/{experimentId}")
+@app.get("/analysis-data/{experiment_id}")
 async def get_analysis_data(experiment_id: str):
     """
     Get analysis data of a given experiment id
