@@ -60,7 +60,7 @@ class ExperimentManager:
             experiment = {
                 'id': experiment_id,
                 'name': name,
-                'status': 'PENDING',
+                'status': 'NOT_STARTED',
                 'created_at': datetime.now().isoformat(),
                 'started_at': "",
                 'completed_at': "",
@@ -88,7 +88,7 @@ class ExperimentManager:
         batch_config = {
             'id': batch_id,
             'name': name,
-            'status': 'PENDING',
+            'status': 'NOT_STARTED',
             'created_at': datetime.now().isoformat(),
             'started_at': "",
             'completed_at': "",
@@ -112,7 +112,7 @@ class ExperimentManager:
             sub_experiment = {
                 'id': f"{i}",
                 'name': f"{name}_{i}",
-                'status': 'PENDING',
+                'status': 'NOT_STARTED',
                 'created_at': datetime.now().isoformat(),
                 'started_at': "",
                 'completed_at': "",

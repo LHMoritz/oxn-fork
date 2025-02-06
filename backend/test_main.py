@@ -155,7 +155,7 @@ async def test_get_experiment_status(sample_config):
         id = create_response.json()["id"]
         response = await ac.get(f"/experiments/{id}/status")
         assert response.status_code == 200
-        assert response.json()["status"] == "PENDING"
+        assert response.json()["status"] == "NOT_STARTED"
 
         await ac.post(f"/experiments/{id}/run", json={"output_format": "json", "runs": 1})
         

@@ -48,7 +48,7 @@ class Engine:
         self.sue_running = False
         """Status of the sue"""
         self.additional_treatments = []
-        self.status = 'PENDING'
+        self.status = 'NOT_STARTED'
         self.error_message = None
         self.started_at = None
         self.completed_at = None

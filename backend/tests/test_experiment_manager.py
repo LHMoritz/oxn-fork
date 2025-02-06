@@ -177,7 +177,7 @@ def test_create_experiment(experiment_manager, ExperimentConfig):
     assert experiment is not None
     assert experiment.id is not None
     assert experiment.name == "Test Experiment"
-    assert experiment.status == "PENDING"
+    assert experiment.status == "NOT_STARTED"
     assert experiment.error_message is ""
     assert experiment.spec == ExperimentConfig
 
@@ -187,7 +187,7 @@ def test_create_batch_experiment(experiment_manager, ExperimentConfig):
     batch_config = experiment_manager.create_batch_experiment("Batch Test", ExperimentConfig, parameter_variations)
     assert batch_config is not None
     assert batch_config.name == "Batch Test"
-    assert batch_config.status == "PENDING"
+    assert batch_config.status == "NOT_STARTED"
     assert batch_config.parameter_variations == parameter_variations
 
 def test_get_experiment_config(experiment_manager, ExperimentConfig):
@@ -228,7 +228,7 @@ def test_update_experiment_config(experiment_manager, ExperimentConfig):
     experiment_manager.store.load.return_value = {
         'id': experiment_id,
         'name': "Test Experiment",
-        'status': 'PENDING',
+        'status': 'NOT_STARTED',
         'created_at': response.created_at,
         'started_at': "",
         'completed_at': "",
