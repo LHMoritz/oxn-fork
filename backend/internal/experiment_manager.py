@@ -541,7 +541,6 @@ class ExperimentManager:
         """
         Runs multiple experiments from a suite of experiment configurations.
         """
-        logger.info(f"Running suite of experiments with ids: {experimentIds}")
         responses = []
         
         if not experimentIds:
