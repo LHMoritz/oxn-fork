@@ -87,6 +87,9 @@ class Experiment(BaseModel):
     sue: Sue
     loadgen: Loadgen
 
+class SuiteExperimentRequest(BaseModel):
+    experiments: List[Experiment]
+
 class CreateExperimentResponse(BaseModel):
     id: str
     name: str
@@ -126,3 +129,6 @@ class CreateBatchExperimentRequest(BaseModel):
 class RunExperimentRequest(BaseModel):
     runs: int = 1
     output_formats: List[FileFormat] = [FileFormat.JSON]
+
+class SuiteRunRequest(BaseModel):
+    experimentIds: List[str]

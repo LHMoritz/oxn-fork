@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 data_dir = "data"
 report_dir = "report"
-from fastapi import FastAPI, BackgroundTasks, HTTPException, Query, Request, Response
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Query, Request, Response, Body
 from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel
@@ -37,7 +37,7 @@ from datetime import datetime
 from backend.internal.experiment_manager import ExperimentManager
 from fastapi.responses import FileResponse, StreamingResponse
 from backend.internal.store import LocalFSStore
-from backend.internal.models.experiment import CreateBatchExperimentRequest, CreateBatchExperimentResponse, CreateExperimentResponse, Experiment, ExperimentStatus, RunExperimentRequest
+from backend.internal.models.experiment import CreateBatchExperimentRequest, CreateBatchExperimentResponse, CreateExperimentResponse, Experiment, ExperimentStatus, RunExperimentRequest, SuiteExperimentRequest
 
 
 app = FastAPI(title="OXN API", version="1.0.0")
@@ -286,6 +286,29 @@ async def analyse_fault_detection(experiment_id: str):
 async def get_experiment_detections(experiment_id: str):
     """Get raw detection data for an experiment"""
     return experiment_manager.get_experiment_detections(experiment_id)
+
+
+@app.post("/experiments/suite", response_model=List[CreateExperimentResponse])
+async def create_suite_experiments(request: SuiteExperimentRequest):
+    """
+    Create a suite of experiments.
+    Accepts a list of experiment configurations and creates a suite of experiments.
+    """
+    try:
+        return experiment_manager.create_suite_experiments(request.experiments)
+    except Exception as e:
+        logger.error(f"Error creating suite experiments: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error creating suite experiments: {str(e)}"
+        )
+
+class SuiteRunRequest(BaseModel):
+    experimentIds: List[str]
+
+@app.post("/experimentsuite/run")
+async def run_suite(request: SuiteRunRequest):
+    return experiment_manager.run_suite_experiments(request.experimentIds)
 
 # run with uvicorn:
 if __name__ == "__main__":
