@@ -137,6 +137,8 @@ class ExperimentManager:
         """Get experiment config"""
         experiment_config = self.store.load(f"{experiment_id}_config", FileFormat.JSON)
         if experiment_config is None:
+            logger.info(f"Experiment id object:")
+            logger.info(experiment_config)
             raise ValueError(f"No experiment config found for experiment {experiment_id}")
         if not isinstance(experiment_config, dict):
             raise ValueError(f"Experiment config is not a dictionary for experiment {experiment_id}")
@@ -522,6 +524,54 @@ class ExperimentManager:
             raise ValueError(f"Detections are not a dictionary for experiment {experiment_id}")
         return detections
 
-
+    def create_suite_experiments(self, experiments: List[Experiment]) -> List[CreateExperimentResponse]:
+        """
+        Creates multiple experiments from a suite of experiment configurations.
+        """
+        responses = []
+        for experiment in experiments:
+            response = self.create_experiment(
+                name=experiment.name or "experiment name not set",
+                config=experiment
+            )
+            responses.append(response)
+        return responses
+    
+    def run_suite_experiments(self, experimentIds: List[str]) -> List[CreateExperimentResponse]:
+        """
+        Runs multiple experiments from a suite of experiment configurations.
+        """
+        logger.info(f"Running suite of experiments with ids: {experimentIds}")
+        responses = []
         
+        if not experimentIds:
+            raise HTTPException(status_code=400, detail="No experiment IDs provided")
+        
+        for experimentId in experimentIds:
+            logger.info(f"Running experiment with id {experimentId}")
+            try:
+                # Verify experiment exists before attempting to run it
+                if not self.store.load(f"{experimentId}_config", FileFormat.JSON):
+                    raise HTTPException(
+                        status_code=404, 
+                        detail=f"Experiment with id {experimentId} not found"
+                    )
+                    
+                self.run_experiment(
+                    experiment_id=experimentId,
+                    output_formats=[FileFormat.JSON],
+                    runs=1,
+                    analysisEnabled=False
+                )
+                # Append the experiment status as response
+                responses.append(self.get_experiment_status(experimentId))
+                
+            except Exception as e:
+                logger.error(f"Error running experiment with id {experimentId}. Error: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Error running experiment {experimentId}: {str(e)}"
+                )
+            
+        return responses
 
