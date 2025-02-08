@@ -54,7 +54,7 @@ class PrometheusDetectionAnalyzer(FaultDetectionAnalyzer):
     
     def get_detections(self, start_time: datetime, end_time: datetime) -> List[DetectionEvent]:
         """Get detections from Prometheus alerts"""
-        logger.debug(f"Fetching alerts from {start_time} to {end_time}")
+        logger.info(f"Fetching alerts from {start_time} to {end_time}")
         alert_data = self.prometheus.get_alerts(start_time, end_time)
         return self._process_alerts(alert_data, start_time, end_time)
     
