@@ -104,7 +104,7 @@ install dev="false":
 
     echo "Installing OXN Platform..."
     kubectl create namespace oxn --dry-run=client -o yaml | kubectl apply -f -
-    if [ {{dev}} == "true" ]; then helm install oxn-platform {{kubernetes_dir}}/oxn-platform --namespace oxn --create-namespace --set backend-chart.enabled=false --set backend-dev-chart.enabled=true; else helm install oxn-platform {{kubernetes_dir}}/oxn-platform --namespace oxn --create-namespace; fi
+    if [ {{dev}} == "true" ]; then helm install oxn-platform {{kubernetes_dir}}/oxn-platform --set backend-chart.enabled=false --set backend-dev-chart.enabled=true; else helm install oxn-platform {{kubernetes_dir}}/oxn-platform; fi
 
     echo "Waiting for OpenTelemetry Demo pods to be ready..."
     kubectl wait --for=condition=ready pod \
