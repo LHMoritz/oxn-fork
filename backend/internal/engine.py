@@ -5,6 +5,7 @@ Connection: Central component that coordinates between treatments, load generati
 
  """
 
+import datetime
 import logging
 from typing import Tuple
 import yaml
@@ -93,40 +94,40 @@ class Engine:
                     message=f"Error while checking preconditions for treatment {treatment.name} which is class {treatment.__class__}",
                     explanation="\n".join(treatment.messages),
                 )
-        experiment_start = utc_timestamp()
-        self.runner.experiment_start = experiment_start
-        self.runner.observer.experiment_start = experiment_start
+        experiment_start = datetime.datetime.now(datetime.timezone.utc)
+        self.runner.experiment_start = experiment_start.timestamp()
+        self.runner.observer.experiment_start = experiment_start.timestamp()
         
         self.generator.start()
         self.loadgen_running = True
         logger.info("Started load generation")
 
         # Execute runtime treatments while load generation is running
-        self.runner.execute_runtime_treatments()
+        treatment_data = self.runner.execute_runtime_treatments()
+        
         
         # Wait for load generation to complete its full duration
+        logger.info("Waiting for load generation to complete")
         self.generator.stop()
         self.loadgen_running = False
         logger.info("Stopped load generation")
 
-        experiment_end = utc_timestamp()
-        self.runner.experiment_end = experiment_end
-        self.runner.observer.experiment_end = experiment_end
+        experiment_end = datetime.datetime.now(datetime.timezone.utc)
+        self.runner.experiment_end = experiment_end.timestamp()
+        self.runner.observer.experiment_end = experiment_end.timestamp()
 
         # Clean up and observe results
         self.runner.clean_compile_time_treatments()
         self.runner.observe_response_variables()
         
         self.loadgen_running = False
-        logger.info("Stopped load generation")
 
         
 
-        #return self.runner.observer.variables(), self.reporter.report_data
-
         # Populate the report data: for each response variable, gather the interaction data for each treatment
+        """
         for _, response in self.runner.observer.variables().items():
-            for _, treatment in self.runner.treatments.items():
+             for _, treatment in self.runner.treatments.items():
                 self.reporter.gather_interaction(
                     experiment=self.runner,
                     treatment=treatment,
@@ -137,12 +138,16 @@ class Engine:
                 )
             self.reporter.assemble_interaction_data(
                 run_key=self.runner.short_id
-            )
-            logger.debug("Assembled all interaction data")
-            self.reporter.add_loadgen_data(
-                runner=self.runner, request_stats=self.generator.env.stats
-            )
-            self.reporter.add_experiment_data(runner=self.runner)
+            ) """
+        self.reporter.initialize_report_data(run_key=self.runner.short_id)
+        logger.debug("Assembled all interaction data")
+        self.reporter.add_loadgen_data(
+            runner=self.runner, request_stats=self.generator.env.stats
+        )
+        self.reporter.add_experiment_data(experiment_start=experiment_start, experiment_end=experiment_end, runner=self.runner)
         # Now we return two dicts, one with the dataframes and one with the report. This data then gets written to disk by the caller (ExperimentManager)
+
+        # Add treatment data to the report
+        self.reporter.add_treatment_data(self.runner, treatment_data)
 
         return self.runner.observer.variables(), self.reporter.get_report_data()

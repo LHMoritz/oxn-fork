@@ -94,8 +94,8 @@ class MetricResponseVariable(ResponseVariable):
 
     def label(
             self,
-            treatment_start: float,
-            treatment_end: float,
+            treatment_start: datetime.datetime,
+            treatment_end: datetime.datetime,
             label_column: str,
             label: str,
     ) -> None:
@@ -104,7 +104,11 @@ class MetricResponseVariable(ResponseVariable):
             self.data = pd.DataFrame(columns=['timestamp'])
             return
         
-        predicate = self.data["timestamp"].between(treatment_start, treatment_end)
+        # Convert UTC datetime to Prometheus timestamp
+        prometheus_treatment_start = int(treatment_start.timestamp())
+        prometheus_treatment_end = int(treatment_end.timestamp())
+        
+        predicate = self.data["timestamp"].between(prometheus_treatment_start, prometheus_treatment_end)
         self.data[label_column] = np.where(predicate, label, "NoTreatment")
 
     @staticmethod
@@ -272,8 +276,8 @@ class TraceResponseVariable(ResponseVariable):
 
     def label(
             self,
-            treatment_start: float,
-            treatment_end: float,
+            treatment_start: datetime.datetime,
+            treatment_end: datetime.datetime,
             label_column: str,
             label: str,
     ) -> None:
@@ -282,11 +286,13 @@ class TraceResponseVariable(ResponseVariable):
             # TODO handle this better
             self.data = pd.DataFrame(columns=['start_time'])
             return
+        
+        # Convert UTC datetime to Jaeger microsecond timestamp
+        jaeger_treatment_start = int(treatment_start.timestamp() * 1_000_000)
+        jaeger_treatment_end = int(treatment_end.timestamp() * 1_000_000)
 
-        scaled_treatment_start = to_microseconds(treatment_start)
-        scaled_treatment_end = to_microseconds(treatment_end)
-        predicate = (self.data["start_time"] >= scaled_treatment_start) & (
-                self.data["start_time"] <= scaled_treatment_end
+        predicate = (self.data["start_time"] >= jaeger_treatment_start) & (
+                self.data["start_time"] <= jaeger_treatment_end
         )
         self.data[label_column] = np.where(predicate, label, "NoTreatment")
 

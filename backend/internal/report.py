@@ -4,13 +4,14 @@ Functionality: Collects and formats interaction data between treatments and resp
 Connection: Called by main.py and Engine to compile and save experiment results.
 
 Handle the generation of experiment reports"""
+import datetime
 import uuid
-from typing import Tuple, Union, TypedDict, Dict, NotRequired
+from typing import List, Tuple, Union, TypedDict, Dict, NotRequired
 import locust.stats
 import pandas as pd
 from scipy.stats import ttest_ind
 
-from backend.internal.runner import ExperimentRunner
+from backend.internal.runner import ExperimentRunner, TreatmentData
 from backend.internal.models.treatment import Treatment
 from backend.internal.responses import TraceResponseVariable, MetricResponseVariable
 from backend.internal.utils import humanize_utc_timestamp
@@ -137,6 +138,10 @@ class Reporter:
         """Create human-readable datetime strings from integer timestamps"""
         return humanize_utc_timestamp(timestamp)
 
+    def initialize_report_data(self, run_key) -> None:
+        """Initialize the report data"""
+        self.report_data["report"]["runs"][run_key] = {}
+
     def assemble_interaction_data(self, run_key) -> dict:
         """Assemble all interaction data for an experiment run"""
         self.report_data["report"]["runs"][run_key] = {}
@@ -147,13 +152,13 @@ class Reporter:
             ] = interaction
         return self.report_data
 
-    def add_experiment_data(self, runner: ExperimentRunner) -> dict:
+    def add_experiment_data(self, experiment_start: datetime.datetime, experiment_end: datetime.datetime, runner: ExperimentRunner) -> dict:
         """Add top level experiment data to the report"""
         try:
             self.report_data["report"][
                 "experiment_start"
-            ] = runner.humanize_start_timestamp
-            self.report_data["report"]["experiment_end"] = runner.humanize_end_timestamp
+            ] = experiment_start
+            self.report_data["report"]["experiment_end"] = experiment_end
             self.report_data["report"]["experiment_key"] = runner.short_hash
         except KeyError as key_error:
             raise OxnException(
@@ -219,6 +224,16 @@ class Reporter:
     def get_report_data(self):
         return self.report_data
 
+    def add_treatment_data(self, runner: ExperimentRunner, treatment_data: List[TreatmentData]):
+        """Add treatment data to the report"""
+        self.report_data["report"]["runs"][runner.short_id]["treatments"] = {}
+        for treatment in treatment_data:    
+            self.report_data["report"]["runs"][runner.short_id]["treatments"][
+                treatment.name
+            ] = {
+                "start": treatment.start,
+                "end": treatment.end,
+            }
 
 
 class InteractionData(TypedDict):
