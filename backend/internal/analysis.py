@@ -20,17 +20,17 @@ class ExperimentAnalyzer:
         for run_id, run_data in report['report']['runs'].items():
             logger.debug(f"Processing run {run_id}")
             seen_treatments = set()
-            for interaction in run_data['interactions'].values():
-                treatment_name = interaction['treatment_name']
+            
+            for treatment_name, treatment in run_data['treatments'].items():
                 if treatment_name in seen_treatments:
                     continue
                     
                 seen_treatments.add(treatment_name)
                 faults.append(InjectedFault(
-                    name=treatment_name,
-                    start_time=interaction['treatment_start'],
-                    end_time=interaction['treatment_end'],
-                    type=interaction['treatment_type'],
+                    name=treatment_name,  # Use the key as the name
+                    start_time=treatment['start'],
+                    end_time=treatment['end'],
+                    type="runtime",
                     params={}  # TODO: Add treatment params
                 ))
         

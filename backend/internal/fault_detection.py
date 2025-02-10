@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 import logging
 from backend.internal.prometheus import Prometheus
@@ -83,7 +83,8 @@ class PrometheusDetectionAnalyzer(FaultDetectionAnalyzer):
             logger.debug(f"Processing alert {alert_name} in state {alert_state}")
             
             for timestamp, value in values:
-                event_time = datetime.fromtimestamp(timestamp)
+                # Prometheus uses UTC
+                event_time = datetime.fromtimestamp(timestamp, tz=timezone.utc)
                 if (float(value) > 0 and 
                     alert_state == "firing" and
                     start_time <= event_time <= end_time):
@@ -94,8 +95,6 @@ class PrometheusDetectionAnalyzer(FaultDetectionAnalyzer):
                         labels=metric
                     ))
                     logger.debug(f"Added detection for {alert_name} at {event_time}")
-        
-        logger.info(f"Found {len(detections)} valid detections")
         return detections
     
     def analyze_detection(self, fault: InjectedFault, detections: List[DetectionEvent]) -> DetectionAnalysisResult:
@@ -112,7 +111,7 @@ class PrometheusDetectionAnalyzer(FaultDetectionAnalyzer):
             if d.firing_time < fault.start_time or d.firing_time > fault.end_time
         ]
         
-        logger.debug(f"Found {len(true_positives)} true positives and {len(false_positives)} false positives")
+        logger.info(f"Found {len(true_positives)} true positives and {len(false_positives)} false positives")
         
         if not true_positives:
             logger.warning(f"No detections found for fault {fault.name}")

@@ -4,6 +4,7 @@ Functionality: Provides an abstract base class ResponseVariable with methods to 
 Connection: Used as a base class for specific response implementations in responses.py.
 
  """
+import datetime
 import uuid
 import abc
 
@@ -43,8 +44,8 @@ class ResponseVariable(abc.ABC):
     @abc.abstractmethod
     def label(
         self,
-        treatment_start: float,
-        treatment_end: float,
+        treatment_start: datetime.datetime,
+        treatment_end: datetime.datetime,
         label_column: str,
         label: str,
     ) -> None:

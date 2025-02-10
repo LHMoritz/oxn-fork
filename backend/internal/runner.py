@@ -11,7 +11,7 @@ import uuid
 import hashlib
 import datetime
 from typing import List
-
+from dataclasses import dataclass
 import psutil
 
 import docker
@@ -46,6 +46,12 @@ from backend.internal.pricing import Accountant
 from backend.internal.models.treatment import Treatment
 from backend.internal.models.orchestrator import Orchestrator
 logger = logging.getLogger(__name__)
+
+@dataclass
+class TreatmentData:
+    name: str
+    start: datetime.datetime | None
+    end: datetime.datetime | None
 
 
 class ExperimentRunner:
@@ -101,6 +107,7 @@ class ExperimentRunner:
         self.id = uuid.uuid4().hex
         """Random and unique ID to identify runs"""
         self.treatments = {}  # since python 3.6 dict remembers order of insertion
+        self.typed_treatments: List[TreatmentData] = []
         """Treatments to execute for this run"""
         self.experiment_start = None
         """Experiment start as UTC unix timestamp in seconds"""
@@ -166,14 +173,14 @@ class ExperimentRunner:
             return
             
         for treatment_dict in treatment_section:
-            key = next(iter(treatment_dict))
-            treatment = treatment_dict[key]
-            action = treatment.action
-            params = treatment.params
-            self.treatments[key] = self._build_treatment(
-                action=action, params=params, name=key, orchestrator=self.orchestrator
-            )
-            logger.debug("Successfully built treatment %s", self.treatments[key])
+            for treatment_name, treatment in treatment_dict.items():
+                action = treatment.action
+                params = treatment.params
+                self.treatments[treatment_name] = self._build_treatment(
+                    action=action, params=params, name=treatment_name, orchestrator=self.orchestrator
+                )
+                self.typed_treatments.append(TreatmentData(name=treatment_name, start=None, end=None))
+                logger.debug("Successfully built treatment %s", self.treatments[treatment_name])
         logger.info(f"Built {len(self.treatments)} treatments: {self.treatments.keys()}")
 
     def _build_treatment(self, action, params, name, orchestrator) -> Treatment:
@@ -208,16 +215,22 @@ class ExperimentRunner:
         """Execute runtime treatments"""
         logger.info("Starting compile time treatments")
         for treatment in self._get_compile_time_treatments():
-            treatment.start = utc_timestamp()
+            treatment.start = datetime.datetime.now(datetime.timezone.utc)
+            for i, v in enumerate(self.typed_treatments):
+                if v.name == treatment.name:
+                    self.typed_treatments[i].start = treatment.start
             treatment.inject()
 
     def clean_compile_time_treatments(self) -> None:
         logger.info("Cleaning compile time treatments")
         for treatment in self._get_compile_time_treatments():
-            treatment.end = utc_timestamp()
+            treatment.end = datetime.datetime.now(datetime.timezone.utc)
+            for i, v in enumerate(self.typed_treatments):
+                if v.name == treatment.name:
+                    self.typed_treatments[i].end = treatment.end
             treatment.clean()
 
-    def execute_runtime_treatments(self) -> None:
+    def execute_runtime_treatments(self) -> List[TreatmentData]:
         """
         Execute one run of the experiment
         A single experiment run is defined as one execution of all treatments and one observation of all responses
@@ -229,12 +242,21 @@ class ExperimentRunner:
         logger.info(f"Sleeping for {ttw_left} seconds")
         time.sleep(ttw_left)
         logger.info(f"Starting runtime treatments")
+        treatment_data = []
         for treatment in self._get_runtime_treatments():
-            treatment.start = utc_timestamp()
+            treatment_start = datetime.datetime.now(datetime.timezone.utc)
             treatment.inject()
             treatment.clean()
-            treatment.end = utc_timestamp()
+            treatment_end = datetime.datetime.now(datetime.timezone.utc)
+            treatment_data.append(TreatmentData(name=treatment.name, start=treatment_start, end=treatment_end))
+            self.treatments[treatment.name].start = treatment_start
+            self.treatments[treatment.name].end = treatment_end
+            for i, v in enumerate(self.typed_treatments):
+                if v.name == treatment.name:
+                    self.typed_treatments[i].start = treatment_start
+                    self.typed_treatments[i].end = treatment_end
         logger.info(f"Injected treatments")
+        return treatment_data
 
     def observe_response_variables(self) -> None:
         self.observer.initialize_variables()
@@ -259,7 +281,8 @@ class ExperimentRunner:
 
     def _label(self) -> None:
         """Label the observed data with information from the treatments"""
-        for treatment in self.treatments.values():
+        # Un-typed version
+        """ for treatment in self.treatments.values():
             for response_id, response_variable in self.observer.variables().items():
                 try:
                     response_variable.label(
@@ -273,4 +296,21 @@ class ExperimentRunner:
                     continue
                 except Exception as e:
                     logger.error(f"Unexpected error while labeling response variable {response_variable.name}: {str(e)}")
+                    raise """
+
+        # Typed version
+        for i, trtmnt in enumerate(self.typed_treatments):
+            for response_id, response_variable in self.observer.variables().items():
+                try:
+                    response_variable.label(
+                        treatment_end=trtmnt.end,
+                        treatment_start=trtmnt.start,
+                        label_column=trtmnt.name,
+                        label=trtmnt.name,
+                    )
+                except (JaegerException, PrometheusException) as e:
+                    logger.warning(f"Failed to label response variable {response_variable.name}: {str(e)}. Skipping.")
+                    continue
+                except Exception as e:
+                    logger.error(f"Unexpected error while labeling response variable {response_variable.name} with treatment {trtmnt.name}: {str(e)}")
                     raise
