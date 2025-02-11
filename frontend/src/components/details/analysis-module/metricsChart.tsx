@@ -1,4 +1,3 @@
-/* eslint-disable  @typescript-eslint/no-explicit-any */
 import Chart from 'react-apexcharts';
 
 export const MetricsChart = ({ data }: { data: any }) => {

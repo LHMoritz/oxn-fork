@@ -1,4 +1,3 @@
-/* eslint-disable  @typescript-eslint/no-explicit-any */
 export const prepareDatasetForMetrics = (metrics: any) => {
   return Object.entries(metrics).map(([service, values]: any) => ({
     service,

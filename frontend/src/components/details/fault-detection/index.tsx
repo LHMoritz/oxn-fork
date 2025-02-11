@@ -1,4 +1,3 @@
-/* eslint-disable  @typescript-eslint/no-explicit-any */
 'use client';
 import { DynamicTable } from '@/components/tables';
 import { faultsColumns } from '@/components/tables/table-columns/fault-columns';

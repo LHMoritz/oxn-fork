@@ -1,4 +1,3 @@
-/* eslint-disable  @typescript-eslint/no-explicit-any */
 'use client';
 import { load as yamlLoad } from 'js-yaml';
 import { useEffect, useState } from 'react';

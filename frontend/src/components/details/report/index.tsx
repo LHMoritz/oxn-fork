@@ -1,4 +1,3 @@
-/* eslint-disable  @typescript-eslint/no-explicit-any */
 'use client';
 import { DynamicTable } from '@/components/tables';
 import { useApi } from '@/hooks/use-api';
