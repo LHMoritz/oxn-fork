@@ -2130,8 +2130,8 @@ class KubernetesPrometheusRulesTreatment(Treatment):
         # Restart to apply changes
         self.orchestrator.restart_pods_of_deployment(self.deployment)
 
-        # sleep 10 seconds to let prometheus apply the rules
-        time.sleep(10)
+        # sleep 20 seconds to let prometheus apply the rules
+        time.sleep(20)
 
     def clean(self) -> None:
         # Similar to PrometheusIntervalTreatment, might want to skip cleanup

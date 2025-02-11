@@ -7,11 +7,12 @@ Connection: Central component that coordinates between treatments, load generati
 
 import datetime
 import logging
+import time
 from typing import Tuple
 import yaml
 from jsonschema import validate
 from pathlib import Path
-
+import concurrent.futures
 from backend.internal.models.experiment import Experiment
 from backend.internal.models.response import ResponseVariable
 from backend.internal.runner import ExperimentRunner
@@ -40,7 +41,7 @@ class Engine:
         """A reference to a reporter instance"""
         self.orchestrator = KubernetesOrchestrator(experiment_config=spec)
         """A reference to an orchestrator instance"""
-        self.generator = None
+        self.generator: LocustFileLoadgenerator
         """A reference to a load generator instance"""
         self.runner = None
         """A reference to a runner instance"""
@@ -97,14 +98,15 @@ class Engine:
         experiment_start = datetime.datetime.now(datetime.timezone.utc)
         self.runner.experiment_start = experiment_start.timestamp()
         self.runner.observer.experiment_start = experiment_start.timestamp()
-        
-        self.generator.start()
-        self.loadgen_running = True
-        logger.info("Started load generation")
+    
 
-        # Execute runtime treatments while load generation is running
-        treatment_data = self.runner.execute_runtime_treatments()
-        
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            loadgen_future = executor.submit(self._execute_loadgen)
+            treatments_future = executor.submit(self.runner.execute_runtime_treatments)
+
+            # Wait for the runtime treatments to complete and get the treatment data.
+            treatment_data = treatments_future.result()
+            loadgen_future.result()
         
         # Wait for load generation to complete its full duration
         logger.info("Waiting for load generation to complete")
@@ -151,3 +153,15 @@ class Engine:
         self.reporter.add_treatment_data(self.runner, treatment_data)
 
         return self.runner.observer.variables(), self.reporter.get_report_data()
+    def _execute_loadgen(self) -> None:
+        """
+        This method starts the load generator and allows it to run for its full duration.
+        """
+        logger.info("Starting load generation")
+        self.generator.start()
+        # Here we assume that `run_time` defines how long load generation should run (in seconds)
+        run_time = self.spec.loadgen.run_time
+        logger.info(f"Load generation will run for {run_time} seconds.")
+        self.generator.stop()
+        logger.info("Stopped load generation")
+        self.loadgen_running = False
