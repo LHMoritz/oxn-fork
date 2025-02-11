@@ -16,8 +16,6 @@ export function formatDate(dateString: Date | string, formatType = DATE_TIME_LON
   }
 };
 
-
-
 export const formatTimestamp = (timeString?: string | null): string | null => {
   if (!timeString || typeof timeString !== "string") return null;
 

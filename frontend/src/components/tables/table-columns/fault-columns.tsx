@@ -1,8 +1,19 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, TriangleAlert } from "lucide-react";
+import { formatDate } from "@/utils/date";
 
 export const faultsColumns: ColumnDef<any>[] = [
+  {
+    accessorKey: "start_time",
+    header: "Start Time",
+    cell: ({ row }) => formatDate(row.original.start_time),
+  },
+  {
+    accessorKey: "end_time",
+    header: "End Time",
+    cell: ({ row }) => formatDate(row.original.end_time),
+  },
   { accessorKey: "fault_name", header: "Fault Name" },
   {
     accessorKey: "detected",
@@ -23,7 +34,7 @@ export const faultsColumns: ColumnDef<any>[] = [
       return (
         <div className="flex align-top gap-1 items-center justify-start">
           {row.original.false_positives.length}
-          {hasFalsePositives && <InfoIcon size={16} color="red" />}
+          {hasFalsePositives && <TriangleAlert size={16} color="red" />}
         </div>
       )
     },
@@ -35,9 +46,9 @@ export const faultsColumns: ColumnDef<any>[] = [
 
       const hasTruePositives = row.original.true_positives.length > 0
       return (
-        <div>
+        <div className="flex align-top gap-1 items-center justify-start">
           {row.original.true_positives.length}
-          {hasTruePositives && <InfoIcon size={16} color="red" />}
+          {hasTruePositives && <InfoIcon size={16} color="green" />}
         </div>
       )
     },
@@ -45,6 +56,7 @@ export const faultsColumns: ColumnDef<any>[] = [
   {
     accessorKey: "detection_time",
     header: "Detection Time",
+    cell: ({ row }) => formatDate(row.original.detection_time),
   },
   {
     accessorKey: "detection_latency",

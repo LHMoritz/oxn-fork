@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
-import { FileText, ChevronDown, ChevronUp, Trash, Cable } from "lucide-react";
+import { load as yamlLoad } from 'js-yaml';
+import { useEffect, useState } from "react";
+import { FileText, ChevronDown, ChevronUp, Cable, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useApi } from "@/hooks/use-api";
@@ -17,14 +18,42 @@ export const SuiteFiles: React.FC<SuiteFilesProps> = ({ files }) => {
   const [expandedFileIndex, setExpandedFileIndex] = useState<number | null>(null);
   const [fileContents, setFileContents] = useState<{ [key: number]: string }>({});
   const [fileTypes, setFileTypes] = useState<{ [key: number]: "yaml" | "json" | null }>({});
+  const [areFilesCreated, setAreFilesCreated] = useState(false);
+  const [experimentIds, setExperimentIds] = useState(null);
+  const [parsedExperimentFiles, setParsedExperimentFiles] = useState<any[]>([])
+
   const { theme } = useTheme();
 
-  const { fetchData: onStartSuite } = useApi({
-    // TODO: Replace with suite API
+  const { data: responseAfterCreate, loading: loadingOnCreate, fetchData: onCreateSuite } = useApi({
     url: "/experiments/suite",
     method: "POST",
-    body: [],
+    body: {
+      experiments: parsedExperimentFiles
+    },
   });
+
+
+  const { loading: loadingOnStart, fetchData: onStartSuite } = useApi({
+    url: "/experimentsuite/run",
+    method: "POST",
+    body: {
+      experimentIds: experimentIds
+    },
+  });
+
+  useEffect(() => {
+    if (responseAfterCreate) {
+      const experimentIds = responseAfterCreate.map((experiment: any) => experiment.id) || [];
+      setExperimentIds(experimentIds)
+    }
+  }, [responseAfterCreate])
+
+  useEffect(() => {
+    if (parsedExperimentFiles.length > 0) {
+      onCreateSuite();
+    }
+  }, [parsedExperimentFiles]);
+
 
   const toggleFileExpansion = (index: number, file: File) => {
     if (expandedFileIndex === index) {
@@ -49,6 +78,38 @@ export const SuiteFiles: React.FC<SuiteFilesProps> = ({ files }) => {
 
     setExpandedFileIndex(index);
   };
+
+  const handleFileCreate = () => {
+
+    const experiments = files.map((file, index) => {
+      const content = fileContents[index];
+      const type = fileTypes[index];
+      let parsed;
+
+      if (type === "json") {
+        try {
+          parsed = JSON.parse(content);
+        } catch (error) {
+          console.error(`Error parsing JSON for file ${file.name}:`, error);
+        }
+      } else if (type === "yaml") {
+        try {
+          parsed = yamlLoad(content);
+        } catch (error) {
+          console.error(`Error parsing YAML for file ${file.name}:`, error);
+        }
+      }
+      return parsed;
+    });
+
+    setParsedExperimentFiles(experiments);
+    setAreFilesCreated(true);
+  };
+
+  const handleStartExperiment = () => {
+    if (experimentIds)
+      onStartSuite();
+  }
 
   return (
     <div className="space-y-4">
@@ -95,7 +156,12 @@ export const SuiteFiles: React.FC<SuiteFilesProps> = ({ files }) => {
       </ScrollArea>
 
       <div className="flex justify-end gap-2 my-4 w-full">
-        <Button disabled={true} onClick={onStartSuite}>
+        <Button disabled={areFilesCreated || loadingOnCreate} onClick={handleFileCreate} variant="outline">
+          <Save />
+          {areFilesCreated ? 'Files created!' : 'Create files'}
+        </Button>
+
+        <Button disabled={!areFilesCreated || loadingOnStart} onClick={handleStartExperiment}>
           <Cable />
           Start Suite
         </Button>

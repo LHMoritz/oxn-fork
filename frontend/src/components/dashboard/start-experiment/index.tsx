@@ -18,7 +18,7 @@ interface StartExperimentProps {
 
 export const StartExperiment: React.FC<StartExperimentProps> = ({ title, icon, description, experimentType, disabled = false }) => {
   return (
-    <Card className="w-[350px]">
+    <Card className="w-[400px]">
       <CardHeader>
         <CardTitle className="flex justify-between align-baseline">
           {title}{icon}
