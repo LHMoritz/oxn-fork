@@ -76,7 +76,7 @@
           "label": "astronomy-shop-recommendationservice",
           "delay_time": "120ms",
           "delay_jitter": "120ms",
-          "duration": "1m",
+          "duration": "40s",
           "interface": "eth0"
         }
       }

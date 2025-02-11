@@ -291,9 +291,26 @@ class TraceResponseVariable(ResponseVariable):
         jaeger_treatment_start = int(treatment_start.timestamp() * 1_000_000)
         jaeger_treatment_end = int(treatment_end.timestamp() * 1_000_000)
 
+        # Debug prints
+        logger.info(f"\nTimestamp comparisons:")
+        logger.info(f"Treatment start (UTC): {treatment_start}")
+        logger.info(f"Treatment start (Jaeger μs): {jaeger_treatment_start}")
+        logger.info(f"Treatment end (UTC): {treatment_end}")
+        logger.info(f"Treatment end (Jaeger μs): {jaeger_treatment_end}")
+        
+        if not self.data.empty:
+            logger.info(f"\nSample data timestamps:")
+            logger.info(f"First row start_time: {self.data['start_time'].iloc[0]}")
+            logger.info(f"Last row start_time: {self.data['start_time'].iloc[-1]}")
+
         predicate = (self.data["start_time"] >= jaeger_treatment_start) & (
                 self.data["start_time"] <= jaeger_treatment_end
         )
+        
+        # Print predicate results
+        if not self.data.empty:
+            logger.info(f"\nPredicate matches: {predicate.sum()} out of {len(predicate)} rows")
+        
         self.data[label_column] = np.where(predicate, label, "NoTreatment")
 
     @staticmethod
