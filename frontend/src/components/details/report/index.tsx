@@ -30,8 +30,8 @@ export const Report = ({ experimentId }: { experimentId: string }) => {
         Report for Experiment #{experimentId}
       </h2>
       <div className="text-sm font-bold border p-2">
-        <p>Experiment start time: {formatDate(reportData.experiment_start)}</p>
-        <p>Experiment end time: {formatDate(reportData.experiment_end)}</p>
+        <p>Experiment start time: {formatDate(reportData?.experiment_start)}</p>
+        <p>Experiment end time: {formatDate(reportData?.experiment_end)}</p>
       </div>
       <DynamicTable
         filterColumnKey="runId"

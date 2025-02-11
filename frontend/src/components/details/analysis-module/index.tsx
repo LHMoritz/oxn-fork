@@ -1,13 +1,12 @@
 'use client';
-import { DynamicTable } from "@/components/tables"
-import { analysisMetricsColumns, analysisProbabilityColumns } from "@/components/tables/table-columns/analysis-columns"
-import { useApi } from "@/hooks/use-api"
 import { useEffect, useState } from "react";
+import { useApi } from "@/hooks/use-api"
+import { DynamicTable } from "@/components/tables"
 import { prepareDatasetForMetrics, prepareDatasetForProbability } from "./helpers";
 import { MetricsChart } from "./metricsChart";
 import { Button } from "@/components/ui/button";
 import { ChartBar, Table } from "lucide-react";
-
+import { analysisMetricsColumns, analysisProbabilityColumns } from "@/components/tables/table-columns/analysis-columns";
 
 export const AnalysisModule = ({ experimentId }: { experimentId: string }) => {
 
@@ -18,7 +17,6 @@ export const AnalysisModule = ({ experimentId }: { experimentId: string }) => {
   const { data: analysisData, fetchData: onGetReport } = useApi({
     url: `analysis-data/${experimentId}`,
     method: "GET",
-    manual: true,
   });
 
   useEffect(() => {

@@ -31,9 +31,6 @@ export const MetricsChart = ({ data }: { data: any }) => {
     },
     dataLabels: {
       enabled: true
-    },
-    title: {
-      text: ""
     }
   };
 
