@@ -1,28 +1,34 @@
 'use client';
-import { DynamicTable } from "@/components/tables"
-import { faultsColumns } from "@/components/tables/table-columns/fault-columns";
-import { useApi } from "@/hooks/use-api";
-import { useEffect, useState } from "react";
+import { DynamicTable } from '@/components/tables';
+import { faultsColumns } from '@/components/tables/table-columns/fault-columns';
+import { useApi } from '@/hooks/use-api';
+import { useEffect, useState } from 'react';
 
-export const AnalyseFaultDetection = ({ experimentId }: { experimentId: string }) => {
-
+export const AnalyseFaultDetection = ({
+  experimentId,
+}: {
+  experimentId: string;
+}) => {
   const [faultDetectionData, setFaultDetectionData] = useState<any>([]);
 
   const { data } = useApi({
     url: `/experiments/${experimentId}/analyse-fault-detection`,
-    method: "GET",
+    method: 'GET',
     showToast: false,
   });
 
   useEffect(() => {
-    if (data) setFaultDetectionData(data)
-  }, [data])
-
+    if (data) setFaultDetectionData(data);
+  }, [data]);
 
   return (
     <div>
-      <h4 className="text-lg font-semibold mb-4">Fault Detection Analysis</h4>
-      <DynamicTable filterColumnKey="fault_name" data={faultDetectionData} columns={faultsColumns} />
+      <h4 className='text-lg font-semibold mb-4'>Fault Detection Analysis</h4>
+      <DynamicTable
+        filterColumnKey='fault_name'
+        data={faultDetectionData}
+        columns={faultsColumns}
+      />
     </div>
-  )
-}
+  );
+};

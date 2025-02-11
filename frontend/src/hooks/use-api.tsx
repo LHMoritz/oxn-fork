@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import axios, { AxiosRequestConfig } from "axios";
-import { toast } from "react-toastify";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import axios, { AxiosRequestConfig } from 'axios';
+import { toast } from 'react-toastify';
 
-type HttpMethod = "GET" | "POST";
+type HttpMethod = 'GET' | 'POST';
 
 const api = axios.create({
-  baseURL: "/api",
-  headers: { "Content-Type": "application/json" },
+  baseURL: '/api',
+  headers: { 'Content-Type': 'application/json' },
 });
 
 interface UseApiProps<T> {
@@ -20,7 +20,7 @@ interface UseApiProps<T> {
 
 export function useApi<T>({
   url,
-  method = "GET",
+  method = 'GET',
   body = {},
   config = {},
   manual = false, // Default to automatic GET requests
@@ -36,7 +36,7 @@ export function useApi<T>({
     setError(null);
     try {
       let response;
-      if (method === "GET") {
+      if (method === 'GET') {
         response = await api.get<T>(url, config);
       } else {
         response = await api.post<T>(url, body, config);
@@ -44,13 +44,15 @@ export function useApi<T>({
       setData(response.data);
 
       if (showToast) {
-        toast.success('Success!')
+        toast.success('Success!');
       }
 
       return response.data;
     } catch (err) {
       const errorMessage =
-        (err as any)?.response?.data?.message || (err as any)?.message || "An error occurred";
+        (err as any)?.response?.data?.message ||
+        (err as any)?.message ||
+        'An error occurred';
       setError(errorMessage);
 
       if (showToast) {
@@ -65,7 +67,7 @@ export function useApi<T>({
 
   // Automatically fetch GET requests on mount if `manual` is false
   useEffect(() => {
-    if (method === "GET" && !manual && !hasFetched.current) {
+    if (method === 'GET' && !manual && !hasFetched.current) {
       fetchData();
       hasFetched.current = true;
     }

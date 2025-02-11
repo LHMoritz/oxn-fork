@@ -9,15 +9,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { menuItems } from "./menu";
+} from '@/components/ui/sidebar';
+import { menuItems } from './menu';
 
 export function AppSidebar() {
-
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-      </SidebarHeader>
+    <Sidebar collapsible='icon'>
+      <SidebarHeader></SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>MAIN</SidebarGroupLabel>
@@ -37,8 +35,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-      </SidebarFooter>
+      <SidebarFooter></SidebarFooter>
     </Sidebar>
-  )
-};
+  );
+}
