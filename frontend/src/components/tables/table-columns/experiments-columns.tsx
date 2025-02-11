@@ -2,6 +2,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { formatDate } from "@/utils/date";
 import { ExperimentsActions } from "../table-actions/experiments-actions";
 import { Badge } from "@/components/ui/badge";
+import { getBadgeVariant } from "@/utils/colorFormat";
 
 export const experimentsColumns = (updateExperimentStatus: (id: string, status: string, analysisStatus: string) => void): ColumnDef<any>[] => [
   {
@@ -25,12 +26,22 @@ export const experimentsColumns = (updateExperimentStatus: (id: string, status: 
   {
     accessorKey: "status",
     header: "Experiment Status",
-    cell: ({ row }) => <Badge className="mx-1">{row.original.status}</Badge>,
+    cell: ({ row }) => {
+      const variant = getBadgeVariant(row.original.status)
+      return (
+        <Badge className="mx-1" variant={variant}>{row.original.status}</Badge>
+      )
+    }
   },
   {
     accessorKey: "analysis_status",
     header: "Analysis Status",
-    cell: ({ row }) => <Badge variant="outline" className="mx-1">{row.original.analysis_status}</Badge>,
+    cell: ({ row }) => {
+      const variant = getBadgeVariant(row.original.analysis_status)
+      return (
+        <Badge className="mx-1" variant={variant}>{row.original.analysis_status}</Badge>
+      )
+    }
   },
   {
     id: "actions",

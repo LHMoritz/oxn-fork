@@ -1,7 +1,5 @@
 'use client';
 import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import CodeMirror from '@uiw/react-codemirror';
 import { yaml as yamlFormat } from "@codemirror/lang-yaml";
 import { json as jsonFormat } from "@codemirror/lang-json";

@@ -32,8 +32,6 @@ interface DynamicTableProps<TData, TValue> {
 }
 
 export function DynamicTable<TData, TValue>({ data, columns, filterColumnKey = "experimentId" }: DynamicTableProps<TData, TValue>) {
-
-
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 

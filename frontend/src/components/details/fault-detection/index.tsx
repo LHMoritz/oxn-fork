@@ -1,9 +1,8 @@
 'use client';
 import { DynamicTable } from "@/components/tables"
-import { faultsColumns } from "./columns"
+import { faultsColumns } from "@/components/tables/table-columns/fault-columns";
 import { useApi } from "@/hooks/use-api";
 import { useEffect, useState } from "react";
-import { ExpandFaults } from "./expand-faults";
 
 export const AnalyseFaultDetection = ({ experimentId }: { experimentId: string }) => {
 

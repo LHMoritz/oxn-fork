@@ -23,7 +23,7 @@ export const SingleFile: React.FC<SingleFileProps> = ({ file }) => {
 
   const parsedConfig = fileType === "yaml" ? yaml.load(editableFile || "") : JSON.parse(editableFile || "{}");
 
-  const { data: responseAfterSave, loading: loadingOnCreate, fetchData: onCreateExperiment } = useApi({
+  const { data: responseAfterCreate, loading: loadingOnCreate, fetchData: onCreateExperiment } = useApi({
     url: `/experiments`,
     method: "POST",
     body: parsedConfig,
@@ -56,8 +56,8 @@ export const SingleFile: React.FC<SingleFileProps> = ({ file }) => {
   }, [file]);
 
   useEffect(() => {
-    if (responseAfterSave) setExperimentId(responseAfterSave.id)
-  }, [responseAfterSave])
+    if (responseAfterCreate) setExperimentId(responseAfterCreate.id)
+  }, [responseAfterCreate])
 
 
   const handleFileCreate = () => {
