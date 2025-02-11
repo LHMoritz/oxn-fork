@@ -448,7 +448,7 @@ class ExperimentManager:
                 file_path = os.path.join(analysis_path, filename)
                 if filename.endswith('.json'):
                     with open(file_path, 'r') as f:
-                        data[filename] = json.load(f)
+                        data = json.load(f)
             return data
             
         except HTTPException:
