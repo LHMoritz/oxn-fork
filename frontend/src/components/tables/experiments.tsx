@@ -5,7 +5,7 @@ import { useApi } from '@/hooks/use-api';
 import { Button } from '../ui/button';
 import { DynamicTable } from '.';
 
-export const ExperimentsTable: React.FC<{}> = ({}) => {
+export const ExperimentsTable = () => {
   const [experiments, setExperiments] = useState<any[]>([]);
 
   const { data, loading, error, fetchData } = useApi({

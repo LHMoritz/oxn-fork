@@ -11,7 +11,7 @@ export function formatDate(dateString: Date | string, formatType = DATE_TIME_LON
     if (dateString) return format(new Date(dateString), formatType);
     return null;
   } catch (error) {
-    console.error('Invalid date:', dateString);
+    console.error('Invalid date:', dateString, error);
     return null;
   }
 };
