@@ -48,8 +48,12 @@ class ExperimentManager:
         # Ensure directories exist
         self.experiments_dir.mkdir(parents=True, exist_ok=True)
 
-    def create_experiment(self, name, config: Experiment) -> CreateExperimentResponse:
+    def create_experiment(self, name, config: Experiment, suiteExperiment: bool = False) -> CreateExperimentResponse:
         """Create new experiment directory and config file"""
+        if suiteExperiment:
+            analysis_status = AnalysisStatus.NOT_ENABLED.value
+        else:
+            analysis_status = AnalysisStatus.NOT_STARTED.value
         if not self.acquire_lock():
             logger.info("Lock already held.")
             raise Exception("Lock already held - cannot create experiment")
@@ -65,7 +69,7 @@ class ExperimentManager:
                 'started_at': "",
                 'completed_at': "",
                 'error_message': "",
-                'analysis_status': AnalysisStatus.NOT_STARTED.value,
+                'analysis_status': analysis_status,
                 'spec': config.model_dump(mode="json"),
             }
             
@@ -532,7 +536,8 @@ class ExperimentManager:
         for experiment in experiments:
             response = self.create_experiment(
                 name=experiment.name or "experiment name not set",
-                config=experiment
+                config=experiment,
+                suiteExperiment=True
             )
             responses.append(response)
         return responses
