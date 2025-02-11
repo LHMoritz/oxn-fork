@@ -7,8 +7,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Cable } from "lucide-react";
+} from '@/components/ui/dialog';
+import { Cable } from 'lucide-react';
 import { FileUploader } from '../file-upload';
 
 interface StartDialogProps {
@@ -17,17 +17,27 @@ interface StartDialogProps {
   disabled: boolean;
 }
 
-const StartDialog: React.FC<StartDialogProps> = ({ experimentType, title, disabled }) => {
+const StartDialog: React.FC<StartDialogProps> = ({
+  experimentType,
+  title,
+  disabled,
+}) => {
   const allowMultiple = experimentType === 'suite'; //Single and batch have single file upload
   return (
     <Dialog>
       <DialogTrigger disabled={disabled}>
-        <div className={`flex items-center gap-2 border-collapse border border-black-300 rounded-md py-2 px-4 text-white ${disabled ? 'bg-slate-400 cursor-not-allowed' : 'bg-black cursor-pointer'}`}>
+        <div
+          className={`flex items-center gap-2 border-collapse border border-black-300 rounded-md py-2 px-4 text-white ${
+            disabled
+              ? 'bg-slate-400 cursor-not-allowed'
+              : 'bg-black cursor-pointer'
+          }`}
+        >
           <Cable size={14} />
           <span className='text-sm'>Start {title}</span>
         </div>
       </DialogTrigger>
-      <DialogContent className="max-w-[900px] w-full max-h-[90vh] overflow-auto">
+      <DialogContent className='max-w-[900px] w-full max-h-[90vh] overflow-auto'>
         <DialogHeader>
           <DialogTitle>Start {title}</DialogTitle>
           <DialogDescription>
@@ -35,7 +45,10 @@ const StartDialog: React.FC<StartDialogProps> = ({ experimentType, title, disabl
           </DialogDescription>
         </DialogHeader>
         {/* File Upload Process */}
-        <FileUploader allowMultiple={allowMultiple} experimentType={experimentType} />
+        <FileUploader
+          allowMultiple={allowMultiple}
+          experimentType={experimentType}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -1,16 +1,25 @@
-import type { Metadata } from "next";
-import { ThemeProvider } from "@/context/theme-provider";
-import "./globals.css";
-import Layout from "@/components/sidebar";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import type { Metadata } from 'next';
+import { ThemeProvider } from '@/context/theme-provider';
+import './globals.css';
+import Layout from '@/components/sidebar';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export const metadata: Metadata = {
-  title: "OXN++ Dashboard",
-  description: "A user-friendly interface for configuring, monitoring, and analyzing observability experiments in cloud-native applications.",
-  keywords: ["OXN", "Observability", "Microservices", "Dashboard", "Cloud-Native", "Fault Injection", "Performance Monitoring"],
+  title: 'OXN++ Dashboard',
+  description:
+    'A user-friendly interface for configuring, monitoring, and analyzing observability experiments in cloud-native applications.',
+  keywords: [
+    'OXN',
+    'Observability',
+    'Microservices',
+    'Dashboard',
+    'Cloud-Native',
+    'Fault Injection',
+    'Performance Monitoring',
+  ],
   authors: [],
-  applicationName: "OXN++",
+  applicationName: 'OXN++',
 };
 export default function RootLayout({
   children,
@@ -19,22 +28,20 @@ export default function RootLayout({
 }>) {
   return (
     <>
-      <html lang="en" suppressHydrationWarning>
+      <html lang='en' suppressHydrationWarning>
         <head />
         <body>
           <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
+            attribute='class'
+            defaultTheme='system'
             enableSystem
             disableTransitionOnChange
           >
-            <Layout>
-              {children}
-            </Layout>
+            <Layout>{children}</Layout>
           </ThemeProvider>
-          <ToastContainer position="top-right" autoClose={2000} />
+          <ToastContainer position='top-right' autoClose={2000} />
         </body>
       </html>
     </>
-  )
+  );
 }

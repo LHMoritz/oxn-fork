@@ -8,7 +8,9 @@ export function transformReportData(report: any): any[] {
     const runs = report.runs as Record<string, RunData>;
     for (const [runId, runData] of Object.entries(runs)) {
       if (runData && runData.interactions) {
-        for (const [interactionId, interaction] of Object.entries(runData.interactions)) {
+        for (const [interactionId, interaction] of Object.entries(
+          runData.interactions
+        )) {
           rows.push({
             runId,
             interactionId,

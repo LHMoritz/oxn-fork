@@ -1,21 +1,27 @@
 'use client';
-import { useEffect, useState } from "react";
-import { experimentsColumns } from "./table-columns/experiments-columns";
-import { useApi } from "@/hooks/use-api";
-import { Button } from "../ui/button";
-import { DynamicTable } from ".";
+import { useEffect, useState } from 'react';
+import { experimentsColumns } from './table-columns/experiments-columns';
+import { useApi } from '@/hooks/use-api';
+import { Button } from '../ui/button';
+import { DynamicTable } from '.';
 
-export const ExperimentsTable: React.FC<{}> = ({ }) => {
-
+export const ExperimentsTable: React.FC<{}> = ({}) => {
   const [experiments, setExperiments] = useState<any[]>([]);
 
-  const { data, loading, error, fetchData } = useApi({ url: "/experiments", showToast: false });
+  const { data, loading, error, fetchData } = useApi({
+    url: '/experiments',
+    showToast: false,
+  });
 
   useEffect(() => {
     if (data) setExperiments(data);
   }, [data]);
 
-  const updateExperimentStatus = (experimentId: string, newStatus: string, newAnalysisStatus: string) => {
+  const updateExperimentStatus = (
+    experimentId: string,
+    newStatus: string,
+    newAnalysisStatus: string
+  ) => {
     setExperiments((prevExperiments) =>
       prevExperiments.map((exp) =>
         exp.id === experimentId
@@ -28,9 +34,9 @@ export const ExperimentsTable: React.FC<{}> = ({ }) => {
   return (
     <div>
       {error && (
-        <div className="text-red-500 my-4">
+        <div className='text-red-500 my-4'>
           <p>Error loading experiments: {error}</p>
-          <Button onClick={fetchData} variant="outline">
+          <Button onClick={fetchData} variant='outline'>
             Retry
           </Button>
         </div>
@@ -40,11 +46,11 @@ export const ExperimentsTable: React.FC<{}> = ({ }) => {
 
       {!loading && !error && (
         <DynamicTable
-          filterColumnKey="id"
+          filterColumnKey='id'
           data={experiments}
           columns={experimentsColumns(updateExperimentStatus)}
         />
       )}
     </div>
-  )
-}
+  );
+};

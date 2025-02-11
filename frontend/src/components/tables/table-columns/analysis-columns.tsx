@@ -1,4 +1,4 @@
-import { ColumnDef } from "@tanstack/react-table"
+import { ColumnDef } from '@tanstack/react-table';
 
 export const analysisMetricsColumns: ColumnDef<any>[] = [
   {
@@ -41,4 +41,3 @@ export const analysisProbabilityColumns: ColumnDef<any>[] = [
     header: 'Good No Error',
   },
 ];
-

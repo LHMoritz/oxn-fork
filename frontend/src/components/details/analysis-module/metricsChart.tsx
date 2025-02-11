@@ -1,42 +1,47 @@
-import Chart from "react-apexcharts";
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+import Chart from 'react-apexcharts';
 
 export const MetricsChart = ({ data }: { data: any }) => {
-
   const chartSeries = [
     {
-      name: "Micro F1 Score",
-      data: data.map((item: any) => item.micro_f1_score)
+      name: 'Micro F1 Score',
+      data: data.map((item: any) => item.micro_f1_score),
     },
     {
-      name: "Micro Precision",
-      data: data.map((item: any) => item.micro_precision)
+      name: 'Micro Precision',
+      data: data.map((item: any) => item.micro_precision),
     },
     {
-      name: "Micro Recall",
-      data: data.map((item: any) => item.micro_recall)
-    }
+      name: 'Micro Recall',
+      data: data.map((item: any) => item.micro_recall),
+    },
   ];
 
   const chartOptions: any = {
     chart: {
-      type: "bar"
+      type: 'bar',
     },
     xaxis: {
-      categories: data.map((item: any) => item.service)
+      categories: data.map((item: any) => item.service),
     },
     plotOptions: {
       bar: {
-        horizontal: false
-      }
+        horizontal: false,
+      },
     },
     dataLabels: {
-      enabled: true
-    }
+      enabled: true,
+    },
   };
 
   return (
     <div>
-      <Chart options={chartOptions} series={chartSeries} type="bar" height={350} />
+      <Chart
+        options={chartOptions}
+        series={chartSeries}
+        type='bar'
+        height={350}
+      />
     </div>
-  )
-}
+  );
+};
