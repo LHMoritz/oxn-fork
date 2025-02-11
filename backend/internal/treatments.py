@@ -26,6 +26,9 @@ from python_on_whales import DockerClient
 
 from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
 
+from gevent import Greenlet
+from gevent.pool import Group
+
 
 from backend.internal.errors import OrchestratorException, OxnException, OrchestratorResourceNotFoundException
 from backend.internal.utils import (
@@ -43,8 +46,13 @@ class EmptyTreatment(Treatment):
     """
     Empty treatment to represent a simple observation of response variables
     """
+    def __init__(self, config, name, orchestrator):
+        super().__init__(config, name, orchestrator)
+        self.greenlets = Group()
 
     def clean(self) -> None:
+        for greenlet in self.greenlets:
+            greenlet.kill()
         pass
 
     def _transform_params(self) -> None:
@@ -70,8 +78,12 @@ class EmptyTreatment(Treatment):
         return all(bools)
 
     def inject(self) -> None:
-        sleep_duration_seconds = self.config.get("duration_seconds")
-        time.sleep(sleep_duration_seconds)
+        sleep_duration_seconds = self.config.get("duration_seconds", 0)
+        if sleep_duration_seconds is not None:
+            greenlet = Greenlet.spawn(gevent.sleep, float(sleep_duration_seconds))
+            self.greenlets.add(greenlet)
+            greenlet.start()
+
 
     def params(self) -> dict:
         return {
@@ -96,8 +108,13 @@ class EmptyKubernetesTreatment(Treatment):
     """
     Empty treatment to represent a simple observation of response variables
     """
+    def __init__(self, config, name, orchestrator):
+        super().__init__(config, name, orchestrator)
+        self.greenlets = Group()
 
     def clean(self) -> None:
+        for greenlet in self.greenlets:
+            greenlet.kill()
         pass
 
     def _transform_params(self) -> None:
@@ -124,7 +141,9 @@ class EmptyKubernetesTreatment(Treatment):
 
     def inject(self) -> None:
         sleep_duration_seconds = self.config.get("duration_seconds")
-        time.sleep(sleep_duration_seconds)
+        greenlet = Greenlet.spawn(gevent.sleep, float(sleep_duration_seconds))
+        self.greenlets.add(greenlet)
+        greenlet.start()
 
     def params(self) -> dict:
         return {
@@ -1108,6 +1127,7 @@ class KubernetesNetworkDelayTreatment(Treatment):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.greenlets = Group()
         #self.client = docker.from_env()
         self.client = self.orchestrator
 
@@ -1260,7 +1280,10 @@ class KubernetesNetworkDelayTreatment(Treatment):
             logger.info(
                 f"Injected delay into pods in {namespace} with {label_selector}={label}. Waiting for {duration}s."
             )
-            time.sleep(duration)
+            sleep_duration_seconds = self.config.get("duration_seconds")
+            greenlet = Greenlet.spawn(time.sleep, sleep_duration_seconds)
+            self.greenlets.add(greenlet)
+            greenlet.start()
         except ContainerNotFound:
             logger.error(f"Can't find container ")
         except DockerAPIError as e:
@@ -1284,6 +1307,8 @@ class KubernetesNetworkDelayTreatment(Treatment):
                 label=label,
                 command=command
             )
+            for greenlet in self.greenlets:
+                greenlet.kill()
             
             logger.info(f"Cleaned delay treatment from pods in {namespace} with {label_selector}={label}")
             #self.client.close()
