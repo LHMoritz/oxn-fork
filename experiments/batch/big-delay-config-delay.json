@@ -351,8 +351,9 @@
       "kubernetes_prometheus_rules": {
         "action": "kubernetes_prometheus_rules",
         "params": {
-          "latency_threshold": 100,
-          "evaluation_window": "120s"
+          "latency_threshold": 500,
+          "evaluation_window": "120s",
+          "quantile": 0.90
         }
       }
     },

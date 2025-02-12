@@ -130,5 +130,3 @@ class LocustFileLoadgenerator:
         self.greenlets.kill()
         if self.env and self.env.runner:
             self.env.runner.quit()  # Ensure the runner is stopped if kill is called
-
-

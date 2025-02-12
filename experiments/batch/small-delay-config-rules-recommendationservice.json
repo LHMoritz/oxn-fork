@@ -47,7 +47,8 @@
         "action": "kubernetes_prometheus_rules",
         "params": {
           "latency_threshold": 100,
-          "evaluation_window": "120s"
+          "evaluation_window": "120s",
+          "quantile": 0.90
         }
       }
     },
@@ -74,9 +75,9 @@
           "namespace": "system-under-evaluation",
           "label_selector": "app.kubernetes.io/name",
           "label": "astronomy-shop-recommendationservice",
-          "delay_time": "120ms",
+          "delay_time": "200ms",
           "delay_jitter": "45ms",
-          "duration": "140s",
+          "duration": "120s",
           "interface": "eth0"
         }
       }
@@ -110,7 +111,8 @@
   }
 },
 "parameter_variations":	{
-"treatments.0.kubernetes_prometheus_rules.params.latency_threshold": [100, 150, 200, 250, 300],
-"treatments.0.kubernetes_prometheus_rules.params.evaluation_window": ["90s" , "120s", "150s"]
+"treatments.0.kubernetes_prometheus_rules.params.latency_threshold": [300, 400],
+"treatments.0.kubernetes_prometheus_rules.params.evaluation_window": ["240s", "300s"],
+"treatments.0.kubernetes_prometheus_rules.params.quantile": [0.60, 0.70, 0.80, 0.90]
 }
 }

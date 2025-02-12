@@ -20,7 +20,7 @@ from backend.internal.docker_orchestration import DockerComposeOrchestrator
 from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
 from backend.internal.report import Reporter
 from backend.internal.locust_file_loadgenerator import LocustFileLoadgenerator
-from backend.internal.utils import utc_timestamp
+from backend.internal.utils import time_string_to_seconds, utc_timestamp
 from backend.internal.errors import OxnException, OrchestrationException
 
 logger = logging.getLogger(__name__)
@@ -100,18 +100,20 @@ class Engine:
         self.runner.observer.experiment_start = experiment_start.timestamp()
     
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
             loadgen_future = executor.submit(self._execute_loadgen)
             treatments_future = executor.submit(self.runner.execute_runtime_treatments)
 
             # Wait for the runtime treatments to complete and get the treatment data.
             treatment_data = treatments_future.result()
+            logger.info("Waiting for load generation to complete")
             loadgen_future.result()
+            self.loadgen_running = False
         
-        # Wait for load generation to complete its full duration
+        """ # Wait for load generation to complete its full duration
         logger.info("Waiting for load generation to complete")
         self.generator.stop()
-        self.loadgen_running = False
+        self.loadgen_running = False """
         logger.info("Stopped load generation")
 
         experiment_end = datetime.datetime.now(datetime.timezone.utc)
@@ -159,9 +161,9 @@ class Engine:
         """
         logger.info("Starting load generation")
         self.generator.start()
-        # Here we assume that `run_time` defines how long load generation should run (in seconds)
         run_time = self.spec.loadgen.run_time
-        logger.info(f"Load generation will run for {run_time} seconds.")
+        logger.info(f"Load generation will run for {run_time}.")
+        time.sleep(time_string_to_seconds(run_time))
         self.generator.stop()
         logger.info("Stopped load generation")
         self.loadgen_running = False

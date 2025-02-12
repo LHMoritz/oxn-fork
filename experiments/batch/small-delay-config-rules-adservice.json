@@ -47,7 +47,8 @@
         "action": "kubernetes_prometheus_rules",
         "params": {
           "latency_threshold": 100,
-          "evaluation_window": "120s"
+          "evaluation_window": "120s",
+          "quantile": 0.90
         }
       }
     },
@@ -76,7 +77,7 @@
           "label": "astronomy-shop-adservice",
           "delay_time": "120ms",
           "delay_jitter": "45ms",
-          "duration": "140s",
+          "duration": "120s",
           "interface": "eth0"
         }
       }
@@ -110,7 +111,7 @@
   }
 },
 "parameter_variations":	{
-"treatments.0.kubernetes_prometheus_rules.params.latency_threshold": [100, 150, 200, 250, 300],
-"treatments.0.kubernetes_prometheus_rules.params.evaluation_window": ["90s" , "120s", "150s"]
+"treatments.0.kubernetes_prometheus_rules.params.latency_threshold": [400, 500, 600],
+"treatments.0.kubernetes_prometheus_rules.params.evaluation_window": ["120s", "240s", "360s"]
 }
 }

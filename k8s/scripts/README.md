@@ -110,5 +110,6 @@ then visit http://localhost:9090/
 # from oxn/k8s/
 helm upgrade astronomy-shop open-telemetry/opentelemetry-demo \
     --namespace system-under-evaluation \
+    --version 0.34.2 \
     -f "manifests/values_opentelemetry_demo.yaml"
 ```

@@ -293,15 +293,16 @@ class TraceResponseVariable(ResponseVariable):
 
         # Debug prints
         logger.info(f"\nTimestamp comparisons:")
-        logger.info(f"Treatment start (UTC): {treatment_start}")
-        logger.info(f"Treatment start (Jaeger μs): {jaeger_treatment_start}")
-        logger.info(f"Treatment end (UTC): {treatment_end}")
-        logger.info(f"Treatment end (Jaeger μs): {jaeger_treatment_end}")
+        logger.info(f"{label}: Treatment start (UTC): {treatment_start}")
+        logger.info(f"{label}: Treatment start (Jaeger μs): {jaeger_treatment_start}")
+        logger.info(f"{label}: Treatment end (UTC): {treatment_end}")
+        logger.info(f"{label}: Treatment end (Jaeger μs): {jaeger_treatment_end}")
         
         if not self.data.empty:
-            logger.info(f"\nSample data timestamps:")
-            logger.info(f"First row start_time: {self.data['start_time'].iloc[0]}")
-            logger.info(f"Last row start_time: {self.data['start_time'].iloc[-1]}")
+            logger.info(f"\nTrace timestamp range:")
+            logger.info(f"Traces from: {datetime.datetime.fromtimestamp(self.data['start_time'].iloc[0]/1_000_000, tz=datetime.timezone.utc)}")
+            logger.info(f"Until: {datetime.datetime.fromtimestamp(self.data['start_time'].iloc[-1]/1_000_000, tz=datetime.timezone.utc)}")
+            logger.info(f"Raw timestamps - First: {self.data['start_time'].iloc[0]}, Last: {self.data['start_time'].iloc[-1]}")
 
         predicate = (self.data["start_time"] >= jaeger_treatment_start) & (
                 self.data["start_time"] <= jaeger_treatment_end

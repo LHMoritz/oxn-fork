@@ -85,6 +85,9 @@ install dev="false":
     echo "Installing OpenEBS..."
     kubectl apply -f https://openebs.github.io/charts/openebs-operator.yaml
 
+    kubectl apply -f {{manifests_dir}}/jaeger_pv.yaml
+    kubectl apply -f {{manifests_dir}}/jaeger_pvc.yaml
+
     echo "Installing Prometheus Stack..."
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
     helm repo update

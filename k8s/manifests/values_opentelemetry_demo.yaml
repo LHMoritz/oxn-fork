@@ -10,13 +10,12 @@ jaeger:
     #   - --prometheus.server-url=http://{{ include "otel-demo.name" . }}-prometheus-server:9090
     #   - --prometheus.query.normalize-calls=true
     #   - --prometheus.query.normalize-duration=true
-  # storage:
-  #   badger:
-  #     ephemeral: false
-  #     persistence:
-  #       mountPath: /mnt/data
-  #       useExistingPvcName: "jaeger-pvc"
-  #   type: badger
+  storage:
+    badger:
+      ephemeral: false
+      persistence:
+        mountPath: /mnt/data
+        useExistingPvcName: "jaeger-pvc"
 
 components:
 #  flagd:
@@ -38,7 +37,7 @@ opentelemetry-collector:
   config:
     processors:
       probabilistic_sampler:
-        sampling_percentage: 10
+        sampling_percentage: 2
         hash_seed: 22
     service:
       pipelines:
@@ -51,6 +50,11 @@ opentelemetry-collector:
             - probabilistic_sampler
 prometheus:
   server:
+    securityContext:
+      runAsUser: 65534
+      runAsGroup: 65534
+      runAsNonRoot: false
+      fsGroup: 65534
     global:
       evaluation_interval: 5s
     extraArgs:
@@ -61,6 +65,7 @@ prometheus:
       accessModes:
         - ReadWriteOnce
       size: 8Gi
+      mountPath: /data
     resources:
       limits:
         memory: 1500Mi

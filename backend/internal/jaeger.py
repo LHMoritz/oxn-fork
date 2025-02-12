@@ -14,7 +14,7 @@ from backend.internal.models.orchestrator import Orchestrator
 
 from backend.internal.errors import JaegerException
 
-LOGGER = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 # NOTE: jaeger timestamps wire format is microseconds since epoch in utc cf.
@@ -67,13 +67,13 @@ class Jaeger:
             try:
                 return list(response_json["data"])
             except KeyError as error:
-                LOGGER.error("Received invalid response from Jaeger")
+                logger.error("Received invalid response from Jaeger")
                 raise JaegerException from error
         except requests.exceptions.HTTPError as error:
-            LOGGER.error(error)
+            logger.error(error)
             raise JaegerException from error
         except requests.exceptions.ConnectionError as error:
-            LOGGER.error(f"Could not connect to jaeger at {url}")
+            logger.error(f"Could not connect to jaeger at {url}")
             raise JaegerException from error
 
     def search_traces(
@@ -104,6 +104,7 @@ class Jaeger:
             "limit": limit,
         }
         try:
+            logger.info(f"Fetching jaeger traces from {start} to {end}")
             response = self.session.get(url=endpoint, params=params)
             response.raise_for_status()
             return response.json()

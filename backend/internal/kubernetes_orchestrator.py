@@ -669,7 +669,7 @@ class KubernetesOrchestrator(Orchestrator):
         alert_rules = yaml.safe_load(alert_rules_yaml)
         return alert_rules
 
-    def configure_prometheus_alert_rules(self, latency_threshold: int, evaluation_window: str):
+    def configure_prometheus_alert_rules(self, latency_threshold: int, evaluation_window: str, quantile: float):
         """
         Update alert rules configuration in the Prometheus ConfigMap
         
@@ -695,8 +695,8 @@ class KubernetesOrchestrator(Orchestrator):
                     'name': 'astronomy-shop-rapid-http-latency-alerts',
                     'rules': [{
                         'alert': 'ImmediateHighHTTPLatency',
-                        'expr': f'histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{{job=~"opentelemetry-demo/.*", http_status_code="200", le!="infinity"}}[{evaluation_window}])) by (job, http_method, http_flavor, net_host_name, le)) > {latency_threshold}',
-                        'for': '10s',
+                        'expr': f'histogram_quantile({quantile}, sum(rate(http_server_duration_milliseconds_bucket{{job=~"opentelemetry-demo/.*", http_status_code="200", le!="infinity"}}[{evaluation_window}])) by (job, http_method, http_flavor, net_host_name, le)) > {latency_threshold}',
+                        'for': '20s',
                         'labels': {
                             'detection': 'rapid',
                             'runbook': 'latency-immediate-response',
@@ -709,8 +709,8 @@ class KubernetesOrchestrator(Orchestrator):
                     'name': 'astronomy-shop-rapid-rpc-latency-alerts',
                     'rules': [{
                         'alert': 'ImmediateHighRPCLatency',
-                        'expr': f'histogram_quantile(0.95, sum(rate(rpc_server_duration_milliseconds_bucket{{job=~"opentelemetry-demo/.*", rpc_grpc_status_code="0", le!="infinity"}}[{evaluation_window}])) by (job, rpc_method, rpc_service, le)) > {latency_threshold}',
-                        'for': '10s',
+                        'expr': f'histogram_quantile({quantile}, sum(rate(rpc_server_duration_milliseconds_bucket{{job=~"opentelemetry-demo/.*", rpc_grpc_status_code="0", le!="infinity"}}[{evaluation_window}])) by (job, rpc_method, rpc_service, le)) > {latency_threshold}',
+                        'for': '20s',
                         'labels': {
                             'detection': 'rapid',
                             'runbook': 'rpc-latency-immediate-response',
@@ -723,8 +723,8 @@ class KubernetesOrchestrator(Orchestrator):
                     'name': 'astronomy-shop-critical-service-rpc-latency',
                     'rules': [{
                         'alert': 'CriticalServiceRPCLatencySpike',
-                        'expr': f'histogram_quantile(0.95, sum by (job, rpc_method, rpc_service, le) (rate(rpc_server_duration_milliseconds_bucket{{job=~"opentelemetry-demo/(checkoutservice|adservice|productcatalogservice)",le!="infinity",rpc_grpc_status_code="0"}}[{evaluation_window}]))) > {latency_threshold}',
-                        'for': '10s',
+                        'expr': f'histogram_quantile({quantile}, sum by (job, rpc_method, rpc_service, le) (rate(rpc_server_duration_milliseconds_bucket{{job=~"opentelemetry-demo/(checkoutservice|adservice|productcatalogservice)",le!="infinity",rpc_grpc_status_code="0"}}[{evaluation_window}]))) > {latency_threshold}',
+                        'for': '20s',
                         'labels': {
                             'detection': 'rapid',
                             'runbook': 'critical-service-rpc-latency',
@@ -732,7 +732,91 @@ class KubernetesOrchestrator(Orchestrator):
                             'team': 'platform'
                         }
                     }]
-                }
+                },
+                {
+                    'name': 'recommendation-service-trace-latency',
+                    'rules': [{
+                        'alert': 'recommendationServiceTraceLatency',
+                        'expr': f'histogram_quantile({quantile}, rate(traces_span_metrics_duration_milliseconds_bucket{{service_name="recommendationservice"}}[{evaluation_window}])) > {latency_threshold}',
+                        'for': '20s',
+                        'labels': {
+                            'detection': 'rapid',
+                            'runbook': 'recommendation-service-trace-latency',
+                            'severity': 'critical',
+                            'team': 'platform'
+                        }
+                    }]
+                },
+                {
+                    'name': 'adservice-trace-latency',
+                    'rules': [{
+                        'alert': 'adserviceTraceLatency',
+                        'expr': f'histogram_quantile({quantile}, rate(traces_span_metrics_duration_milliseconds_bucket{{service_name="adservice"}}[{evaluation_window}])) > {latency_threshold}',
+                        'for': '20s',
+                        'labels': {
+                            'detection': 'rapid',
+                            'runbook': 'adservice-trace-latency',
+                            'severity': 'critical',
+                            'team': 'platform'
+                        }
+                    }]
+                },
+                {
+                    'name': 'checkoutservice-trace-latency',
+                    'rules': [{
+                        'alert': 'checkoutserviceTraceLatency',
+                        'expr': f'histogram_quantile({quantile}, rate(traces_span_metrics_duration_milliseconds_bucket{{service_name="checkoutservice"}}[{evaluation_window}])) > {latency_threshold}',
+                        'for': '20s',
+                        'labels': {
+                            'detection': 'rapid',
+                            'runbook': 'checkoutservice-trace-latency',
+                            'severity': 'critical',
+                            'team': 'platform'
+                        }
+                    }]
+                },
+                {
+                    'name': 'paymentservice-trace-latency',
+                    'rules': [{
+                        'alert': 'paymentserviceTraceLatency',
+                        'expr': f'histogram_quantile({quantile}, rate(traces_span_metrics_duration_milliseconds_bucket{{service_name="paymentservice"}}[{evaluation_window}])) > {latency_threshold}',
+                        'for': '20s',
+                        'labels': {
+                            'detection': 'rapid',
+                            'runbook': 'paymentservice-trace-latency',
+                            'severity': 'critical',
+                            'team': 'platform'
+                        }
+                    }]
+                },
+                {
+                    'name': 'productcatalogservice-trace-latency',
+                    'rules': [{
+                        'alert': 'productcatalogserviceTraceLatency',
+                        'expr': f'histogram_quantile({quantile}, rate(traces_span_metrics_duration_milliseconds_bucket{{service_name="productcatalogservice"}}[{evaluation_window}])) > {latency_threshold}',
+                        'for': '20s',
+                        'labels': {
+                            'detection': 'rapid',
+                            'runbook': 'productcatalogservice-trace-latency',
+                            'severity': 'critical',
+                            'team': 'platform'
+                        }
+                    }]
+                },
+                {
+                    'name': 'cartservice-trace-latency',
+                    'rules': [{
+                        'alert': 'cartserviceTraceLatency',
+                        'expr': f'histogram_quantile({quantile}, rate(traces_span_metrics_duration_milliseconds_bucket{{service_name="cartservice"}}[{evaluation_window}])) > {latency_threshold}',
+                        'for': '20s',
+                        'labels': {
+                            'detection': 'rapid',
+                            'runbook': 'cartservice-trace-latency',
+                            'severity': 'critical',
+                            'team': 'platform'
+                        }
+                    }]
+                },
             ]
         }
 

@@ -2110,6 +2110,7 @@ class KubernetesPrometheusRulesTreatment(Treatment):
     def inject(self) -> None:
         assert self.config.get("latency_threshold")
         assert self.config.get("evaluation_window")
+        assert self.config.get("quantile")
         assert isinstance(self.orchestrator, KubernetesOrchestrator)
         
         self.deployment = self.orchestrator.get_deployment(
@@ -2124,7 +2125,8 @@ class KubernetesPrometheusRulesTreatment(Treatment):
         # Apply new rules
         self.orchestrator.configure_prometheus_alert_rules(
             latency_threshold=self.config.get("latency_threshold"),
-            evaluation_window=self.config.get("evaluation_window")
+            evaluation_window=self.config.get("evaluation_window"),
+            quantile=self.config.get("quantile")
         )
         
         # Restart to apply changes
@@ -2147,7 +2149,8 @@ class KubernetesPrometheusRulesTreatment(Treatment):
     def params(self) -> dict:
         return {
             "latency_threshold": (int, float),  # Allow both int and float
-            "evaluation_window": str
+            "evaluation_window": str,
+            "quantile": float,
         }
 
     def _validate_params(self) -> bool:
@@ -2161,6 +2164,11 @@ class KubernetesPrometheusRulesTreatment(Treatment):
                 if not isinstance(self.config[key], (int, float)):
                     self.messages.append(
                         f"Parameter {key} has to be a number (int or float) for {self.treatment_type}"
+                    )
+            elif key == "quantile":
+                if not isinstance(self.config[key], float):
+                    self.messages.append(
+                        f"Parameter {key} has to be a number (float) for {self.treatment_type}"
                     )
             elif not isinstance(self.config[key], val):
                 self.messages.append(

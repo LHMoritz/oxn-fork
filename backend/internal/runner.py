@@ -260,9 +260,6 @@ class ExperimentRunner:
 
     def observe_response_variables(self) -> None:
         self.observer.initialize_variables()
-        ttw_right = self.observer.time_to_wait_right()
-        logger.info(f"Sleeping for {ttw_right} seconds")
-        time.sleep(ttw_right)
         self.observer.observe()
         logger.info("Observed response variables")
         self._label()

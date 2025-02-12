@@ -59,7 +59,7 @@
         "params": {
           "namespace": "system-under-evaluation",
           "label_selector": "app.kubernetes.io/component",
-          "label": "checkoutservice",
+          "label": "recommendationservice",
           "capabilities": {
             "add": [
               "NET_ADMIN"
@@ -74,10 +74,10 @@
         "params": {
           "namespace": "system-under-evaluation",
           "label_selector": "app.kubernetes.io/name",
-          "label": "astronomy-shop-checkoutservice",
-          "delay_time": "120ms",
+          "label": "astronomy-shop-recommendationservice",
+          "delay_time": "200ms",
           "delay_jitter": "45ms",
-          "duration": "140s",
+          "duration": "120s",
           "interface": "eth0"
         }
       }
@@ -97,7 +97,7 @@
   },
   "loadgen": {
     "run_time": "4m",
-    "max_users": 800,
+    "max_users": 600,
     "spawn_rate": 50,
     "locust_files": [
       "/backend/locust/locust_basic_interaction.py",
@@ -111,7 +111,8 @@
   }
 },
 "parameter_variations":	{
-"treatments.0.kubernetes_prometheus_rules.params.latency_threshold": [100, 150, 200, 250, 300],
-"treatments.0.kubernetes_prometheus_rules.params.evaluation_window": ["90s" , "120s", "150s"]
+"treatments.0.kubernetes_prometheus_rules.params.latency_threshold": [400 , 500 , 600],
+"treatments.0.kubernetes_prometheus_rules.params.evaluation_window": ["240s"],
+"treatments.0.kubernetes_prometheus_rules.params.quantile": [0.60, 0.70, 0.80, 0.90]
 }
 }
