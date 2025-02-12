@@ -100,6 +100,7 @@ install dev="false":
     helm install astronomy-shop open-telemetry/opentelemetry-demo \
         --namespace system-under-evaluation \
         --create-namespace \
+        --version 0.34.2 \
         -f {{manifests_dir}}/values_opentelemetry_demo.yaml
 
     echo "Installing OXN Platform..."
