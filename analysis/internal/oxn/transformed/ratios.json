@@ -1,0 +1,386 @@
+{
+  "41737545062_0_accountingservice_traces.json": {
+    "goody": 0.07228915662650602,
+    "faulty": 0.927710843373494
+  },
+  "41737545062_0_adservice_traces.json": {
+    "goody": 0.07939508506616257,
+    "faulty": 0.9206049149338374
+  },
+  "41737545062_0_cartservice_traces.json": {
+    "goody": 0.06588715664439496,
+    "faulty": 0.9341128433556051
+  },
+  "41737545062_0_checkoutservice_traces.json": {
+    "goody": 0.061488084409678005,
+    "faulty": 0.938511915590322
+  },
+  "41737545062_0_currencyservice_traces.json": {
+    "goody": 0.06376155442369365,
+    "faulty": 0.9362384455763063
+  },
+  "41737545062_0_emailservice_traces.json": {
+    "goody": 0.061488084409678005,
+    "faulty": 0.938511915590322
+  },
+  "41737545062_0_flagd_traces.json": {
+    "goody": 0.05238041131689581,
+    "faulty": 0.9476195886831041
+  },
+  "41737545062_0_frauddetectionservice_traces.json": {
+    "goody": 0.06440548780487805,
+    "faulty": 0.9355945121951219
+  },
+  "41737545062_0_frontendproxy_traces.json": {
+    "goody": 0.10403066419117207,
+    "faulty": 0.895969335808828
+  },
+  "41737545062_0_frontend_traces.json": {
+    "goody": 0.08129543952412426,
+    "faulty": 0.9187045604758758
+  },
+  "41737545062_0_paymentservice_traces.json": {
+    "goody": 0.06497500961168781,
+    "faulty": 0.9350249903883122
+  },
+  "41737545062_0_quoteservice_traces.json": {
+    "goody": 0.06395458845789971,
+    "faulty": 0.9360454115421003
+  },
+  "41737545062_0_recommendationservice_traces.json": {
+    "goody": 0.042705646316996276,
+    "faulty": 0.9572943536830038
+  },
+  "41737545062_0_shippingservice_traces.json": {
+    "goody": 0.06440548780487805,
+    "faulty": 0.9355945121951219
+  },
+  "batch_01737547493_0_0_accountingservice_traces.json": {
+    "goody": 0.0546875,
+    "faulty": 0.9453125
+  },
+  "batch_01737547493_0_0_adservice_traces.json": {
+    "goody": 0.05216752387950037,
+    "faulty": 0.9478324761204996
+  },
+  "batch_01737547493_0_0_cartservice_traces.json": {
+    "goody": 0.05189895170991579,
+    "faulty": 0.9481010482900842
+  },
+  "batch_01737547493_0_0_checkoutservice_traces.json": {
+    "goody": 0.045056786445727054,
+    "faulty": 0.9549432135542729
+  },
+  "batch_01737547493_0_0_currencyservice_traces.json": {
+    "goody": 0.045056786445727054,
+    "faulty": 0.9549432135542729
+  },
+  "batch_01737547493_0_0_emailservice_traces.json": {
+    "goody": 0.045056786445727054,
+    "faulty": 0.9549432135542729
+  },
+  "batch_01737547493_0_0_flagd_traces.json": {
+    "goody": 0.05617056170561706,
+    "faulty": 0.9438294382943829
+  },
+  "batch_01737547493_0_0_frauddetectionservice_traces.json": {
+    "goody": 0.045056786445727054,
+    "faulty": 0.9549432135542729
+  },
+  "batch_01737547493_0_0_frontendproxy_traces.json": {
+    "goody": 0.08529923764931868,
+    "faulty": 0.9147007623506813
+  },
+  "batch_01737547493_0_0_frontend_traces.json": {
+    "goody": 0.08141442371954553,
+    "faulty": 0.9185855762804545
+  },
+  "batch_01737547493_0_0_paymentservice_traces.json": {
+    "goody": 0.045056786445727054,
+    "faulty": 0.9549432135542729
+  },
+  "batch_01737547493_0_0_quoteservice_traces.json": {
+    "goody": 0.045056786445727054,
+    "faulty": 0.9549432135542729
+  },
+  "batch_01737547493_0_0_recommendationservice_traces.json": {
+    "goody": 0.06978335233751426,
+    "faulty": 0.9302166476624858
+  },
+  "batch_01737547493_0_0_shippingservice_traces.json": {
+    "goody": 0.045056786445727054,
+    "faulty": 0.9549432135542729
+  },
+  "batch_01737547493_10_0_accountingservice_traces.json": {
+    "goody": 0.06779661016949153,
+    "faulty": 0.9322033898305084
+  },
+  "batch_01737547493_10_0_adservice_traces.json": {
+    "goody": 0.052700922266139656,
+    "faulty": 0.9472990777338604
+  },
+  "batch_01737547493_10_0_recommendationservice_traces.json": {
+    "goody": 0.05415549597855228,
+    "faulty": 0.9458445040214477
+  },
+  "batch_01737547493_11_0_accountingservice_traces.json": {
+    "goody": 0.04285714285714286,
+    "faulty": 0.9571428571428572
+  },
+  "batch_01737547493_11_0_adservice_traces.json": {
+    "goody": 0.020895522388059702,
+    "faulty": 0.9791044776119403
+  },
+  "batch_01737547493_11_0_recommendationservice_traces.json": {
+    "goody": 0.07066125566961089,
+    "faulty": 0.9293387443303891
+  },
+  "batch_01737547493_1_0_accountingservice_traces.json": {
+    "goody": 0.06306306306306306,
+    "faulty": 0.9369369369369369
+  },
+  "batch_01737547493_1_0_adservice_traces.json": {
+    "goody": 0.029239766081871343,
+    "faulty": 0.9707602339181286
+  },
+  "batch_01737547493_1_0_cartservice_traces.json": {
+    "goody": 0.05734580734580735,
+    "faulty": 0.9426541926541927
+  },
+  "batch_01737547493_1_0_checkoutservice_traces.json": {
+    "goody": 0.064297490382854,
+    "faulty": 0.935702509617146
+  },
+  "batch_01737547493_1_0_currencyservice_traces.json": {
+    "goody": 0.064297490382854,
+    "faulty": 0.935702509617146
+  },
+  "batch_01737547493_1_0_emailservice_traces.json": {
+    "goody": 0.064297490382854,
+    "faulty": 0.935702509617146
+  },
+  "batch_01737547493_1_0_flagd_traces.json": {
+    "goody": 0.04627808261724816,
+    "faulty": 0.9537219173827518
+  },
+  "batch_01737547493_1_0_frauddetectionservice_traces.json": {
+    "goody": 0.064297490382854,
+    "faulty": 0.935702509617146
+  },
+  "batch_01737547493_1_0_frontendproxy_traces.json": {
+    "goody": 0.06412332793473696,
+    "faulty": 0.935876672065263
+  },
+  "batch_01737547493_1_0_frontend_traces.json": {
+    "goody": 0.06997342781222321,
+    "faulty": 0.9300265721877768
+  },
+  "batch_01737547493_1_0_paymentservice_traces.json": {
+    "goody": 0.064297490382854,
+    "faulty": 0.935702509617146
+  },
+  "batch_01737547493_1_0_quoteservice_traces.json": {
+    "goody": 0.064297490382854,
+    "faulty": 0.935702509617146
+  },
+  "batch_01737547493_1_0_recommendationservice_traces.json": {
+    "goody": 0.027488151658767772,
+    "faulty": 0.9725118483412323
+  },
+  "batch_01737547493_1_0_shippingservice_traces.json": {
+    "goody": 0.064297490382854,
+    "faulty": 0.935702509617146
+  },
+  "batch_01737547493_2_0_accountingservice_traces.json": {
+    "goody": 0.04950495049504951,
+    "faulty": 0.9504950495049505
+  },
+  "batch_01737547493_2_0_adservice_traces.json": {
+    "goody": 0.07350565428109855,
+    "faulty": 0.9264943457189014
+  },
+  "batch_01737547493_2_0_recommendationservice_traces.json": {
+    "goody": 0.03781388478581979,
+    "faulty": 0.9621861152141802
+  },
+  "batch_01737547493_3_0_accountingservice_traces.json": {
+    "goody": 0.10576923076923077,
+    "faulty": 0.8942307692307693
+  },
+  "batch_01737547493_3_0_adservice_traces.json": {
+    "goody": 0.05092250922509225,
+    "faulty": 0.9490774907749078
+  },
+  "batch_01737547493_3_0_frontendproxy_traces.json": {
+    "goody": 0.08695652173913043,
+    "faulty": 0.9130434782608695
+  },
+  "batch_01737547493_3_0_frontend_traces.json": {
+    "goody": 0.09261465157832043,
+    "faulty": 0.9073853484216796
+  },
+  "batch_01737547493_3_0_recommendationservice_traces.json": {
+    "goody": 0.05527511357900051,
+    "faulty": 0.9447248864209995
+  },
+  "batch_01737547493_4_0_accountingservice_traces.json": {
+    "goody": 0.058823529411764705,
+    "faulty": 0.9411764705882353
+  },
+  "batch_01737547493_4_0_adservice_traces.json": {
+    "goody": 0.043859649122807015,
+    "faulty": 0.956140350877193
+  },
+  "batch_01737547493_4_0_recommendationservice_traces.json": {
+    "goody": 0.06884166417240348,
+    "faulty": 0.9311583358275966
+  },
+  "batch_01737547493_5_0_accountingservice_traces.json": {
+    "goody": 0.07526881720430108,
+    "faulty": 0.9247311827956989
+  },
+  "batch_01737547493_5_0_adservice_traces.json": {
+    "goody": 0.014911463187325256,
+    "faulty": 0.9850885368126747
+  },
+  "batch_01737547493_5_0_recommendationservice_traces.json": {
+    "goody": 0.03068815871047737,
+    "faulty": 0.9693118412895226
+  },
+  "batch_01737547493_6_0_accountingservice_traces.json": {
+    "goody": 0.09174311926605505,
+    "faulty": 0.908256880733945
+  },
+  "batch_01737547493_6_0_adservice_traces.json": {
+    "goody": 0.07257448433919023,
+    "faulty": 0.9274255156608098
+  },
+  "batch_01737547493_6_0_recommendationservice_traces.json": {
+    "goody": 0.06178039876439202,
+    "faulty": 0.938219601235608
+  },
+  "batch_01737547493_7_0_accountingservice_traces.json": {
+    "goody": 0.08870967741935484,
+    "faulty": 0.9112903225806451
+  },
+  "batch_01737547493_7_0_adservice_traces.json": {
+    "goody": 0.04351204351204351,
+    "faulty": 0.9564879564879565
+  },
+  "batch_01737547493_7_0_cartservice_traces.json": {
+    "goody": 0.04077791718946048,
+    "faulty": 0.9592220828105396
+  },
+  "batch_01737547493_7_0_checkoutservice_traces.json": {
+    "goody": 0.034923019151333085,
+    "faulty": 0.9650769808486669
+  },
+  "batch_01737547493_7_0_currencyservice_traces.json": {
+    "goody": 0.034923019151333085,
+    "faulty": 0.9650769808486669
+  },
+  "batch_01737547493_7_0_emailservice_traces.json": {
+    "goody": 0.03585196607555898,
+    "faulty": 0.964148033924441
+  },
+  "batch_01737547493_7_0_flagd_traces.json": {
+    "goody": 0.0323744825390086,
+    "faulty": 0.9676255174609913
+  },
+  "batch_01737547493_7_0_frauddetectionservice_traces.json": {
+    "goody": 0.034923019151333085,
+    "faulty": 0.9650769808486669
+  },
+  "batch_01737547493_7_0_frontendproxy_traces.json": {
+    "goody": 0.05953557312252965,
+    "faulty": 0.9404644268774703
+  },
+  "batch_01737547493_7_0_frontend_traces.json": {
+    "goody": 0.0724969766405703,
+    "faulty": 0.9275030233594297
+  },
+  "batch_01737547493_7_0_paymentservice_traces.json": {
+    "goody": 0.034923019151333085,
+    "faulty": 0.9650769808486669
+  },
+  "batch_01737547493_7_0_quoteservice_traces.json": {
+    "goody": 0.034923019151333085,
+    "faulty": 0.9650769808486669
+  },
+  "batch_01737547493_7_0_recommendationservice_traces.json": {
+    "goody": 0.040772014475271415,
+    "faulty": 0.9592279855247285
+  },
+  "batch_01737547493_7_0_shippingservice_traces.json": {
+    "goody": 0.034923019151333085,
+    "faulty": 0.9650769808486669
+  },
+  "batch_01737547493_8_0_accountingservice_traces.json": {
+    "goody": 0.06306306306306306,
+    "faulty": 0.9369369369369369
+  },
+  "batch_01737547493_8_0_adservice_traces.json": {
+    "goody": 0.06899418121363259,
+    "faulty": 0.9310058187863675
+  },
+  "batch_01737547493_8_0_cartservice_traces.json": {
+    "goody": 0.04597318231031898,
+    "faulty": 0.954026817689681
+  },
+  "batch_01737547493_8_0_checkoutservice_traces.json": {
+    "goody": 0.05200904505131327,
+    "faulty": 0.9479909549486867
+  },
+  "batch_01737547493_8_0_currencyservice_traces.json": {
+    "goody": 0.05200904505131327,
+    "faulty": 0.9479909549486867
+  },
+  "batch_01737547493_8_0_emailservice_traces.json": {
+    "goody": 0.05200904505131327,
+    "faulty": 0.9479909549486867
+  },
+  "batch_01737547493_8_0_flagd_traces.json": {
+    "goody": 0.04343186426208516,
+    "faulty": 0.9565681357379149
+  },
+  "batch_01737547493_8_0_frauddetectionservice_traces.json": {
+    "goody": 0.05200904505131327,
+    "faulty": 0.9479909549486867
+  },
+  "batch_01737547493_8_0_frontendproxy_traces.json": {
+    "goody": 0.07460717284394866,
+    "faulty": 0.9253928271560513
+  },
+  "batch_01737547493_8_0_frontend_traces.json": {
+    "goody": 0.07305244013337375,
+    "faulty": 0.9269475598666262
+  },
+  "batch_01737547493_8_0_paymentservice_traces.json": {
+    "goody": 0.05200904505131327,
+    "faulty": 0.9479909549486867
+  },
+  "batch_01737547493_8_0_quoteservice_traces.json": {
+    "goody": 0.05200904505131327,
+    "faulty": 0.9479909549486867
+  },
+  "batch_01737547493_8_0_recommendationservice_traces.json": {
+    "goody": 0.02981778023191607,
+    "faulty": 0.9701822197680839
+  },
+  "batch_01737547493_8_0_shippingservice_traces.json": {
+    "goody": 0.05200904505131327,
+    "faulty": 0.9479909549486867
+  },
+  "batch_01737547493_9_0_accountingservice_traces.json": {
+    "goody": 0.057692307692307696,
+    "faulty": 0.9423076923076923
+  },
+  "batch_01737547493_9_0_adservice_traces.json": {
+    "goody": 0.11055776892430279,
+    "faulty": 0.8894422310756972
+  },
+  "batch_01737547493_9_0_recommendationservice_traces.json": {
+    "goody": 0.05350960025180988,
+    "faulty": 0.9464903997481902
+  }
+}

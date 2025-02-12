@@ -145,6 +145,11 @@ However, this gives us the opporunity to build interesting KPIs around the Class
      - child_of ==> synchronous , blocking request response communication
      - follows_from ==> event-driven , asynchronous?
 
+# Model Training
+
+     - accountingservice traces are not usable and I will delete them from the training data
+      ==> not instrumented correctly
+
 
      
      

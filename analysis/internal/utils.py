@@ -31,7 +31,7 @@ This function loads the Model
 """
 def load_model() -> TraceModel:
      try:
-          model = TraceModel(nn.CrossEntropyLoss(), constants.MODEL_DIMENSIONS, nn.ReLU())
+          model = TraceModel(nn.CrossEntropyLoss(), constants.SMALL_MODEL_DIMENSIONS, nn.ReLU())
           state_dict = torch.load(constants.MODEL_PATH, weights_only=True)
           model.load_state_dict(state_dict)
           # set the model to Evaluation mode to infer on unseen data

@@ -86,7 +86,9 @@ SERVICES_REVERSE = {
 }
 
 # machine learning model constants
-MODEL_DIMENSIONS = [256, 1500, 1500, 1500, 17]
+MODEL_DIMENSIONS = [257, 1500, 1500, 1500, 17]
+SMALL_MODEL_DIMENSIONS = [257, 1500, 17]
+MODEL_DIMENSIONS_BINARY = [257, 1500, 2]
 #ODEL_PATH = "./model/new_traceModel.pt"
 METRICS = ["micro_precision", "micro_recall", "micro_f1_score"]
 MODEL_PATH = Path("internal/model") / "real_tracemodel.pt"
