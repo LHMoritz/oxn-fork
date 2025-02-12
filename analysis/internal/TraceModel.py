@@ -11,6 +11,8 @@ from torch.utils.data import DataLoader
 import pandas as pd
 import logging
 import numpy as np
+from torcheval.metrics import MulticlassPrecision
+import analysis.internal.constants as constants
 
 logger = logging.getLogger(__name__)
 
@@ -50,35 +52,89 @@ class TraceModel(nn.Module):
           logger.info(f"accuracy: {accuracy}")
           return accuracy
 
+     def calculate_precision_multiclass(self, predictions : torch.Tensor, targets: torch.Tensor) -> float:
+          pred_labels = torch.argmax(predictions, dim=1)
+          metric = MulticlassPrecision(average="micro", num_classes= (len(constants.SERVICES) +1))
+          metric.update(pred_labels, targets)
+          return metric.compute().item()
+     
+
+
+     """
+
+          For Multiclass classification:
+
+          Calculate per class accuracy for index:
+          12 : recommendationservice
+          16 : no fault injected
+          
+          As a third float we want to know the ratio of other predictions (every other index than 12 or 16) and this this changes over time.
+          the third float in the tuple will be the ratio of number other class predictions (except 12 or 16) / batch size
+                this will yield a ratio between [0, 1] and can easily be plotted with the precisions
+
+     """
+     def calculate_per_class_precision(self, predictions: torch.Tensor, labels: torch.Tensor) -> tuple[float, float, float]:
+          pred_labels = torch.argmax(predictions, dim=1)
+
+
+          recommendations_index = 12
+          no_fault_index = 16
+
+          predicted_recommendation_service = (pred_labels == recommendations_index)
+          predicted_no_fault = (pred_labels == no_fault_index)
+
+
+          predicted_other_classes = ((pred_labels != recommendations_index) & (pred_labels != no_fault_index)).sum().item()
+
+          true_positives_recom = ((pred_labels == recommendations_index) & (labels == recommendations_index)).sum().item()
+          true_positives_no_fault = ((pred_labels == no_fault_index) & (labels == no_fault_index)).sum().item()
+
+          # Count the total predictions per class
+          num_recom_predicted = predicted_recommendation_service.sum().item()
+          num_predicted_no_fault = predicted_no_fault.sum().item()
+
+          if num_recom_predicted > 0:
+               recom_precision = float(true_positives_recom / num_recom_predicted)
+          else:
+               recom_precision = 0.0
+
+          if num_predicted_no_fault > 0:
+               no_fault_precision = float(true_positives_no_fault / num_predicted_no_fault)
+          else:
+               no_fault_precision = 0.0
+          
+          ratio_other_class_predictions = predicted_other_classes / len(pred_labels)
+
+          return recom_precision, no_fault_precision , ratio_other_class_predictions
+
+
+
      def train_trace_model(self, train_loader : DataLoader , num_epochs : int) -> tuple[list[float], list[float]]:
           # initlaized with the standard parameters
           optimizer = optim.Adam(self.parameters(), lr=0.001)
 
           errors = []
-          accuracies_per_batch = []
-          accuracies_per_epoch = []
-          iterations_counter = 0
+          precison_per_batch_recom = []
+          precison_per_batch_no_fault = []
+          other_class_prediction_ratios = []
           for epoch in range(num_epochs):
-                    accuracies = []
+                    precisions = []
                     for batch, labels in train_loader:
                          optimizer.zero_grad()
                          out =  self.forward(batch)
                          targets = torch.argmax(labels, dim=1)
                          loss = self.loss_function(out, targets)
                          # just for vizualizing during training
-                         accuracy = self.calculate_accuracy(out, targets)
-                         accuracies.append(accuracy)
+                         recom_precision, no_fault_precision, other_class_pred_ratio = self.calculate_per_class_precision(out, targets)
+                         precison_per_batch_recom.append(recom_precision)
+                         precison_per_batch_no_fault.append(no_fault_precision)
+                         other_class_prediction_ratios.append(other_class_pred_ratio)
                          errors.append(loss.item())
                          loss.backward() 
                          optimizer.step()
                     
-                    accuracies_per_batch.extend(accuracies)
-                    mean_accuracy_per_epoch = sum(accuracies) / len(accuracies)
-                    accuracies_per_epoch.append(mean_accuracy_per_epoch)
-                    
-
           logger.info("finished training")
-          return accuracies_per_epoch, accuracies_per_batch
+          return precison_per_batch_recom, precison_per_batch_no_fault, other_class_prediction_ratios
      
      def infer(self, input: torch.Tensor )-> torch.Tensor:
           input = input.unsqueeze(0)
@@ -89,16 +145,60 @@ class TraceModel(nn.Module):
      
      def test_trace_model(self, test_loader : DataLoader) ->  list[float]:
           logger.info("starting testing the data")
-          acc = []
+          precison_recom_list = []
+          precison_no_fault_list = []
+          other_prediction_ratios  = []
           self.eval()
           with torch.no_grad():
                for batch , labels in test_loader:
                     #labels = labels.long()
                     out = self.forward(batch)
                     targets = torch.argmax(labels, dim=1)
-                    acc.append(self.calculate_accuracy(out, targets))
+                    precision_recom , precison_no_fault, other_class_ratios = self.calculate_per_class_precision(out, targets)
+                    precison_recom_list.append(precision_recom)
+                    precison_no_fault_list.append(precison_no_fault)
+                    other_prediction_ratios.append(other_class_ratios)
           
-          return acc
+          return precison_recom_list, precison_no_fault_list, other_prediction_ratios
+     
+
+     def calculate_tp_fp(self , preds: torch.Tensor, targets: torch.Tensor) -> tuple[int, int, int, int]:
+         
+          CLASS_RECOM = 12  
+          CLASS_NO_FAULT = 16 
+          tp_recom = ((preds == CLASS_RECOM) & (targets == CLASS_RECOM)).sum().item()
+          tp_no_fault = ((preds == CLASS_NO_FAULT) & (targets == CLASS_NO_FAULT)).sum().item()
+          fp_recom = ((preds == CLASS_RECOM) & (targets != CLASS_RECOM)).sum().item()
+          fp_no_fault = ((preds == CLASS_NO_FAULT) & (targets != CLASS_NO_FAULT)).sum().item()
+
+          return tp_recom, fp_recom, tp_no_fault, fp_no_fault
+
+     def test_trace_model_precision(self,  test_loader : DataLoader) -> tuple[float, float]:
+          logger.info("Starting model evaluation on test data")
+          
+          total_tp_recom, total_fp_recom = 0, 0
+          total_tp_no_fault, total_fp_no_fault = 0, 0
+
+          self.eval()
+          with torch.no_grad():
+               for batch, labels in test_loader:
+                    out = self.forward(batch)
+                    targets = torch.argmax(labels, dim=1)
+                    preds = torch.argmax(out, dim=1)  # Get predicted class indices
+
+                    # Compute per-class precision
+                    tp_recom, fp_recom, tp_no_fault, fp_no_fault = self.calculate_tp_fp(preds, targets)
+
+                    total_tp_recom += tp_recom
+                    total_fp_recom += fp_recom
+                    total_tp_no_fault += tp_no_fault
+                    total_fp_no_fault += fp_no_fault
+
+          # Compute overall precision for each class
+          precision_recom = total_tp_recom / (total_tp_recom + total_fp_recom + 1e-10)
+          precision_no_fault = total_tp_no_fault / (total_tp_no_fault + total_fp_no_fault + 1e-10)
+
+          return precision_recom, precision_no_fault
 
 
      def save_model_dict(self, PATH) -> None: 
@@ -106,34 +206,51 @@ class TraceModel(nn.Module):
           torch.save(self.state_dict(), PATH)
 
 
-
-
-def visualize_training_acc_per_batch(acc_per_batch, acc_per_epochs):
-    batches_per_epoch = len(acc_per_batch) / len(acc_per_epochs)
-    x_batches = np.arange(1, len(acc_per_batch) + 1)
-    x_epochs = np.arange(batches_per_epoch, len(acc_per_batch) + 1, batches_per_epoch)
-    plt.figure(figsize=(10, 5))
-    plt.plot(x_batches, acc_per_batch, label='Batch Accuracy', alpha=0.7)
-    plt.plot(x_epochs, acc_per_epochs, label='Epoch Accuracy', marker='o', linestyle='--', color='red')
+def visualize_training_precision(precision_recom, precision_no_fault, other_prediction_ratio, training_or_test : str,   filename="training_precision.png", ):
+   
+    x_batches = np.arange(1, len(precision_recom) + 1)
     
-    plt.xlabel("Training Step (Batch Number)")
-    plt.ylabel("Accuracy")
-    plt.title("Training Accuracy per Batch and per Epoch 3 hidden layers")
+    plt.figure(figsize=(10, 5))
+    
+    # Plot both time series on the same figure.
+    plt.plot(x_batches, precision_recom, label='Precision Recom', alpha=0.7, marker='o')
+    plt.plot(x_batches, precision_no_fault, label='Precision No Fault', alpha=0.7, marker='o')
+    plt.plot(x_batches, other_prediction_ratio, label='Other pred. ratio', alpha=0.7, marker='o')
+    
+    plt.xlabel(f"{training_or_test} Step (Batch Number)")
+    plt.ylabel("Precision")
+    plt.title(f"{training_or_test} Precision per Batch")
     plt.legend()
     plt.grid(True)
-    plt.savefig("training_error_all.png")
+    
+    # Save the figure.
+    plt.savefig(filename)
     plt.close()
 
-def vizualize_test_acc(acc : list[float]) -> None:
-     x_axis = list(range(len(acc)))
-     plt.plot(x_axis, acc , label='Test Accuracy', marker='x')
-     plt.title("Test accuracy per batch 3 hidden layers")
-     plt.xlabel("Test Step (Batch Number)")
-     plt.ylabel("Accuracy")
-     plt.legend()
-     plt.grid(True)
-     plt.savefig("test_error_all.png")
-     plt.close()
+
+def plot_average_precisions(avg_recom: float, avg_no_fault: float, filename: str):
+    
+    labels = ['Recommendationservice', 'No Fault injected']
+    values = [avg_recom, avg_no_fault]
+
+    fig, ax = plt.subplots()
+    bars = ax.bar(labels, values)
+    
+    for bar in bars:
+        height = bar.get_height()
+        ax.annotate(f'{height:.2f}',
+                    xy=(bar.get_x() + bar.get_width() / 2, height),
+                    xytext=(0, 3), 
+                    textcoords="offset points",
+                    ha='center', va='bottom')
+    
+    ax.set_ylabel('Precision')
+    ax.set_title('Average Test Precision per Class')
+    
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close(fig)
+
 
 
 

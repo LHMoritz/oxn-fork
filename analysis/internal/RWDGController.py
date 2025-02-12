@@ -19,6 +19,7 @@ It is part of the RWDG Trace model and therefore part for the data wranglin for 
 logger = logging.getLogger(__name__)
 
 def mean_normalization( val : float, mean: float, min: float , max : float) -> float:
+     #logger.info(f"val : {val} , mean : {mean} , min : {min}, max : {max}")
      if val == 0.0:
           return val
 
@@ -51,7 +52,6 @@ class RWDGController:
      '''Normalizes the calculated weight matrices after the mean normalization
           This has the affect that each value is in range [0, 1] '''
      
-     # TODO : This is not properly working
 
      # if cell in column is null it should NOT be included ==> might require implementation yourself
 
@@ -67,6 +67,7 @@ class RWDGController:
                     min_values = []
                     for col in numerical_column_names:
                          non_zero_values = var.adf_matrices[col][var.adf_matrices[col] != 0.0]
+                         non_zero_values = non_zero_values.astype(float)
                          if len(non_zero_values) > 0:
                               avg = float(non_zero_values.mean())
                          else:
@@ -78,9 +79,8 @@ class RWDGController:
                     #logger.info(f"these are the mean values: {avg_values}")
                     #logger.info(f"these are the min values: {min_values}")
                     #logger.info(f"these are the max values: {max_values}")
-
-                    for idx in range(len(numerical_column_names)):
-                         var.adf_matrices[self.column_names[idx]].apply(mean_normalization, args=(avg_values[idx], min_values[idx], max_values[idx]))
+                    for x in range(len(numerical_column_names)):
+                         var.adf_matrices[numerical_column_names[x]] = var.adf_matrices[numerical_column_names[x]].apply(lambda val : mean_normalization(val, avg_values[x], min_values[x], max_values[x]))
           
 
      '''
@@ -135,9 +135,12 @@ class RWDGController:
                weighted = self._weight_adjency_matrix(raw_adj)
                new_row.append(single_trace_data[constants.TRACE_ID_COLUMN].iloc[0])
                new_row.extend(np.array(weighted).flatten())
-               new_row.append(response_variable.service_name)
                new_row.append(self.trace_has_error(single_trace_data))
-               new_row.extend(self.one_hot_encoding_for_exp)
+               new_row.append(response_variable.service_name)
+               if single_trace_data[self.supervised_column].iloc[0] == constants.NO_TREATMENT:
+                    new_row.extend(self.gen_one_hot_encpding_for_no_fault())
+               else:
+                    new_row.extend(self.gen_one_hot_encoding_for_exp())
                new_row.append(single_trace_data[self.supervised_column].iloc[0])
                dataframe_rows.append(new_row)
           
@@ -148,7 +151,7 @@ class RWDGController:
          # print("_________________")
           #print([constants.TRACE_ID_COLUMN, *self.column_names, "microservice_name", constants.ERROR_IN_TRACE_COLUMN, *self.one_hot_encoding_column_names, self.supervised_column])
          # exit(1)
-          response_variable.adf_matrices = pd.DataFrame(dataframe_rows , columns=[constants.TRACE_ID_COLUMN, *self.column_names, "microservice_name", constants.ERROR_IN_TRACE_COLUMN, *self.one_hot_encoding_column_names, self.supervised_column])
+          response_variable.adf_matrices = pd.DataFrame(dataframe_rows , columns=[constants.TRACE_ID_COLUMN, *self.column_names, constants.ERROR_IN_TRACE_COLUMN, "microservice_name",  *self.one_hot_encoding_column_names, self.supervised_column])
          
      '''
      To add internal spans to the next network span, we are going to use a stack of networl request that hold the index tuple for the matrix
@@ -230,11 +233,24 @@ class RWDGController:
 
           return result
 
-     # since the data comes from one experiement with only ine injected fault
+     """
+          One hot encoding in the case that there was a fault injected in the service.
+     """
      def gen_one_hot_encoding_for_exp(self) -> list[float]:
           try:
                one_hot_values = [0.0] * (len(self.service_name_mapping) + 1)
                one_hot_values[self.injected_service] = 1
+               return one_hot_values
+          except KeyError as e:
+               return []
+     
+     """
+          Generate one_hot encoding for the case that no fault was injected in the service
+     """
+     def gen_one_hot_encpding_for_no_fault(self) -> list[float]:
+          try:
+               one_hot_values = [0.0] * (len(self.service_name_mapping) + 1)
+               one_hot_values[-1] = 1
                return one_hot_values
           except KeyError as e:
                return []
