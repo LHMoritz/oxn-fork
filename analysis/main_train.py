@@ -43,9 +43,9 @@ if __name__=='__main__':
 
      #transformer.transform_data("41737545062", "recommendationservice")
      #transformer.transform_data("01737547493", "recommendationservice")
-     transformer.check_imbalanced_data("41737545062")
-     transformer.check_imbalanced_data("01737547493")
-     #transformer.train_model()
+     #transformer.check_imbalanced_data("41737545062")
+     #transformer.check_imbalanced_data("01737547493")
+     transformer.train_model()
      #transformer.check_goody_faulty_traces()
      #transformer.get_error_entire_code_ratio()
 

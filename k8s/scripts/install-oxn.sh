@@ -69,6 +69,7 @@ helm repo update
 helm install astronomy-shop open-telemetry/opentelemetry-demo \
     --namespace system-under-evaluation \
     --create-namespace \
+    --version 0.34.2
     -f "${MANIFESTS_DIR}/values_opentelemetry_demo.yaml"
 
 echo "Waiting for OpenTelemetry Demo pods to be ready..."

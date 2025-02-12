@@ -185,7 +185,7 @@ class DataTransformerAndAnalyzer():
           train_dataloader = DataLoader(training_data, batch_size=100, shuffle=True)
           test_dataloader = DataLoader(test_data, batch_size=100, shuffle=True)
 
-          precision_per_batch_recom, precision_per_batch_no_fault, other_class_ratios_training  = self.trace_model.train_trace_model(train_loader=train_dataloader, num_epochs=1)
+          precision_per_batch_recom, precision_per_batch_no_fault, other_class_ratios_training  = self.trace_model.train_trace_model(train_loader=train_dataloader, num_epochs=3)
           self.trace_model.save_model_dict(constants.MODEL_PATH)
           precison_recom, precison_no_fault, ratio_other_class_predictions_test = self.trace_model.test_trace_model(test_loader=test_dataloader)
 
@@ -195,9 +195,9 @@ class DataTransformerAndAnalyzer():
           #logger.info(f"The average precision in recom class : {sum(precison_recom) / len(precison_recom)}")
           #logger.info(f"The overall precision in the no fault class : {sum(precison_no_fault) / len(precison_no_fault)}")
  
-          visualize_training_precision( precision_per_batch_recom, precision_per_batch_no_fault, other_prediction_ratio=other_class_ratios_training, training_or_test="Training" , filename="1_hidden_layer_training_with_ratios_3.png")
-          visualize_training_precision( precison_recom, precison_no_fault, other_prediction_ratio=ratio_other_class_predictions_test, training_or_test="Test" , filename="1_hidden_layer_test_with_ratios_3.png")
-          plot_average_precisions(average_test_precison_recom, average_test_precision_no_fault, "1_hidden_layer_average_results_3.png")
+          visualize_training_precision( precision_per_batch_recom, precision_per_batch_no_fault, other_prediction_ratio=other_class_ratios_training, training_or_test="Training" , filename="1_hidden_layer_training_with_ratios_3_3_epochs.png")
+          visualize_training_precision( precison_recom, precison_no_fault, other_prediction_ratio=ratio_other_class_predictions_test, training_or_test="Test" , filename="1_hidden_layer_test_with_ratios_3_3_epochs.png")
+          plot_average_precisions(average_test_precison_recom, average_test_precision_no_fault, "1_hidden_layer_average_results_3_3_epochs.png")
           
      
 
