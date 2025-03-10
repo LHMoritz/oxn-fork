@@ -2132,7 +2132,9 @@ class KubernetesPrometheusRulesTreatment(Treatment):
         
         # Reload prometheus config
         prom_client = Prometheus(self.orchestrator, "sue")
-        prom_client.reload_config()
+        result = prom_client.reload_config()
+        if not result:
+            raise Exception("Failed to reload Prometheus configuration")
 
     def clean(self) -> None:
         # Similar to PrometheusIntervalTreatment, might want to skip cleanup
