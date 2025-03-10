@@ -692,48 +692,6 @@ class KubernetesOrchestrator(Orchestrator):
         alert_rules = {
             'groups': [
                 {
-                    'name': 'astronomy-shop-rapid-http-latency-alerts',
-                    'rules': [{
-                        'alert': 'ImmediateHighHTTPLatency',
-                        'expr': f'histogram_quantile({quantile}, sum(rate(http_server_duration_milliseconds_bucket{{job=~"opentelemetry-demo/.*", http_status_code="200", le!="infinity"}}[{evaluation_window}])) by (job, http_method, http_flavor, net_host_name, le)) > {latency_threshold}',
-                        'for': '20s',
-                        'labels': {
-                            'detection': 'rapid',
-                            'runbook': 'latency-immediate-response',
-                            'severity': 'critical',
-                            'team': 'observability'
-                        }
-                    }]
-                },
-                {
-                    'name': 'astronomy-shop-rapid-rpc-latency-alerts',
-                    'rules': [{
-                        'alert': 'ImmediateHighRPCLatency',
-                        'expr': f'histogram_quantile({quantile}, sum(rate(rpc_server_duration_milliseconds_bucket{{job=~"opentelemetry-demo/.*", rpc_grpc_status_code="0", le!="infinity"}}[{evaluation_window}])) by (job, rpc_method, rpc_service, le)) > {latency_threshold}',
-                        'for': '20s',
-                        'labels': {
-                            'detection': 'rapid',
-                            'runbook': 'rpc-latency-immediate-response',
-                            'severity': 'critical',
-                            'team': 'observability'
-                        }
-                    }]
-                },
-                {
-                    'name': 'astronomy-shop-critical-service-rpc-latency',
-                    'rules': [{
-                        'alert': 'CriticalServiceRPCLatencySpike',
-                        'expr': f'histogram_quantile({quantile}, sum by (job, rpc_method, rpc_service, le) (rate(rpc_server_duration_milliseconds_bucket{{job=~"opentelemetry-demo/(checkoutservice|adservice|productcatalogservice)",le!="infinity",rpc_grpc_status_code="0"}}[{evaluation_window}]))) > {latency_threshold}',
-                        'for': '20s',
-                        'labels': {
-                            'detection': 'rapid',
-                            'runbook': 'critical-service-rpc-latency',
-                            'severity': 'critical',
-                            'team': 'platform'
-                        }
-                    }]
-                },
-                {
                     'name': 'recommendation-service-trace-latency',
                     'rules': [{
                         'alert': 'recommendationServiceTraceLatency',

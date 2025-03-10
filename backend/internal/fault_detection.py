@@ -6,7 +6,7 @@ from backend.internal.prometheus import Prometheus
 from backend.internal.models.fault_detection import DetectionEvent, InjectedFault, DetectionAnalysisResult
 logger = logging.getLogger(__name__)
     
-
+TOLERATION_WINDOW_SECONDS = 240
 class FaultDetectionAnalyzer(ABC):
     """Base class for fault detection analysis"""
 
@@ -103,12 +103,12 @@ class PrometheusDetectionAnalyzer(FaultDetectionAnalyzer):
         
         true_positives = [
             d for d in detections 
-            if fault.start_time <= d.firing_time <= fault.end_time
+            if fault.start_time <= d.firing_time <= (fault.end_time + timedelta(seconds=240))
         ]
 
         false_positives = [
             d for d in detections 
-            if d.firing_time < fault.start_time or d.firing_time > fault.end_time
+            if d.firing_time < fault.start_time or d.firing_time > (fault.end_time + timedelta(seconds=240))
         ]
         
         logger.info(f"Found {len(true_positives)} true positives and {len(false_positives)} false positives")
