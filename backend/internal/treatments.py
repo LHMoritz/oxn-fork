@@ -28,6 +28,7 @@ from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
 
 
 from backend.internal.errors import OrchestratorException, OxnException, OrchestratorResourceNotFoundException
+from backend.internal.prometheus import Prometheus
 from backend.internal.utils import (
     time_string_to_seconds,
     validate_time_string,
