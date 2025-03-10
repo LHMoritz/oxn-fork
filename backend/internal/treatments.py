@@ -2129,11 +2129,9 @@ class KubernetesPrometheusRulesTreatment(Treatment):
             quantile=self.config.get("quantile")
         )
         
-        # Restart to apply changes
-        self.orchestrator.restart_pods_of_deployment(self.deployment)
-
-        # sleep 20 seconds to let prometheus apply the rules
-        time.sleep(20)
+        # Reload prometheus config
+        prom_client = Prometheus(self.orchestrator, "sue")
+        prom_client.reload_config()
 
     def clean(self) -> None:
         # Similar to PrometheusIntervalTreatment, might want to skip cleanup

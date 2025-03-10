@@ -52,33 +52,10 @@
         }
       }
     },
-
     {
-      "add_security_context": {
-        "action": "security_context_kubernetes",
-        "params": {
-          "namespace": "system-under-evaluation",
-          "label_selector": "app.kubernetes.io/component",
-          "label": "adservice",
-          "capabilities": {
-            "add": [
-              "NET_ADMIN"
-            ]
-          }
-        }
-      }
-    },
-    {
-      "packet_loss_treatment": {
-        "action": "kubernetes_loss",
-        "params": {
-          "namespace": "system-under-evaluation",
-          "label_selector": "app.kubernetes.io/name",
-          "label": "astronomy-shop-adservice",
-          "loss_percentage": 25.0,
-          "duration": "120s",
-          "interface": "eth0"
-        }
+      "empty_treatment": {
+        "action": "empty",
+        "params": {}
       }
     }
   ],
@@ -96,7 +73,7 @@
   },
   "loadgen": {
     "run_time": "4m",
-    "max_users": 800,
+    "max_users": 600,
     "spawn_rate": 50,
     "locust_files": [
       "/backend/locust/locust_basic_interaction.py",

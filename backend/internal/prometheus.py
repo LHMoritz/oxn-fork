@@ -313,3 +313,18 @@ class Prometheus:
                 message=f"Error while querying alerts from Prometheus at {url} with params {params}",
                 explanation=f"{requests_exception}",
             )
+
+    def reload_config(self):
+    """Trigger Prometheus to reload its configuration at runtime"""
+    # The reload endpoint is not part of the v1 API, its a special admin endpoint
+    url = f"http://{self.base_url.split('/api/')[0]}/-/reload"
+    
+    try:
+        response = self.session.post(url)
+        response.raise_for_status()
+        return True
+    except (requests.ConnectionError, requests.HTTPError) as requests_exception:
+        raise PrometheusException(
+            message=f"Error while triggering config reload in Prometheus at {url}",
+            explanation=f"{requests_exception}",
+        )

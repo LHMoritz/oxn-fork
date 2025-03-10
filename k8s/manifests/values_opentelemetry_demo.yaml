@@ -49,6 +49,8 @@ opentelemetry-collector:
             - batch
             - probabilistic_sampler
 prometheus:
+  configmapReload:
+    enabled: true
   server:
     securityContext:
       runAsUser: 65534

@@ -69,13 +69,14 @@
       }
     },
     {
-      "packet_loss_treatment": {
-        "action": "kubernetes_loss",
+      "delay_treatment": {
+        "action": "delay",
         "params": {
           "namespace": "system-under-evaluation",
           "label_selector": "app.kubernetes.io/name",
           "label": "astronomy-shop-adservice",
-          "loss_percentage": 25.0,
+          "delay_time": "200ms",
+          "delay_jitter": "45ms",
           "duration": "120s",
           "interface": "eth0"
         }
@@ -96,7 +97,7 @@
   },
   "loadgen": {
     "run_time": "4m",
-    "max_users": 800,
+    "max_users": 600,
     "spawn_rate": 50,
     "locust_files": [
       "/backend/locust/locust_basic_interaction.py",
