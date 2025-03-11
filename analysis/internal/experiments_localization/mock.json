@@ -1,0 +1,156 @@
+     {
+     "experiment_id": "11738841869",
+     "metrics": {
+        "0_cartservice": {
+            "micro_precision": 0.8900,
+            "micro_recall": 0.9300,
+            "micro_f1_score": 0.9091
+        },
+        "0_frontendproxy": {
+            "micro_precision": 0.7623,
+            "micro_recall": 0.8123,
+            "micro_f1_score": 0.7868
+        },
+        "0_quoteservice": {
+            "micro_precision": 0.9123,
+            "micro_recall": 0.8750,
+            "micro_f1_score": 0.8928
+        },
+        "0_flagd": {
+            "micro_precision": 0.8450,
+            "micro_recall": 0.7650,
+            "micro_f1_score": 0.8024
+        },
+        "0_frauddetectionservice": {
+            "micro_precision": 0.9300,
+            "micro_recall": 0.9500,
+            "micro_f1_score": 0.9400
+        },
+        "0_recommendationservice": {
+            "micro_precision": 0.8800,
+            "micro_recall": 0.8700,
+            "micro_f1_score": 0.8758
+        },
+        "0_shippingservice": {
+            "micro_precision": 0.9200,
+            "micro_recall": 0.9100,
+            "micro_f1_score": 0.9150
+        },
+        "0_currencyservice": {
+            "micro_precision": 0.8600,
+            "micro_recall": 0.8800,
+            "micro_f1_score": 0.8695
+        },
+        "0_adservice": {
+            "micro_precision": 0.9400,
+            "micro_recall": 0.7600,
+            "micro_f1_score": 0.8405
+        },
+        "0_checkoutservice": {
+            "micro_precision": 0.7700,
+            "micro_recall": 0.9300,
+            "micro_f1_score": 0.8425
+        },
+        "0_frontend": {
+            "micro_precision": 0.9000,
+            "micro_recall": 0.9100,
+            "micro_f1_score": 0.9050
+        },
+        "0_paymentservice": {
+            "micro_precision": 0.8000,
+            "micro_recall": 0.8300,
+            "micro_f1_score": 0.8150
+        },
+        "0_emailservice": {
+            "micro_precision": 0.8600,
+            "micro_recall": 0.8500,
+            "micro_f1_score": 0.8544
+     }},
+     "probability": {
+        "0_cartservice": {
+            "faultyError": 0.0412,
+            "faultyNoError": 0.9588,
+            "goodError": 0.0873,
+            "goodNoError": 0.9127
+        },
+        "0_frontendproxy": {
+            "faultyError": 0.0645,
+            "faultyNoError": 0.9355,
+            "goodError": 0.0281,
+            "goodNoError": 0.9719
+        },
+        "0_quoteservice": {
+            "faultyError": 0.0924,
+            "faultyNoError": 0.9076,
+            "goodError": 0.0468,
+            "goodNoError": 0.9532
+        },
+        "0_flagd": {
+            "faultyError": 0.0367,
+            "faultyNoError": 0.9633,
+            "goodError": 0.0678,
+            "goodNoError": 0.9322
+        },
+        "0_frauddetectionservice": {
+            "faultyError": 0.0785,
+            "faultyNoError": 0.9215,
+            "goodError": 0.0874,
+            "goodNoError": 0.9126
+        },
+        "0_recommendationservice": {
+            "faultyError": 0.0563,
+            "faultyNoError": 0.9437,
+            "goodError": 0.0331,
+            "goodNoError": 0.9669
+        },
+        "0_shippingservice": {
+            "faultyError": 0.0892,
+            "faultyNoError": 0.9108,
+            "goodError": 0.0795,
+            "goodNoError": 0.9205
+        },
+        "0_currencyservice": {
+            "faultyError": 0.0478,
+            "faultyNoError": 0.9522,
+            "goodError": 0.0254,
+            "goodNoError": 0.9746
+        },
+        "0_adservice": {
+            "faultyError": 0.0591,
+            "faultyNoError": 0.9409,
+            "goodError": 0.0865,
+            "goodNoError": 0.9135
+        },
+        "0_checkoutservice": {
+            "faultyError": 0.0682,
+            "faultyNoError": 0.9318,
+            "goodError": 0.0763,
+            "goodNoError": 0.9237
+        },
+        "0_frontend": {
+            "faultyError": 0.0579,
+            "faultyNoError": 0.9421,
+            "goodError": 0.041,
+            "goodNoError": 0.959
+        },
+        "0_paymentservice": {
+            "faultyError": 0.0816,
+            "faultyNoError": 0.9184,
+            "goodError": 0.0992,
+            "goodNoError": 0.9008
+        },
+        "0_emailservice": {
+            "faultyError": 0.093,
+            "faultyNoError": 0.907,
+            "goodError": 0.0768,
+            "goodNoError": 0.9232
+        }
+     },
+     "aggregation": {
+         "micro_precision_agg": 0,
+         "micro_recall_agg": 0,
+         "micro_f1_score_agg": 0
+     },
+     "failedVariables": "['11738841869_0_producatalogservice_traces.json', '11738841869_0_featureflagservice_traces.json', '11738841869_0_kafka_traces.json', '11738841869_0_grafana_traces.json', '11738841869_0_otelcollector_traces.json', '11738841869_0_ffspostgres_traces.json']",
+     "timeToResult": 51.233688831329346
+}
