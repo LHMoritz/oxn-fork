@@ -93,4 +93,6 @@ MODEL_DIMENSIONS_BINARY = [257, 1500, 2]
 METRICS = ["micro_precision", "micro_recall", "micro_f1_score"]
 MODEL_PATH = Path("internal/model") / "real_tracemodel.pt"
 
+MODEL_PATH_BIG_MODEL = Path("internal/model") / "real_tracemodel_big.pt"
+
 

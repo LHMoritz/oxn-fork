@@ -149,9 +149,56 @@ However, this gives us the opporunity to build interesting KPIs around the Class
 
      - accountingservice traces are not usable and I will delete them from the training data
       ==> not instrumented correctly
-
-
      
+
+# Data generation
+
+     11739368800 , label recommendationservice, 120 ms delay, failed variables: cartservice_traces, currencyservice_traces, emailservice_traces, featureflagservice_traces, frauddetectionservice_traces, paymentservice_traces, producatalogservice_traces, quoteservice_traces
+
+
+     21739370401 , label : checkoutservice , 120 ms delay, failed variables : producatalogservice_traces, featureflagservice_traces
+          weird finding : suddenly the cartservice traces are the longest response variable, normally it was frontend....
+
+
+     31739371482, label : adservice, 120 ms delay, failed variables : featureflagservice_traces, producatalogservice_traces
+
+     41739375644, label : currencyservice , 120 ms delay failed variables : featureflagservice_traces,  producatalogservice_traces
+
+     51739376582, label : emailservice , 120 ms delay : failed varibales : featureflagservice_traces, producatalogservice_traces
+          interesting finding : cartservice traces quite high
+     
+     61739377327 , featureflagservice, 120 ms delay , failed varibles : featureflagservice_traces, producatalogservice_traces
+          note : might not use those in the model training
+     
+     71739378001, frauddetection service,  120 ms delay , failed varibles : featureflagservice_traces, producatalogservice_traces
+
+     81739378664, frontend , 120 ms delay , failed varibles : featureflagservice_traces, producatalogservice_traces
+                   locust file error
+     
+     91739379442 , frontendproxy , failed varibles : featureflagservice_traces, producatalogservice_traces
+          locust file error
+
+     101739380200, paymentservice , failed varibles : featureflagservice_traces, producatalogservice_traces
+     
+          
+          
+     111739380890, productcatalogservice , failed varibles : featureflagservice_traces, producatalogservice_traces
+          Unexpected error: No deployments found for service producatalogservice: No deployments found for the given service
+          might not use this in the training set
+     
+     121739381977, cartservice , failed variables : cartservice_traces, currencyservice_traces, emailservice_traces, featureflagservice_traces, frauddetectionservice_traces, paymentservice_traces, producatalogservice_traces, quoteservice_traces
+
+     note : weirdly small response
+
+
+     131739382742 , accounting service, featureflag, productcatalogservice
+
+     141739383580, quote service , featureflag, productcatalogservice
+     
+
+     151739384226, shipping service, featureflag, productcatalogservice
+
+     161739384974, flagd ,  featureflag, productcatalogservice
      
 
 

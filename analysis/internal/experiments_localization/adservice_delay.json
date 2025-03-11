@@ -1,0 +1,213 @@
+{
+     "name": "single-big-delay-config-rules",
+     "version": "0.0.1",
+     "orchestrator": "kubernetes",
+     "services": {
+       "jaeger": {
+         "name": "astronomy-shop-jaeger-query",
+         "namespace": "system-under-evaluation"
+       },
+       "prometheus": [
+         {
+           "name": "astronomy-shop-prometheus-server",
+           "namespace": "system-under-evaluation",
+           "target": "sue"
+         },
+         {
+           "name": "kube-prometheus-kube-prome-prometheus",
+           "namespace": "oxn-external-monitoring",
+           "target": "oxn"
+         }
+       ]
+     },
+     "responses": [
+       {
+         "name": "flagd_traces",
+         "type": "trace",
+         "service_name": "flagd",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "adservice_traces",
+         "type": "trace",
+         "service_name": "adservice",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "cartservice_traces",
+         "type": "trace",
+         "service_name": "cartservice",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "checkoutservice_traces",
+         "type": "trace",
+         "service_name": "checkoutservice",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "currencyservice_traces",
+         "type": "trace",
+         "service_name": "currencyservice",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "emailservice_traces",
+         "type": "trace",
+         "service_name": "emailservice",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "featureflagservice_traces",
+         "type": "trace",
+         "service_name": "featureflagservice",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "frontendproxy_traces",
+         "type": "trace",
+         "service_name": "frontendproxy",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "frauddetectionservice_traces",
+         "type": "trace",
+         "service_name": "frauddetectionservice",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "frontend_traces",
+         "type": "trace",
+         "service_name": "frontend",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "paymentservice_traces",
+         "type": "trace",
+         "service_name": "paymentservice",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "producatalogservice_traces",
+         "type": "trace",
+         "service_name": "producatalogservice",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "quoteservice_traces",
+         "type": "trace",
+         "service_name": "quoteservice",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "recommendationservice_traces",
+         "type": "trace",
+         "service_name": "recommendationservice",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       },
+       {
+         "name": "shippingservice_traces",
+         "type": "trace",
+         "service_name": "shippingservice",
+         "left_window": "10s",
+         "right_window": "10s",
+         "limit": 1499
+       } 
+     ],
+     "treatments": [
+       {
+         "kubernetes_prometheus_rules": {
+           "action": "kubernetes_prometheus_rules",
+           "params": {
+             "latency_threshold": 100,
+             "evaluation_window": "120s"
+           }
+         }
+       },
+ 
+       {
+         "add_security_context": {
+           "action": "security_context_kubernetes",
+           "params": {
+             "namespace": "system-under-evaluation",
+             "label_selector": "app.kubernetes.io/component",
+             "label": "adservice",
+             "capabilities": {
+               "add": [
+                 "NET_ADMIN"
+               ]
+             }
+           }
+         }
+       },
+       {
+         "delay_treatment": {
+           "action": "delay",
+           "params": {
+             "namespace": "system-under-evaluation",
+             "label_selector": "app.kubernetes.io/name",
+             "label": "astronomy-shop-recommendationservice",
+             "delay_time": "120ms",
+             "delay_jitter": "120ms",
+             "duration": "3m",
+             "interface": "eth0"
+           }
+         }
+       }
+     ],
+     "sue": {
+       "compose": "opentelemetry-demo/docker-compose.yml",
+       "exclude": [
+         "loadgenerator"
+       ],
+       "required": [
+         {
+           "namespace": "system-under-evaluation",
+           "name": "astronomy-shop-prometheus-server"
+         }
+       ]
+     },
+     "loadgen": {
+       "run_time": "6m",
+       "max_users": 500,
+       "spawn_rate": 50,
+       "locust_files": [
+         "/backend/locust/locust_basic_interaction.py",
+         "/backend/locust/locust_otel_demo.py"
+       ],
+       "target": {
+         "name": "astronomy-shop-frontendproxy",
+         "namespace": "system-under-evaluation",
+         "port": 8080
+       }
+     }
+   }
+ 

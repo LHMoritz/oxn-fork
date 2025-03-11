@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 import pandas as pd
 import logging
 import numpy as np
-from torcheval.metrics import MulticlassPrecision
+from torcheval.metrics import MulticlassPrecision, MulticlassAccuracy
 import analysis.internal.constants as constants
 
 logger = logging.getLogger(__name__)
@@ -107,6 +107,80 @@ class TraceModel(nn.Module):
 
           return recom_precision, no_fault_precision , ratio_other_class_predictions
 
+     def calculate_multiclass_accuracy_per_batch(self, predictions : torch.Tensor, labels : torch.Tensor) -> float:
+          pred_labels = torch.argmax(predictions, dim=1)
+          metric = MulticlassAccuracy()
+          metric.update(pred_labels, labels)
+          return metric.compute().item()
+     
+     def calc_acc_for_class_index(self, predictions : torch.Tensor, labels : torch.Tensor) -> tuple[list[float], list[float]]:
+          indices = [0, 1, 2, 3, 4, 5, 6, 7 , 8, 9, 10, 11, 12, 13, 14, 15, 16]
+          pred_labels = torch.argmax(predictions, dim=1)
+          accuracies_per_class = []
+          precisions_per_class = []
+
+          for index in indices:
+               pred_is_cls = (pred_labels == index)
+               label_is_cls = (labels == index)
+
+               # True Positives (TP): correctly predicted as cls
+               tp = (pred_is_cls & label_is_cls).sum().item()
+               # False Positives (FP): predicted as cls but not actually cls
+               fp = (pred_is_cls & ~label_is_cls).sum().item()
+               # False Negatives (FN): not predicted as cls but actually cls
+               fn = ((~pred_is_cls) & label_is_cls).sum().item()
+               # True Negatives (TN): all others (optional, used for accuracy)
+               tn = ((~pred_is_cls) & (~label_is_cls)).sum().item()
+               
+               # Calculate metrics safely by checking for zero denominators
+               precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+               #recall    = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+               #f1_score  = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0
+               # Accuracy for the class: (correct predictions) / (total samples in batch)
+               accuracy  = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0.0
+               accuracies_per_class.append(accuracy)
+               precisions_per_class.append(precision)
+          
+          return accuracies_per_class, precisions_per_class
+     
+
+
+     def train_trace_model_big(self, train_loader : DataLoader , num_epochs : int) -> tuple[list[list[float]], list[list[float]]]:
+          optimizer = optim.Adam(self.parameters(), lr=0.001)
+          
+          multi_class_predictions_accuracies = []
+          multi_class_predictions_precisons = []
+
+          for _ in range(num_epochs):
+                    for batch, labels in train_loader:
+                         optimizer.zero_grad()
+                         out =  self.forward(batch)
+                         targets = torch.argmax(labels, dim=1)
+                         loss = self.loss_function(out, targets)
+                         acc, precision = self.calc_acc_for_class_index(out, targets)
+                         multi_class_predictions_accuracies.append(acc)
+                         multi_class_predictions_precisons.append(precision)
+                         loss.backward() 
+                         optimizer.step()
+
+          return multi_class_predictions_accuracies, multi_class_predictions_precisons
+
+
+     def test_trace_model_big(self, test_loader : DataLoader) ->  tuple[list[list[float]], list[list[float]]]:
+          logger.info("starting testing the data")
+          multi_class_predictions_accuracies = []
+          multi_class_predictions_precisons = []
+          self.eval()
+          with torch.no_grad():
+               for batch , labels in test_loader:
+                    #labels = labels.long()
+                    out = self.forward(batch)
+                    targets = torch.argmax(labels, dim=1)
+                    acc , precison = self.calc_acc_for_class_index(out, targets)
+                    multi_class_predictions_accuracies.append(acc)
+                    multi_class_predictions_precisons.append(precison)
+          
+          return multi_class_predictions_accuracies, multi_class_predictions_precisons
 
 
      def train_trace_model(self, train_loader : DataLoader , num_epochs : int) -> tuple[list[float], list[float]]:
